@@ -17,6 +17,29 @@ import LFPy
 class NeuralSimulation:
     def __init__(self, input_type):
 
+        # self._single_neural_sim_function = self._run_distributed_synaptic_simulation
+        self.input_type = input_type
+        self._set_input_specific_properties()
+
+        self.cell_name = 'hay'
+
+        self.username = os.getenv('USER')
+
+        if at_stallo:
+            self.root_folder = join('/global', 'work', self.username, 'aPop')
+            self.figure_folder = join(self.root_folder, 'generic_study')
+            self.sim_folder = join(self.root_folder, 'generic_study', self.cell_name)
+        else:
+            self.root_folder = join('/home', self.username, 'work', 'aPop')
+            self.figure_folder = join(self.root_folder, 'generic_study')
+            self.sim_folder = join(self.root_folder, 'generic_study', self.cell_name)
+        if not os.path.isdir(self.figure_folder):
+            os.mkdir(self.figure_folder)
+        if not os.path.isdir(self.sim_folder):
+            os.mkdir(self.sim_folder)
+
+        self._set_electrode()
+
         self.divide_into_welch = 16.
         self.welch_dict = {'Fs': 1000 / self.timeres_python,
                            'NFFT': int(self.num_tsteps/self.divide_into_welch),
@@ -25,22 +48,17 @@ class NeuralSimulation:
                            'detrend': plt.detrend_mean,
                            'scale_by_freq': True,
                            }
-
-        self._single_neural_sim_function = self._run_distributed_synaptic_simulation
-        self.timeres_NEURON = 2**-4
-        self.timeres_python = 2**-4
-        self.cut_off = 100
-        self.end_t = 20000
+        self.neuron_models = join(self.root_folder, 'neuron_models')
+        sys.path.append(join(self.neuron_models, 'hay'))
+        from hay_active_declarations import active_declarations
+        neuron.load_mechanisms(join(self.neuron_models))
 
     def _set_electrode(self):
-        self.distances = np.array([50, 100, 200, 400, 1600, 6400])
-        # self.use_elec_idxs = np.array([0, 1, 2, 3, 5, 7, 8, 9, 10, 11, 13, 15, 16, 17, 18, 19, 21, 23])
-
-        elec_x, elec_z = np.meshgrid(self.distances, np.array([self.zmax, 500, 0]))
+        self.distances = 10 * np.exp(np.linspace(0, np.log(1000), 30))
+        elec_x, elec_z = np.meshgrid(self.distances, np.array([1000, 500, 0]))
         self.elec_x = elec_x.flatten()
         self.elec_z = elec_z.flatten()
         self.elec_y = np.zeros(len(self.elec_z))
-
         self.electrode_parameters = {
                 'sigma': 0.3,
                 'x': self.elec_x,
@@ -48,14 +66,33 @@ class NeuralSimulation:
                 'z': self.elec_z
         }
 
+    def _set_input_specific_properties(self):
+
+        if self.input_type == 'distributed_delta':
+            print "Distributed synaptic delta input"
+            self._single_neural_sim_function = self._run_distributed_synaptic_simulation
+            self.timeres_NEURON = 2**-4
+            self.timeres_python = 2**-4
+            self.cut_off = 200
+            self.end_t = 10000
+            self.repeats = None
+            self.max_freq = 500
+
+        else:
+            raise ValueError("Unrecognized input_type")
+
+        self.num_tsteps = round(self.end_t/self.timeres_python + 1)
+
+
+
     def _return_cell(self, holding_potential, conductance_type, mu, distribution, tau_w):
-        neuron_models = join(self.root_folder, 'neuron_models')
-        neuron.load_mechanisms(join(neuron_models))
+
 
         if self.cell_name == 'hay':
-            neuron.load_mechanisms(join(neuron_models, 'hay', 'mod'))
+            # neuron.load_mechanisms(join(neuron_models, 'hay', 'mod'))
+
             cell_params = {
-                'morphology': join(neuron_models, 'hay', 'lfpy_version', 'morphologies', 'cell1.hoc'),
+                'morphology': join(self.neuron_models, 'hay', 'lfpy_version', 'morphologies', 'cell1.hoc'),
                 'v_init': holding_potential,
                 'passive': False,           # switch on passive mechs
                 'nsegs_method': 'lambda_f',  # method for setting number of segments,
@@ -82,19 +119,6 @@ class NeuralSimulation:
     def save_neural_sim_single_input_data(self, cell, electrode, input_idx,
                              mu, distribution, taum, weight=None):
 
-        if not os.path.isdir(self.sim_folder):
-            os.mkdir(self.sim_folder)
-
-        dist_dict = {'dist': np.zeros(cell.totnsegs),
-             'sec_clrs': np.zeros(cell.totnsegs, dtype='|S3'),
-             'g_pas_QA': np.zeros(cell.totnsegs),
-             'V_rest_QA': np.zeros(cell.totnsegs),
-             'v': np.zeros(cell.totnsegs),
-             'mu_QA': np.zeros(cell.totnsegs),
-             'tau_w_QA': np.zeros(cell.totnsegs),
-             'g_w_bar_QA': np.zeros(cell.totnsegs),
-             }
-
         if not self.repeats is None:
             cut_off_idx = (len(cell.tvec) - 1) / self.repeats
             cell.tvec = cell.tvec[-cut_off_idx:] - cell.tvec[-cut_off_idx]
@@ -102,22 +126,10 @@ class NeuralSimulation:
             cell.vmem = cell.vmem[:, -cut_off_idx:]
 
         tau = '%1.2f' % taum if type(taum) in [float, int] else taum
-        dist_dict = self._get_distribution(dist_dict, cell)
+        # dist_dict = self._get_distribution(dist_dict, cell)
 
-        if type(input_idx) is int:
-            # sim_name = '%s_%s_%d_%1.1f_%+d_%s_%1.2f_%1.4f' % (self.cell_name, self.input_type, input_idx, mu,
-            #                                             self.holding_potential, distribution, tau, weight)
-            sim_name = '%s_%s_%d_%1.1f_%+d_%s_%s' % (self.cell_name, self.input_type, input_idx, mu,
-                                                        self.holding_potential, distribution, tau)
-        elif type(input_idx) in [list, np.ndarray]:
-            sim_name = '%s_%s_multiple_%1.2f_%1.1f_%+d_%s_%s_%1.4f' % (self.cell_name, self.input_type, weight, mu,
-                                                                    self.holding_potential, distribution, tau, weight)
-        elif type(input_idx) is str:
-            sim_name = '%s_%s_%s_%1.1f_%+d_%s_%s_%1.4f' % (self.cell_name, self.input_type, input_idx, mu,
-                                                        self.holding_potential, distribution, tau, weight)
-        else:
-            print input_idx, type(input_idx)
-            raise RuntimeError("input_idx is not recognized!")
+        sim_name = '%s_%s_%+1.1f_%s_%dms_%1.5fuS' % (self.cell_name, self.input_type, mu, distribution, tau, weight)
+
 
         np.save(join(self.sim_folder, 'tvec_%s_%s.npy' % (self.cell_name, self.input_type)), cell.tvec)
         # np.save(join(self.sim_folder, 'dist_dict_%s.npy' % sim_name), dist_dict)
@@ -147,23 +159,17 @@ class NeuralSimulation:
     def _run_distributed_synaptic_simulation(self, mu, input_sec, distribution, tau_w, weight):
         plt.seed(1234)
 
-        tau = '%1.2f' % tau_w if type(tau_w) in [int, float] else tau_w
-        sim_name = '%s_%s_%s_%1.1f_%+d_%s_%s_%1.4f' % (self.cell_name, self.input_type, input_sec, mu,
-                                                       self.holding_potential, distribution, tau, weight)
 
-        if os.path.isfile(join(self.sim_folder, 'sig_%s.npy' % sim_name)):
-            print "Skipping ", mu, input_sec, distribution, tau_w, weight, 'sig_%s.npy' % sim_name
-            return
+        # if os.path.isfile(join(self.sim_folder, 'sig_%s.npy' % sim_name)):
+        #     print "Skipping ", mu, input_sec, distribution, tau_w, weight, 'sig_%s.npy' % sim_name
+        #     return
 
         electrode = LFPy.RecExtElectrode(**self.electrode_parameters)
-        cell = self._return_cell(self.holding_potential, 'generic', mu, distribution, tau_w)
+        cell = self._return_cell(mu, distribution, tau_w)
         cell, syn, noiseVec = self._make_distributed_synaptic_stimuli_equal_density(cell, input_sec, weight)
         print "Starting simulation ..."
-        #import ipdb; ipdb.set_trace()
-        cell.simulate(rec_imem=True, rec_vmem=True, electrode=electrode)
 
-        # plt.plot(cell.tvec, cell.somav)
-        # plt.show()
+        cell.simulate(rec_imem=True, rec_vmem=True, electrode=electrode)
 
         self.save_neural_sim_single_input_data(cell, electrode, input_sec, mu, distribution, tau_w, weight)
         neuron.h('forall delete_section()')
@@ -175,7 +181,7 @@ class NeuralSimulation:
         synapse_params = {
             'e': 0.,                   # reversal potential
             'syntype': 'ExpSyn',       # synapse type
-            'tau': 2.,                # syn. time constant
+            'tau': .1,                # syn. time constant
             'weight': weight,            # syn. weight
             'record_current': False,
         }
@@ -216,11 +222,8 @@ class NeuralSimulation:
         return synapse_list
 
 
-
-
-
 if __name__ == '__main__':
 
-    ns = NeuralSimulation("delta_synapse")
+    ns = NeuralSimulation("distributed_delta")
 
 
