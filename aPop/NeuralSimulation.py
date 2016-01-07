@@ -34,12 +34,12 @@ class NeuralSimulation:
 
         if at_stallo:
             self.root_folder = join('/global', 'work', self.username, 'aPop')
-            self.figure_folder = join(self.root_folder, 'generic_study')
-            self.sim_folder = join(self.root_folder, 'generic_study', self.cell_name)
         else:
             self.root_folder = join('/home', self.username, 'work', 'aPop')
-            self.figure_folder = join(self.root_folder, 'generic_study')
-            self.sim_folder = join(self.root_folder, 'generic_study', self.cell_name)
+
+        self.figure_folder = join(self.root_folder, self.param_dict['save_folder'])
+        self.sim_folder = join(self.root_folder, self.param_dict['save_folder'], 'simulations')
+
         if not os.path.isdir(self.figure_folder):
             os.mkdir(self.figure_folder)
         if not os.path.isdir(self.sim_folder):
@@ -70,11 +70,11 @@ class NeuralSimulation:
 
     def _set_input_params(self):
 
-        if self.input_type is 'distributed_delta':
-            print "Distributed synaptic delta input"
-            self._single_neural_sim_function = self._run_distributed_synaptic_simulation
-        else:
-            raise RuntimeError("Unrecognized input type!")
+        # if self.input_type is 'distributed_delta':
+        #     print "Distributed synaptic delta input"
+            # self._single_neural_sim_function = self._run_distributed_synaptic_simulation
+        # else:
+        #     raise RuntimeError("Unrecognized input type!")
 
         self.timeres_NEURON = self.param_dict['timeres_NEURON']
         self.timeres_python = self.param_dict['timeres_python']
@@ -89,6 +89,7 @@ class NeuralSimulation:
             neuron.load_mechanisms(join(self.neuron_models))
 
         if self.cell_name == 'hay':
+            # print "Loading Hay"
             sys.path.append(join(self.neuron_models, 'hay'))
             from hay_active_declarations import active_declarations
             cell_params = {
@@ -109,11 +110,12 @@ class NeuralSimulation:
                                      'distribution': distribution,
                                      'tau_w': 'auto',
                                      #'total_w_conductance': 6.23843378791,# / 5,
-                                     'avrg_w_bar': 0.00005 * 2,
+                                     'avrg_w_bar': 0.00005, # Half of "original"!!!
                                      'hold_potential': self.holding_potential}]
             }
         else:
             raise ValueError("Unrcognized cell-type")
+        # neuron.h('forall delete_section()')
         cell = LFPy.Cell(**cell_params)
         cell.set_rotation(z=2*np.pi*np.random.random())
         return cell
@@ -155,7 +157,7 @@ class NeuralSimulation:
         np.save(join(self.sim_folder, 'zmid_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.zmid)
         np.save(join(self.sim_folder, 'diam_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.diam)
 
-    def _run_distributed_synaptic_simulation(self, mu, input_region, distribution, cell_number):
+    def run_distributed_synaptic_simulation(self, mu, input_region, distribution, cell_number):
         plt.seed(123 * cell_number)
         # if os.path.isfile(join(self.sim_folder, 'sig_%s.npy' % sim_name)):
         #     print "Skipping ", mu, input_sec, distribution, tau_w, weight, 'sig_%s.npy' % sim_name
@@ -163,18 +165,24 @@ class NeuralSimulation:
 
         electrode = LFPy.RecExtElectrode(**self.electrode_parameters)
         cell = self._return_cell(mu, distribution)
-        cell, syn, noiseVec = self._make_distributed_synaptic_stimuli(cell, input_region)
-        # print "Starting simulation of cell %d" % cell_number
-
+        cell, syn = self._make_distributed_synaptic_stimuli(cell, input_region)
         cell.simulate(rec_imem=True, rec_vmem=True, electrode=electrode)
-
         self.save_neural_sim_single_input_data(cell, electrode, input_region, mu, distribution, cell_number)
         self._draw_all_elecs_with_distance(cell, electrode, input_region, mu, distribution, cell_number)
-        neuron.h('forall delete_section()')
-        del cell, noiseVec, electrode
-        for s in syn:
-            del d
-        del syn
+
+    def run_asymmetry_simulation(self, mu, fraction, distribution, cell_number):
+        plt.seed(123 * cell_number)
+        # if os.path.isfile(join(self.sim_folder, 'sig_%s.npy' % sim_name)):
+        #     print "Skipping ", mu, input_sec, distribution, tau_w, weight, 'sig_%s.npy' % sim_name
+        #     return
+
+        electrode = LFPy.RecExtElectrode(**self.electrode_parameters)
+        cell = self._return_cell(mu, distribution)
+        cell, syn_apic, syn_basal = self._make_asymmetry_distributed_synaptic_stimuli(cell, fraction)
+        cell.simulate(rec_imem=True, rec_vmem=True, electrode=electrode)
+        self.save_neural_sim_single_input_data(cell, electrode, 'asymmetry_%1.1f' % fraction, mu, distribution, cell_number)
+        self._draw_all_elecs_with_distance(cell, electrode, 'asymmetry_%1.1f' % fraction, mu, distribution, cell_number)
+
 
     def _make_distributed_synaptic_stimuli(self, cell, input_sec):
 
@@ -186,6 +194,7 @@ class NeuralSimulation:
             'weight': self.param_dict['syn_weight'],            # syn. weight
             'record_current': False,
         }
+
         if input_sec == 'distal_tuft':
             input_pos = ['apic']
             maxpos = 10000
@@ -214,7 +223,43 @@ class NeuralSimulation:
         synapses = self.set_input_spiketrain(cell, cell_input_idxs, spike_trains, synapse_params)
         #self.input_plot(cell, cell_input_idxs, spike_trains)
 
-        return cell, synapses, None
+        return cell, synapses
+
+    def _make_asymmetry_distributed_synaptic_stimuli(self, cell, fraction):
+
+        # Define synapse parameters
+        synapse_params = {
+            'e': 0.,                   # reversal potential
+            'syntype': 'ExpSyn',       # synapse type
+            'tau': self.param_dict['syn_tau'],                # syn. time constant
+            'weight': self.param_dict['syn_weight'],            # syn. weight
+            'record_current': False,
+        }
+
+        num_synapses_apic = int(1000 * fraction)
+        input_pos = ['apic']
+        maxpos = 10000
+        minpos = 600
+        cell_input_idxs_apic = cell.get_rand_idx_area_norm(section=input_pos, nidx=num_synapses_apic,
+                                                      z_min=minpos, z_max=maxpos)
+        spike_trains_apic = LFPy.inputgenerators.stationary_poisson(num_synapses_apic, 5, cell.tstartms, cell.tstopms)
+        synapses_apic = self.set_input_spiketrain(cell, cell_input_idxs_apic, spike_trains_apic, synapse_params)
+
+        num_synapses_basal = int(1000 * (1 - fraction))
+        input_pos = ['apic', 'dend']
+        maxpos = 600
+        minpos = -10000
+
+        if num_synapses_apic + num_synapses_basal != 1000:
+            raise RuntimeError("Does not sum to 1000")
+
+        cell_input_idxs_basal = cell.get_rand_idx_area_norm(section=input_pos, nidx=num_synapses_basal,
+                                                      z_min=minpos, z_max=maxpos)
+        spike_trains_basal = LFPy.inputgenerators.stationary_poisson(num_synapses_basal, 5, cell.tstartms, cell.tstopms)
+        synapses_basal = self.set_input_spiketrain(cell, cell_input_idxs_basal, spike_trains_basal, synapse_params)
+
+        return cell, synapses_apic, synapses_basal
+
 
     def set_input_spiketrain(self, cell, cell_input_idxs, spike_trains, synapse_params):
         synapse_list = []
@@ -346,147 +391,4 @@ class NeuralSimulation:
          [ax_i_apic, ax_i_middle, ax_i_soma, ax_v_apic, ax_v_middle, ax_v_soma]]
 
         fig.savefig(join(self.figure_folder, '%s.png' % sim_name))
-
-class ShapeFunction:
-    def __init__(self):
-        pass
-
-    def distribute_cellsims_local(self):
-        from param_dicts import distributed_delta_params
-        ns = NeuralSimulation(**distributed_delta_params)
-
-        secs = ['homogeneous', 'distal_tuft', 'basal']
-        mus = [-0.5, 0.0, 2.0]
-        dists = ['uniform', 'linear_increase', 'linear_decrease']
-        cell_number = 100
-        num_sims = len(secs) * len(mus) * len(dists) * cell_number
-        i = 0
-        for input_sec in secs:
-            for mu in mus:
-                for channel_dist in dists:
-                    for cell_idx in range(cell_number):
-                        i += 1
-                        print i, '/', num_sims
-                        ns._run_distributed_synaptic_simulation(mu, input_sec, channel_dist, cell_idx)
-
-    def distribute_cellsims_MPI_DEPRECATED(self):
-        """ Run with
-            openmpirun -np 4 python example_mpi.py
-        """
-        from param_dicts import distributed_delta_params
-        ns = NeuralSimulation(**distributed_delta_params)
-
-        from mpi4py import MPI
-        COMM = MPI.COMM_WORLD
-        SIZE = COMM.Get_size()
-        RANK = COMM.Get_rank()
-
-        secs = ['homogeneous', 'distal_tuft', 'basal']
-        mus = [-0.5, 0.0, 2.0]
-        dists = ['uniform', 'linear_increase', 'linear_decrease']
-        cell_number = 100
-        num_sims = len(secs) * len(mus) * len(dists) * cell_number
-
-        sim_num = 0
-        for input_sec in secs:
-            for mu in mus:
-                for channel_dist in dists:
-                    for cell_idx in range(cell_number):
-                        if divmod(sim_num, SIZE)[1] == RANK:
-                            print RANK, "simulating ", input_sec, channel_dist, mu, cell_idx
-                            ns._run_distributed_synaptic_simulation(mu, input_sec, channel_dist, cell_idx)
-
-                        sim_num += 1
-
-
-def ShapeFunctionMPI():
-    """ Run with
-        mpirun -np 4 python example_mpi.py
-    """
-    from mpi4py import MPI
-
-    class Tags:
-        def __init__(self):
-            self.READY = 0
-            self.DONE = 1
-            self.EXIT = 2
-            self.START = 3
-            self.ERROR = 4
-    tags = Tags()
-    # Initializations and preliminaries
-    comm = MPI.COMM_WORLD   # get MPI communicator object
-    size = comm.size        # total number of processes
-    rank = comm.rank        # rank of this process
-    status = MPI.Status()   # get MPI status object
-    num_workers = size - 1
-
-    if size == 1:
-        sys.exit()
-
-    if rank == 0:
-
-        secs = ['homogeneous', 'distal_tuft', 'basal']
-        mus = [-0.5, 0.0, 2.0]
-        dists = ['uniform', 'linear_increase', 'linear_decrease']
-
-        print("\033[95m Master starting with %d workers\033[0m" % num_workers)
-        task = 0
-        num_cells = 100
-        num_tasks = len(secs) * len(mus) * len(dists) * num_cells
-
-        for input_sec in secs:
-            for channel_dist in dists:
-                for mu in mus:
-                    for cell_idx in xrange(num_cells):
-                        task += 1
-                        sent = False
-                        while not sent:
-                            data = comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
-                            source = status.Get_source()
-                            tag = status.Get_tag()
-                            if tag == tags.READY:
-                                comm.send([input_sec, channel_dist, mu, cell_idx], dest=source, tag=tags.START)
-                                print "\033[95m Sending task %d/%d to worker %d\033[0m" % (task, num_tasks, source)
-                                sent = True
-                            elif tag == tags.DONE:
-                                print "\033[95m Worker %d completed task %d/%d\033[0m" % (source, task, num_tasks)
-                            elif tag == tags.ERROR:
-                                print "\033[91mMaster detected ERROR at node %d. Aborting...\033[0m" % source
-                                for worker in range(1, num_workers + 1):
-                                    comm.send([{}, None], dest=worker, tag=tags.EXIT)
-                                sys.exit()
-
-        for worker in range(1, num_workers + 1):
-            comm.send([{}, None], dest=worker, tag=tags.EXIT)
-        print("\033[95m Master finishing\033[0m")
-    else:
-        from param_dicts import distributed_delta_params
-        ns = NeuralSimulation(**distributed_delta_params)
-        #print("I am a worker with rank %d." % rank)
-        while True:
-            comm.send(None, dest=0, tag=tags.READY)
-            [input_sec, channel_dist, mu, cell_idx] = comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
-
-            tag = status.Get_tag()
-            if tag == tags.START:
-                # Do the work here
-                print "\033[93m%d put to work on %s %s %+1.1f cell %d\033[0m" % (rank, input_sec,
-                                                                                 channel_dist, mu, cell_idx)
-                try:
-                    ns._run_distributed_synaptic_simulation(mu, input_sec, channel_dist, cell_idx)
-                except:
-                    print "\033[91mNode %d exiting with ERROR\033[0m" % rank
-                    comm.send(None, dest=0, tag=tags.ERROR)
-                    sys.exit()
-                comm.send(None, dest=0, tag=tags.DONE)
-            elif tag == tags.EXIT:
-                print "\033[93m%d exiting\033[0m" % rank
-                break
-        comm.send(None, dest=0, tag=tags.EXIT)
-
-if __name__ == '__main__':
-
-    ShapeFunction()
-    # ns = NeuralSimulation(**distributed_delta_params)
-
 
