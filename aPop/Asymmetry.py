@@ -30,7 +30,7 @@ def Asymmetry(params):
 
     if rank == 0:
         fractions = params['asymmetry_fractions']
-        mus = [-0.5, 0.0, 2.0]
+        mus = [2.0]#[-0.5, 0.0, 2.0]
         dists = ['linear_increase']
 
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
@@ -70,11 +70,11 @@ def Asymmetry(params):
             tag = status.Get_tag()
             if tag == tags.START:
                 # Do the work here
-                print "\033[93m%d put to work on %1.1f %s %+1.1f cell %d\033[0m" % (rank, fraction,
+                print "\033[93m%d put to work on %1.2f %s %+1.1f cell %d\033[0m" % (rank, fraction,
                                                                                  channel_dist, mu, cell_idx)
                 try:
                     #print "python %s %1.1f %s %s %d" % (sys.argv[0], mu, input_sec, channel_dist, cell_idx)
-                    os.system("python %s %1.1f %1.1f %s %d" % (sys.argv[0], mu, fraction, channel_dist, cell_idx))
+                    os.system("python %s %1.1f %1.2f %s %d" % (sys.argv[0], mu, fraction, channel_dist, cell_idx))
                 except:
                     print "\033[91mNode %d exiting with ERROR\033[0m" % rank
                     comm.send(None, dest=0, tag=tags.ERROR)

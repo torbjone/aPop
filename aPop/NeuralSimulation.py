@@ -245,12 +245,14 @@ class NeuralSimulation:
         spike_trains_apic = LFPy.inputgenerators.stationary_poisson(num_synapses_apic, 5, cell.tstartms, cell.tstopms)
         synapses_apic = self.set_input_spiketrain(cell, cell_input_idxs_apic, spike_trains_apic, synapse_params)
 
-        num_synapses_basal = int(1000 * (1 - fraction))
+        num_synapses_basal = 1000 - num_synapses_apic
         input_pos = ['apic', 'dend']
         maxpos = 600
         minpos = -10000
 
+
         if num_synapses_apic + num_synapses_basal != 1000:
+            print num_synapses_basal, num_synapses_apic
             raise RuntimeError("Does not sum to 1000")
 
         cell_input_idxs_basal = cell.get_rand_idx_area_norm(section=input_pos, nidx=num_synapses_basal,
