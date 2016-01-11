@@ -93,3 +93,8 @@ if __name__ == '__main__':
         ns.run_asymmetry_simulation(*args)
     elif len(sys.argv) == 2 and sys.argv[1] == 'MPI':
         Asymmetry(asymmetry_params)
+    elif len(sys.argv) == 2 and sys.argv[1] == 'plot':
+        ns = NeuralSimulation(**asymmetry_params)
+        fraction = 0.5
+        input_region = 'asymmetry_%1.1f' % fraction
+        ns.plot_LFP_with_distance(input_region, 2.0, 'linear_increase', fraction, 0)

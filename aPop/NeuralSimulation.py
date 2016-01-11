@@ -18,9 +18,8 @@ import tools
 
 
 class NeuralSimulation:
-    def __init__(self, input_type, **kwargs):
-
-        self.input_type = input_type
+    def __init__(self, **kwargs):
+        self.input_type = kwargs['input_type']
         self.param_dict = kwargs
         self._set_input_params()
         self._set_electrode()
@@ -180,8 +179,8 @@ class NeuralSimulation:
         cell = self._return_cell(mu, distribution)
         cell, syn_apic, syn_basal = self._make_asymmetry_distributed_synaptic_stimuli(cell, fraction)
         cell.simulate(rec_imem=True, rec_vmem=True, electrode=electrode)
-        self.save_neural_sim_single_input_data(cell, electrode, 'asymmetry_%1.1f' % fraction, mu, distribution, cell_number)
-        self._draw_all_elecs_with_distance(cell, electrode, 'asymmetry_%1.1f' % fraction, mu, distribution, cell_number)
+        self.save_neural_sim_single_input_data(cell, electrode, 'asymmetry_%1.2f' % fraction, mu, distribution, cell_number)
+        self._draw_all_elecs_with_distance(cell, electrode, 'asymmetry_%1.2f' % fraction, mu, distribution, cell_number)
 
 
     def _make_distributed_synaptic_stimuli(self, cell, input_sec):
@@ -394,3 +393,112 @@ class NeuralSimulation:
 
         fig.savefig(join(self.figure_folder, '%s.png' % sim_name))
 
+    def plot_LFP_with_distance(self, input_region, mu, distribution, fraction, cell_number):
+        print "plotting "
+        plt.seed(123*cell_number)
+        sim_name = '%s_%s_%s_%s_%+1.1f_%1.5fuS_%05d' % (self.cell_name, self.input_type, input_region, distribution,
+                                                        mu, self.param_dict['syn_weight'], cell_number)
+
+        cell = self._return_cell(mu, distribution)
+        cell, syn_apic, syn_basal = self._make_asymmetry_distributed_synaptic_stimuli(cell, fraction)
+        cell.imem = np.load(join(self.sim_folder, 'imem_%s.npy' % sim_name))
+        cell.vmem = np.load(join(self.sim_folder, 'vmem_%s.npy' % sim_name))
+        plt.close('all')
+        fig = plt.figure(figsize=[18, 9])
+        fig.subplots_adjust(right=0.97, left=0.05)
+        apic_clr = 'orange'
+        soma_clr = 'olive'
+        middle_clr = 'm'
+        soma_idx = 0
+        apic_idx = np.argmin(np.abs(cell.zmid - 1000))
+        middle_idx = np.argmin(np.abs(cell.zmid - 500))
+
+        plot_psd = True
+        if plot_psd:
+            scale = 'log'
+            v_x_apic, [v_y_apic] = tools.return_freq_and_psd_welch(cell.vmem[apic_idx], self.welch_dict)
+            v_x_middle, [v_y_middle] = tools.return_freq_and_psd_welch(cell.vmem[middle_idx], self.welch_dict)
+            v_x_soma, [v_y_soma] = tools.return_freq_and_psd_welch(cell.vmem[soma_idx], self.welch_dict)
+            i_x_apic, [i_y_apic] = tools.return_freq_and_psd_welch(cell.imem[apic_idx], self.welch_dict)
+            i_x_middle, [i_y_middle] = tools.return_freq_and_psd_welch(cell.imem[middle_idx], self.welch_dict)
+            i_x_soma, [i_y_soma] = tools.return_freq_and_psd_welch(cell.imem[soma_idx], self.welch_dict)
+        else:
+            scale ='linear'
+            v_x_apic, v_y_apic = cell.tvec, cell.vmem[apic_idx]
+            v_x_middle, v_y_middle = cell.tvec, cell.vmem[middle_idx]
+            v_x_soma, v_y_soma = cell.tvec, cell.vmem[soma_idx]
+            i_x_apic, i_y_apic = cell.tvec, cell.imem[apic_idx]
+            i_x_middle, i_y_middle = cell.tvec, cell.imem[middle_idx]
+            i_x_soma, i_y_soma = cell.tvec, cell.imem[soma_idx]
+        ylim= [1e-5, 1]
+        ax_top = fig.add_subplot(3, 5, 4, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
+        ax_top_n = fig.add_subplot(3, 5, 5, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
+        ax_mid = fig.add_subplot(3, 5, 9, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
+        ax_mid_n = fig.add_subplot(3, 5, 10, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
+        ax_bottom = fig.add_subplot(3, 5, 14, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
+        ax_bottom_n = fig.add_subplot(3, 5, 15, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
+        cell_ax = fig.add_subplot(1, 5, 3, aspect=1, frameon=False, xticks=[], yticks=[])
+        self.plot_cell_to_ax(cell, cell_ax)
+
+        all_elec_ax = [ax_top, ax_mid, ax_bottom]
+        all_elec_n_ax = [ax_top_n, ax_mid_n, ax_bottom_n]
+
+        apic_title = '%1.2f (%1.2f) mV' % (np.mean(cell.vmem[apic_idx]), np.std(cell.vmem[apic_idx]))
+        middle_title = '%1.2f (%1.2f) mV' % (np.mean(cell.vmem[middle_idx]), np.std(cell.vmem[middle_idx]))
+        soma_title = '%1.2f (%1.2f) mV' % (np.mean(cell.vmem[soma_idx]), np.std(cell.vmem[soma_idx]))
+
+        ax_v_apic = fig.add_subplot(3, 5, 1, xlim=[1, self.max_freq], ylabel='mV$^2$/Hz',
+                                    title=apic_title, xscale=scale, yscale=scale)
+        ax_v_middle = fig.add_subplot(3, 5, 6, xlim=[1, self.max_freq], ylabel='mV$^2$/Hz',
+                                      title=middle_title, xscale=scale, yscale=scale)
+        ax_v_soma = fig.add_subplot(3, 5, 11, xlim=[1, self.max_freq], ylabel='mV$^2$/Hz',
+                                    title=soma_title, xscale=scale, yscale=scale)
+
+        ax_i_apic = fig.add_subplot(3, 5, 2, xlim=[1, self.max_freq], ylabel='nA$^2$/Hz', xscale=scale, yscale=scale)
+        ax_i_middle = fig.add_subplot(3, 5, 7, xlim=[1, self.max_freq], ylabel='nA$^2$/Hz', xscale=scale, yscale=scale)
+        ax_i_soma = fig.add_subplot(3, 5, 12, xlim=[1, self.max_freq], ylabel='nA$^2$/Hz', xscale=scale, yscale=scale)
+
+        ax_v_apic.loglog(v_x_apic, v_y_apic, c=apic_clr)
+        ax_v_middle.loglog(v_x_middle, v_y_middle, c=middle_clr)
+        ax_v_soma.loglog(v_x_soma, v_y_soma, c=soma_clr)
+
+        ax_i_apic.loglog(i_x_apic, i_y_apic, c=apic_clr)
+        ax_i_middle.loglog(i_x_middle, i_y_middle, c=middle_clr)
+        ax_i_soma.loglog(i_x_soma, i_y_soma, c=soma_clr)
+
+        cell_ax.plot(cell.xmid[apic_idx], cell.zmid[apic_idx], 'D', ms=10, c=apic_clr)
+        cell_ax.plot(cell.xmid[middle_idx], cell.zmid[middle_idx], 'D', ms=10, c=middle_clr)
+        cell_ax.plot(cell.xmid[soma_idx], cell.zmid[soma_idx], 'D', ms=10, c=soma_clr)
+
+        fig.suptitle(sim_name)
+        LFP = 1000 * np.load(join(self.sim_folder, 'sig_%s.npy' % sim_name))[:, :]
+
+        #if self.input_type is 'distributed_delta':
+        freqs, sig_psd = tools.return_freq_and_psd_welch(LFP, self.welch_dict)
+        #else:
+        #    freqs, sig_psd = tools.return_freq_and_psd(self.timeres_python/1000., LFP)
+
+        cutoff_dist = 1000
+        dist_clr = lambda dist: plt.cm.Greys(np.log(dist) / np.log(cutoff_dist))
+
+        for elec in xrange(len(self.elec_z)):
+            if self.elec_x[elec] > cutoff_dist:
+                continue
+            clr = dist_clr(self.elec_x[elec])
+            cell_ax.plot(self.elec_x[elec], self.elec_z[elec], 'o', c=clr)
+
+            row, col = self._return_elec_row_col(elec)
+            all_elec_ax[row].loglog(freqs, sig_psd[elec, :], color=clr, lw=1)
+            all_elec_n_ax[row].loglog(freqs, sig_psd[elec, :] / np.max(sig_psd[elec, :]), color=clr, lw=1)
+
+        [ax.grid(True) for ax in all_elec_ax + all_elec_n_ax +
+         [ax_i_apic, ax_i_middle, ax_i_soma, ax_v_apic, ax_v_middle, ax_v_soma]]
+
+        for ax in all_elec_ax + all_elec_n_ax + [ax_i_apic, ax_i_middle, ax_i_soma, ax_v_apic, ax_v_middle, ax_v_soma]:
+            max_exponent = np.ceil(np.log10(np.max([np.max(l.get_ydata()) for l in ax.get_lines()])))
+            ax.set_ylim([10**(max_exponent - 4), 10**max_exponent])
+
+        fig.savefig(join(self.figure_folder, 'LFP_%s.png' % sim_name))
+
+#if __name__ == '__main__':
+#    ns = NeuralSimulation()

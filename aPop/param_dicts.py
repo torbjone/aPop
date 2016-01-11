@@ -24,6 +24,6 @@ asymmetry_params = {'input_type': 'distributed_asymmetry',
                             'max_freq': 500,
                             'holding_potential': -80,
                             'conductance_type': 'generic',
-                            'asymmetry_fractions': [0.75],
+                            'asymmetry_fractions': [0.8],
                             'save_folder': 'asymmetry',
                             }
