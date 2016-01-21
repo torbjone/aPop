@@ -33,8 +33,11 @@ class NeuralSimulation:
 
         if at_stallo:
             self.root_folder = join('/global', 'work', self.username, 'aPop')
+            self.neuron_models = join('/home', self.username, 'work', 'aPop', 'neuron_models')
+
         else:
             self.root_folder = join('/home', self.username, 'work', 'aPop')
+            self.neuron_models = join(self.root_folder, 'neuron_models')
 
         self.figure_folder = join(self.root_folder, self.param_dict['save_folder'])
         self.sim_folder = join(self.root_folder, self.param_dict['save_folder'], 'simulations')
@@ -52,7 +55,6 @@ class NeuralSimulation:
                            'detrend': plt.detrend_mean,
                            'scale_by_freq': True,
                            }
-        self.neuron_models = join(self.root_folder, 'neuron_models')
 
     def _set_electrode(self):
         self.distances = 10 * np.exp(np.linspace(0, np.log(1000), 30))
