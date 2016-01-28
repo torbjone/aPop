@@ -8,7 +8,6 @@ if not 'DISPLAY' in os.environ:
     at_stallo = True
 else:
     at_stallo = False
-
 from plotting_convention import mark_subplots, simplify_axes
 import numpy as np
 import pylab as plt
@@ -85,6 +84,7 @@ class NeuralSimulation:
 
     def _return_cell(self, mu, distribution):
         if not 'i_QA' in neuron.h.__dict__.keys():
+            print "loading QA"
             neuron.load_mechanisms(join(self.neuron_models))
 
         if self.cell_name == 'hay':
@@ -164,6 +164,7 @@ class NeuralSimulation:
 
         electrode = LFPy.RecExtElectrode(**self.electrode_parameters)
         cell = self._return_cell(mu, distribution)
+        print "worked so far"
         cell, syn = self._make_distributed_synaptic_stimuli(cell, input_region)
         cell.simulate(rec_imem=True, rec_vmem=True, electrode=electrode)
         self.save_neural_sim_single_input_data(cell, electrode, input_region, mu, distribution, cell_number)
@@ -500,5 +501,106 @@ class NeuralSimulation:
 
         fig.savefig(join(self.figure_folder, 'LFP_%s.png' % sim_name))
 
-#if __name__ == '__main__':
-#    ns = NeuralSimulation()
+
+    def plot_F(self, freqs, sig_psd, sim_name, mu, distribution, input_sec):
+
+        plt.close('all')
+        fig = plt.figure(figsize=[18, 9])
+        fig.subplots_adjust(right=0.97, left=0.05)
+        plt.seed(123*0)
+
+        scale = 'log'
+        cell_ax = fig.add_subplot(1, 3, 1, aspect=1, frameon=False, xticks=[], yticks=[])
+
+        xmid = np.load(join(self.sim_folder, 'xmid_hay_generic.npy'))
+        zmid = np.load(join(self.sim_folder, 'zmid_hay_generic.npy'))
+        xstart = np.load(join(self.sim_folder, 'xstart_hay_generic.npy'))
+        zstart = np.load(join(self.sim_folder, 'zstart_hay_generic.npy'))
+        xend = np.load(join(self.sim_folder, 'xend_hay_generic.npy'))
+        zend = np.load(join(self.sim_folder, 'zend_hay_generic.npy'))
+        synidx = np.load(join(self.sim_folder, 'synidx_%s_00000.npy' % sim_name))
+
+        [cell_ax.plot([xstart[idx], xend[idx]], [zstart[idx], zend[idx]],
+                 lw=1.5, color='0.5', zorder=0, alpha=1)
+            for idx in xrange(len(xmid))]
+        [cell_ax.plot(xmid[idx], zmid[idx], 'g.', ms=4) for idx in synidx]
+
+        ax_top = fig.add_subplot(3, 3, 2, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
+        ax_top_n = fig.add_subplot(3, 3, 3, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
+        ax_mid = fig.add_subplot(3, 3, 5, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
+        ax_mid_n = fig.add_subplot(3, 3, 6, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
+        ax_bottom = fig.add_subplot(3, 3, 8, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
+        ax_bottom_n = fig.add_subplot(3, 3, 9, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
+
+        all_elec_ax = [ax_top, ax_mid, ax_bottom]
+        all_elec_n_ax = [ax_top_n, ax_mid_n, ax_bottom_n]
+        cutoff_dist = 1000
+        dist_clr = lambda dist: plt.cm.Greys(np.log(dist) / np.log(cutoff_dist))
+
+        for elec in xrange(len(self.elec_z)):
+            if self.elec_x[elec] > cutoff_dist:
+                continue
+            clr = dist_clr(self.elec_x[elec])
+            cell_ax.plot(self.elec_x[elec], self.elec_z[elec], 'o', c=clr)
+
+            row, col = self._return_elec_row_col(elec)
+            all_elec_ax[row].loglog(freqs, sig_psd[elec, :], color=clr, lw=1)
+            all_elec_n_ax[row].loglog(freqs, sig_psd[elec, :] / np.max(sig_psd[elec, :]), color=clr, lw=1)
+
+        [ax.grid(True) for ax in all_elec_ax + all_elec_n_ax]
+
+        for ax in all_elec_ax + all_elec_n_ax:
+            max_exponent = np.ceil(np.log10(np.max([np.max(l.get_ydata()) for l in ax.get_lines()])))
+            ax.set_ylim([10**(max_exponent - 4), 10**max_exponent])
+
+        fig.savefig(join(self.figure_folder, 'F_%s.png' % sim_name))
+
+    def sum_shape_functions(self):
+        secs = ['homogeneous', 'distal_tuft', 'basal']
+        mus = [-0.5, 0.0, 2.0]
+        dists = ['uniform', 'linear_increase', 'linear_decrease']
+        num_cells = 10
+        welch_freqs = np.zeros(10001)
+        # print self.elec_x[range(0, 90, 30)], self.elec_y[range(0, 90, 30)], self.elec_z[range(0, 90, 30)]
+        for input_sec in secs:
+            for distribution in dists:
+                for mu in mus:
+                    average_psd = np.zeros((len(self.elec_x), 10001))
+                    cell_count = 0
+                    for cell_number in xrange(num_cells):
+                        # print cell_number
+                        sim_name = '%s_%s_%s_%s_%+1.1f_%1.5fuS_%05d' % (self.cell_name, self.input_type,
+                                                   input_sec, distribution, mu, self.param_dict['syn_weight'], cell_number)
+                        lfp = 1000 * np.load(join(self.sim_folder, 'sig_%s.npy' % sim_name))
+                        freqs, lfp_psd = tools.return_freq_and_psd_welch(lfp[:, :], self.welch_dict)
+                        # self.plot_F(freqs, lfp_psd, sim_name, mu, distribution, input_sec)
+                        # [plt.loglog(freqs, lfp_psd[idx]) for idx in range(0, 90, 30)]
+                        # plt.grid(True)
+                        # plt.show()
+                        if not average_psd.shape == lfp_psd.shape:
+                            print "Reshaping", lfp_psd.shape, freqs.shape, freqs
+                            average_psd = np.zeros(lfp_psd.shape)
+                        if not welch_freqs.shape == freqs.shape:
+                            print "Reshaping frequency"
+                        welch_freqs = freqs
+                        average_psd += lfp_psd
+                        cell_count += 1
+                    print cell_count
+                    F = average_psd / cell_count
+
+                    sim_name = '%s_%s_%s_%s_%+1.1f_%1.5fuS' % (self.cell_name, self.input_type,
+                                                   input_sec, distribution, mu, self.param_dict['syn_weight'])
+                    self.plot_F(welch_freqs, F, sim_name, mu, distribution, input_sec)
+                    print sim_name
+                    # [plt.loglog(welch_freqs, F[idx]) for idx in range(0, 90, 30)]
+                    # plt.grid(True)
+                    # plt.show()
+                    np.save(join(self.sim_folder, 'F_%s.npy' % sim_name), F)
+
+
+if __name__ == '__main__':
+    from param_dicts import distributed_delta_params
+    ns = NeuralSimulation(**distributed_delta_params)
+
+    # ns.run_distributed_synaptic_simulation(-0.5, 'homogeneous', 'uniform', 0)
+    ns.sum_shape_functions()

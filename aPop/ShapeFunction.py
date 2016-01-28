@@ -96,3 +96,7 @@ if __name__ == '__main__':
         ns.run_distributed_synaptic_simulation(*args)
     elif len(sys.argv) == 2 and sys.argv[1] == 'MPI':
         ShapeFunctionMPI()
+    elif len(sys.argv) == 2 and sys.argv[1] == 'sum':
+        from param_dicts import distributed_delta_params
+        ns = NeuralSimulation(**distributed_delta_params)
+        ns.sum_shape_functions()

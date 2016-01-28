@@ -1,6 +1,8 @@
 import numpy as np
 import scipy.fftpack as ff
-from matplotlib import mlab
+
+# NEURON is not OK with this package for some reason. Seems to be something about __future__ import related to strings
+from matplotlib import mlab as ml
 
 def return_freq_and_psd(tvec, sig):
     """ Returns the power and freqency of the input signal"""
@@ -30,6 +32,6 @@ def return_freq_and_psd_welch(sig, welch_dict):
     psd = []
     freqs = None
     for idx in xrange(sig.shape[0]):
-        yvec_w, freqs = mlab.psd(sig[idx, :], **welch_dict)
+        yvec_w, freqs = ml.psd(sig[idx, :], **welch_dict)
         psd.append(yvec_w)
     return freqs, np.array(psd)
