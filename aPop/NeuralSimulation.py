@@ -121,7 +121,7 @@ class NeuralSimulation:
 
     def save_neural_sim_single_input_data(self, cell, electrode, input_sec, mu, distribution, cell_number):
 
-        if not self.repeats is None:
+        if self.repeats is not None:
             cut_off_idx = (len(cell.tvec) - 1) / self.repeats
             cell.tvec = cell.tvec[-cut_off_idx:] - cell.tvec[-cut_off_idx]
             cell.imem = cell.imem[:, -cut_off_idx:]
@@ -136,31 +136,37 @@ class NeuralSimulation:
         np.save(join(self.sim_folder, 'tvec_%s_%s.npy' % (self.cell_name, self.input_type)), cell.tvec)
         np.save(join(self.sim_folder, 'sig_%s.npy' % sim_name), np.dot(electrode.electrodecoeff, cell.imem))
 
-        if cell_number % 10 == 0:
+        if cell_number % 500 == 0:
             np.save(join(self.sim_folder, 'vmem_%s.npy' % sim_name), cell.vmem)
             np.save(join(self.sim_folder, 'imem_%s.npy' % sim_name), cell.imem)
             np.save(join(self.sim_folder, 'synidx_%s.npy' % sim_name), cell.synidx)
 
-        np.save(join(self.sim_folder, 'elec_x_%s.npy' % self.cell_name), electrode.x)
-        np.save(join(self.sim_folder, 'elec_y_%s.npy' % self.cell_name), electrode.y)
-        np.save(join(self.sim_folder, 'elec_z_%s.npy' % self.cell_name), electrode.z)
+        if cell_number == 0:
 
-        np.save(join(self.sim_folder, 'xstart_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.xstart)
-        np.save(join(self.sim_folder, 'ystart_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.ystart)
-        np.save(join(self.sim_folder, 'zstart_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.zstart)
-        np.save(join(self.sim_folder, 'xend_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.xend)
-        np.save(join(self.sim_folder, 'yend_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.yend)
-        np.save(join(self.sim_folder, 'zend_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.zend)
-        np.save(join(self.sim_folder, 'xmid_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.xmid)
-        np.save(join(self.sim_folder, 'ymid_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.ymid)
-        np.save(join(self.sim_folder, 'zmid_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.zmid)
-        np.save(join(self.sim_folder, 'diam_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.diam)
+            np.save(join(self.sim_folder, 'elec_x_%s.npy' % self.cell_name), electrode.x)
+            np.save(join(self.sim_folder, 'elec_y_%s.npy' % self.cell_name), electrode.y)
+            np.save(join(self.sim_folder, 'elec_z_%s.npy' % self.cell_name), electrode.z)
+
+            np.save(join(self.sim_folder, 'xstart_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.xstart)
+            np.save(join(self.sim_folder, 'ystart_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.ystart)
+            np.save(join(self.sim_folder, 'zstart_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.zstart)
+            np.save(join(self.sim_folder, 'xend_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.xend)
+            np.save(join(self.sim_folder, 'yend_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.yend)
+            np.save(join(self.sim_folder, 'zend_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.zend)
+            np.save(join(self.sim_folder, 'xmid_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.xmid)
+            np.save(join(self.sim_folder, 'ymid_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.ymid)
+            np.save(join(self.sim_folder, 'zmid_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.zmid)
+            np.save(join(self.sim_folder, 'diam_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.diam)
 
     def run_distributed_synaptic_simulation(self, mu, input_region, distribution, cell_number):
         plt.seed(123 * cell_number)
-        # if os.path.isfile(join(self.sim_folder, 'sig_%s.npy' % sim_name)):
-        #     print "Skipping ", mu, input_region, distribution,  'sig_%s.npy' % sim_name
-        #     return
+        sim_name = '%s_%s_%s_%s_%+1.1f_%1.5fuS_%05d' % (self.cell_name, self.input_type,
+                                                        input_region, distribution, mu,
+                                                        self.param_dict['syn_weight'], cell_number)
+        if os.path.isfile(join(self.sim_folder, 'sig_%s.npy' % sim_name)):
+            print "Skipping ", mu, input_region, distribution,  'sig_%s.npy' % sim_name
+            return
+
 
         electrode = LFPy.RecExtElectrode(**self.electrode_parameters)
         cell = self._return_cell(mu, distribution)

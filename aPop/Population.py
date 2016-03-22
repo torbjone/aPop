@@ -3,7 +3,9 @@ import os
 import sys
 from NeuralSimulation import NeuralSimulation
 
-def ShapeFunctionMPI():
+
+
+def PopulationMPI():
     """ Run with
         mpirun -np 4 python example_mpi.py
     """
@@ -36,13 +38,13 @@ def ShapeFunctionMPI():
 
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
-        num_cells = 50
-        num_tasks = len(secs) * len(mus) * len(dists) * (num_cells - 10)
+        num_cells = 100
+        num_tasks = len(secs) * len(mus) * len(dists) * (num_cells)
 
         for input_sec in secs:
             for channel_dist in dists:
                 for mu in mus:
-                    for cell_idx in xrange(10, num_cells):
+                    for cell_idx in xrange(0, num_cells):
                         task += 1
                         sent = False
                         while not sent:
@@ -89,13 +91,13 @@ def ShapeFunctionMPI():
 if __name__ == '__main__':
     # print sys.argv
     if len(sys.argv) == 5:
-        from param_dicts import distributed_delta_params
-        ns = NeuralSimulation(**distributed_delta_params)
+        from param_dicts import population_params
+        ns = NeuralSimulation(**population_params)
         args = [float(sys.argv[1]), sys.argv[2], sys.argv[3], int(sys.argv[4])] #mu, input_sec, channel_dist, cell_idx
         ns.run_distributed_synaptic_simulation(*args)
     elif len(sys.argv) == 2 and sys.argv[1] == 'MPI':
-        ShapeFunctionMPI()
+        PopulationMPI()
     elif len(sys.argv) == 2 and sys.argv[1] == 'sum':
         from param_dicts import distributed_delta_params
         ns = NeuralSimulation(**distributed_delta_params)
-        ns.sum_shape_functions()
+        ns.sum_population()

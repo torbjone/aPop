@@ -24,7 +24,8 @@ neuron.load_mechanisms(join(neuron_model, 'mod'))
 neuron.load_mechanisms(join(neuron_model, '..'))
 from hay_active_declarations import active_declarations as hay_active
 
-class Population():
+
+class Population:
 
     def __init__(self, holding_potential=-80, conductance_type='active', correlation=0.0,
                  weight=0.0001, input_region='homogeneous', distribution=None, initialize=False):
