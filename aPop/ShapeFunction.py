@@ -37,13 +37,13 @@ def ShapeFunctionMPI():
 
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
-        num_cells = 10
-        num_tasks = len(secs) * len(mus) * len(dists) * num_cells
+        num_cells = 50
+        num_tasks = len(secs) * len(mus) * len(dists) * (num_cells - 10)
 
         for input_sec in secs:
             for channel_dist in dists:
                 for mu in mus:
-                    for cell_idx in xrange(3, num_cells):
+                    for cell_idx in xrange(10, num_cells):
                         task += 1
                         sent = False
                         while not sent:

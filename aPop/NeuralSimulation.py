@@ -159,12 +159,12 @@ class NeuralSimulation:
     def run_distributed_synaptic_simulation(self, mu, input_region, distribution, cell_number):
         plt.seed(123 * cell_number)
         # if os.path.isfile(join(self.sim_folder, 'sig_%s.npy' % sim_name)):
-        #     print "Skipping ", mu, input_sec, distribution, tau_w, weight, 'sig_%s.npy' % sim_name
+        #     print "Skipping ", mu, input_region, distribution,  'sig_%s.npy' % sim_name
         #     return
 
         electrode = LFPy.RecExtElectrode(**self.electrode_parameters)
         cell = self._return_cell(mu, distribution)
-        print "worked so far"
+        # print "worked so far"
         cell, syn = self._make_distributed_synaptic_stimuli(cell, input_region)
         cell.simulate(rec_imem=True, rec_vmem=True, electrode=electrode)
         self.save_neural_sim_single_input_data(cell, electrode, input_region, mu, distribution, cell_number)
