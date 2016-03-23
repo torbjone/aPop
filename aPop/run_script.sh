@@ -17,5 +17,5 @@ cd /global/work/torbness/aPop/aPop
 
 mpirun -np 8 python ShapeFunction.py MPI
 
-python ShapeFunction.py sum
+#python ShapeFunction.py sum
 

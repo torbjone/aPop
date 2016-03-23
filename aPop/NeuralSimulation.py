@@ -167,7 +167,6 @@ class NeuralSimulation:
             print "Skipping ", mu, input_region, distribution,  'sig_%s.npy' % sim_name
             return
 
-
         electrode = LFPy.RecExtElectrode(**self.electrode_parameters)
         cell = self._return_cell(mu, distribution)
         # print "worked so far"
