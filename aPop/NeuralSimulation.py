@@ -564,7 +564,7 @@ class NeuralSimulation:
         secs = ['homogeneous', 'distal_tuft', 'basal']
         mus = [-0.5, 0.0, 2.0]
         dists = ['uniform', 'linear_increase', 'linear_decrease']
-        num_cells = 50
+        num_cells = 100
         welch_freqs = np.zeros(10001)
         # print self.elec_x[range(0, 90, 30)], self.elec_y[range(0, 90, 30)], self.elec_z[range(0, 90, 30)]
         for input_sec in secs:
