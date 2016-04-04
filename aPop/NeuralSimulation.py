@@ -15,13 +15,15 @@ import neuron
 import LFPy
 import tools
 
-
 class NeuralSimulation:
     def __init__(self, **kwargs):
         self.input_type = kwargs['input_type']
         self.param_dict = kwargs
         self._set_input_params()
-        self._set_electrode()
+        self.electrode_parameters = kwargs['electrode_parameters']
+        self.elec_x = self.electrode_parameters['x']
+        self.elec_y = self.electrode_parameters['y']
+        self.elec_z = self.electrode_parameters['z']
 
         self.cell_name = 'hay'
         self.max_freq = kwargs['max_freq']
@@ -44,7 +46,7 @@ class NeuralSimulation:
         if not os.path.isdir(self.sim_folder):
             os.mkdir(self.sim_folder)
 
-        self.divide_into_welch = 8.
+        self.divide_into_welch = 10. # 8.
         self.welch_dict = {'Fs': 1000 / self.timeres_python,
                            'NFFT': int(self.num_tsteps/self.divide_into_welch),
                            'noverlap': int(self.num_tsteps/self.divide_into_welch/2.),
@@ -53,18 +55,19 @@ class NeuralSimulation:
                            'scale_by_freq': True,
                            }
 
-    def _set_electrode(self):
-        self.distances = 10 * np.exp(np.linspace(0, np.log(1000), 30))
-        elec_x, elec_z = np.meshgrid(self.distances, np.array([1000, 500, 0]))
-        self.elec_x = elec_x.flatten()
-        self.elec_z = elec_z.flatten()
-        self.elec_y = np.zeros(len(self.elec_z))
-        self.electrode_parameters = {
-                'sigma': 0.3,
-                'x': self.elec_x,
-                'y': self.elec_y,
-                'z': self.elec_z
-        }
+    # def _set_electrode(self):
+    # THIS IS NOW IN PARAMETER DICTIONARY
+    #     self.distances = 10 * np.exp(np.linspace(0, np.log(1000), 30))
+    #     elec_x, elec_z = np.meshgrid(self.distances, np.array([1000, 500, 0]))
+    #     self.elec_x = elec_x.flatten()
+    #     self.elec_z = elec_z.flatten()
+    #     self.elec_y = np.zeros(len(self.elec_z))
+    #     self.electrode_parameters = {
+    #             'sigma': 0.3,
+    #             'x': self.elec_x,
+    #             'y': self.elec_y,
+    #             'z': self.elec_z
+    #     }
 
     def _set_input_params(self):
 
@@ -82,12 +85,17 @@ class NeuralSimulation:
         self.max_freq = self.param_dict['max_freqs'] if 'max_freqs' in self.param_dict else 500
         self.num_tsteps = round(self.end_t/self.timeres_python + 1)
 
-    def _return_cell(self, mu, distribution):
+    def _return_cell(self, mu=None, distribution=None):
         if not 'i_QA' in neuron.h.__dict__.keys():
             print "loading QA"
             neuron.load_mechanisms(join(self.neuron_models))
+        # if not 'Ca_LVAst' in neuron.h.__dict__.keys():
+        #     print "loading Ca"
 
-        if self.cell_name == 'hay':
+
+        if self.cell_name != 'hay':
+            raise NotImplementedError("Only works for Hay cell at the moment")
+        if self.conductance_type is 'generic':
             # print "Loading Hay"
             sys.path.append(join(self.neuron_models, 'hay'))
             from hay_active_declarations import active_declarations
@@ -113,7 +121,25 @@ class NeuralSimulation:
                                      'hold_potential': self.holding_potential}]
             }
         else:
-            raise ValueError("Unrcognized cell-type")
+            sys.path.append(join(self.neuron_models, 'hay'))
+            neuron.load_mechanisms(join(self.neuron_models, 'hay', 'mod'))
+            from hay_active_declarations import active_declarations
+            cell_params = {
+                'morphology': join(self.neuron_models, 'hay', 'cell1.hoc'),
+                'v_init': self.holding_potential,
+                'passive': False,           # switch on passive mechs
+                'nsegs_method': 'lambda_f',  # method for setting number of segments,
+                'lambda_f': 100,           # segments are isopotential at this frequency
+                'timeres_NEURON': self.timeres_NEURON,   # dt of LFP and NEURON simulation.
+                'timeres_python': self.timeres_python,
+                'tstartms': -self.cut_off,          # start time, recorders start at t=0
+                'tstopms': self.end_t,
+                'custom_code': [join(self.neuron_models, 'hay', 'custom_codes.hoc')],
+                'custom_fun': [active_declarations],  # will execute this function
+                'custom_fun_args': [{'conductance_type': self.conductance_type,
+                                     'hold_potential': self.holding_potential}]
+            }
+
         # neuron.h('forall delete_section()')
         cell = LFPy.Cell(**cell_params)
         cell.set_rotation(z=2*np.pi*np.random.random())
@@ -129,9 +155,12 @@ class NeuralSimulation:
 
         # tau = '%1.2f' % taum if type(taum) in [float, int] else taum
         # dist_dict = self._get_distribution(dist_dict, cell)
-
-        sim_name = '%s_%s_%s_%s_%+1.1f_%1.5fuS_%05d' % (self.cell_name, self.input_type,
-                                                   input_sec, distribution, mu, self.param_dict['syn_weight'], cell_number)
+        if self.conductance_type is 'generic':
+            sim_name = '%s_%s_%s_%s_%+1.1f_%1.5fuS_%05d' % (self.cell_name, self.input_type, input_sec, distribution,
+                                                            mu, self.param_dict['syn_weight'], cell_number)
+        else:
+             sim_name = '%s_%s_%s_%s_%+d_%1.5fuS_%05d' % (self.cell_name, self.input_type, input_sec,
+                                                      self.conductance_type, self.holding_potential, self.param_dict['syn_weight'], cell_number)
 
         np.save(join(self.sim_folder, 'tvec_%s_%s.npy' % (self.cell_name, self.input_type)), cell.tvec)
         np.save(join(self.sim_folder, 'sig_%s.npy' % sim_name), np.dot(electrode.electrodecoeff, cell.imem))
@@ -158,18 +187,22 @@ class NeuralSimulation:
             np.save(join(self.sim_folder, 'zmid_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.zmid)
             np.save(join(self.sim_folder, 'diam_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.diam)
 
-    def run_distributed_synaptic_simulation(self, mu, input_region, distribution, cell_number):
+    def run_distributed_synaptic_simulation(self, input_region, cell_number, mu=None, distribution=None):
         plt.seed(123 * cell_number)
-        sim_name = '%s_%s_%s_%s_%+1.1f_%1.5fuS_%05d' % (self.cell_name, self.input_type,
+        if self.conductance_type is 'generic':
+            sim_name = '%s_%s_%s_%s_%+1.1f_%1.5fuS_%05d' % (self.cell_name, self.input_type,
                                                         input_region, distribution, mu,
                                                         self.param_dict['syn_weight'], cell_number)
+        else:
+             sim_name = '%s_%s_%s_%s_%+d_%1.5fuS_%05d' % (self.cell_name, self.input_type, input_region,
+                                                      self.conductance_type, self.holding_potential, self.param_dict['syn_weight'], cell_number)
         if os.path.isfile(join(self.sim_folder, 'sig_%s.npy' % sim_name)):
-            print "Skipping ", mu, input_region, distribution,  'sig_%s.npy' % sim_name
+            print "Skipping ", sim_name
             return
 
         electrode = LFPy.RecExtElectrode(**self.electrode_parameters)
+
         cell = self._return_cell(mu, distribution)
-        # print "worked so far"
         cell, syn = self._make_distributed_synaptic_stimuli(cell, input_region)
         cell.simulate(rec_imem=True, rec_vmem=True, electrode=electrode)
         self.save_neural_sim_single_input_data(cell, electrode, input_region, mu, distribution, cell_number)
@@ -370,9 +403,14 @@ class NeuralSimulation:
         cell_ax.plot(cell.xmid[apic_idx], cell.zmid[apic_idx], 'D', ms=10, c=apic_clr)
         cell_ax.plot(cell.xmid[middle_idx], cell.zmid[middle_idx], 'D', ms=10, c=middle_clr)
         cell_ax.plot(cell.xmid[soma_idx], cell.zmid[soma_idx], 'D', ms=10, c=soma_clr)
+        if self.conductance_type is 'generic':
+            sim_name = '%s_%s_%s_%s_%+1.1f_%1.5fuS_%05d' % (self.cell_name, self.input_type,
+                                                        input_region, distribution, mu,
+                                                        self.param_dict['syn_weight'], cell_number)
+        else:
+             sim_name = '%s_%s_%s_%s_%+d_%1.5fuS_%05d' % (self.cell_name, self.input_type, input_region,
+                                                      self.conductance_type, self.holding_potential, self.param_dict['syn_weight'], cell_number)
 
-        sim_name = '%s_%s_%s_%s_%+1.1f_%1.5fuS_%05d' % (self.cell_name, self.input_type,
-                                                       input_region, distribution, mu, self.param_dict['syn_weight'], cell_number)
         fig.suptitle(sim_name)
         LFP = 1000 * electrode.LFP#np.load(join(self.sim_folder, 'sig_%s.npy' % sim_name))[:, :]
 
@@ -507,7 +545,7 @@ class NeuralSimulation:
         fig.savefig(join(self.figure_folder, 'LFP_%s.png' % sim_name))
 
 
-    def plot_F(self, freqs, sig_psd, sim_name, mu, distribution, input_sec):
+    def plot_F(self, freqs, sig_psd, sim_name):
 
         plt.close('all')
         fig = plt.figure(figsize=[18, 9])
@@ -517,12 +555,21 @@ class NeuralSimulation:
         scale = 'log'
         cell_ax = fig.add_subplot(1, 3, 1, aspect=1, frameon=False, xticks=[], yticks=[])
 
-        xmid = np.load(join(self.sim_folder, 'xmid_hay_generic.npy'))
-        zmid = np.load(join(self.sim_folder, 'zmid_hay_generic.npy'))
-        xstart = np.load(join(self.sim_folder, 'xstart_hay_generic.npy'))
-        zstart = np.load(join(self.sim_folder, 'zstart_hay_generic.npy'))
-        xend = np.load(join(self.sim_folder, 'xend_hay_generic.npy'))
-        zend = np.load(join(self.sim_folder, 'zend_hay_generic.npy'))
+        if self.conductance_type is 'generic':
+            xmid = np.load(join(self.sim_folder, 'xmid_hay_generic.npy'))
+            zmid = np.load(join(self.sim_folder, 'zmid_hay_generic.npy'))
+            xstart = np.load(join(self.sim_folder, 'xstart_hay_generic.npy'))
+            zstart = np.load(join(self.sim_folder, 'zstart_hay_generic.npy'))
+            xend = np.load(join(self.sim_folder, 'xend_hay_generic.npy'))
+            zend = np.load(join(self.sim_folder, 'zend_hay_generic.npy'))
+        else:
+            xmid = np.load(join(self.sim_folder, 'xmid_hay_active.npy'))
+            zmid = np.load(join(self.sim_folder, 'zmid_hay_active.npy'))
+            xstart = np.load(join(self.sim_folder, 'xstart_hay_active.npy'))
+            zstart = np.load(join(self.sim_folder, 'zstart_hay_active.npy'))
+            xend = np.load(join(self.sim_folder, 'xend_hay_active.npy'))
+            zend = np.load(join(self.sim_folder, 'zend_hay_active.npy'))
+
         synidx = np.load(join(self.sim_folder, 'synidx_%s_00000.npy' % sim_name))
 
         [cell_ax.plot([xstart[idx], xend[idx]], [zstart[idx], zend[idx]],
@@ -560,10 +607,12 @@ class NeuralSimulation:
 
         fig.savefig(join(self.figure_folder, 'F_%s.png' % sim_name))
 
-    def sum_shape_functions(self):
+    def sum_shape_functions_generic(self):
+
         secs = ['homogeneous', 'distal_tuft', 'basal']
         mus = [-0.5, 0.0, 2.0]
         dists = ['uniform', 'linear_increase', 'linear_decrease']
+
         num_cells = 100
         welch_freqs = np.zeros(10001)
         # print self.elec_x[range(0, 90, 30)], self.elec_y[range(0, 90, 30)], self.elec_z[range(0, 90, 30)]
@@ -578,10 +627,6 @@ class NeuralSimulation:
                                                    input_sec, distribution, mu, self.param_dict['syn_weight'], cell_number)
                         lfp = 1000 * np.load(join(self.sim_folder, 'sig_%s.npy' % sim_name))
                         freqs, lfp_psd = tools.return_freq_and_psd_welch(lfp[:, :], self.welch_dict)
-                        # self.plot_F(freqs, lfp_psd, sim_name, mu, distribution, input_sec)
-                        # [plt.loglog(freqs, lfp_psd[idx]) for idx in range(0, 90, 30)]
-                        # plt.grid(True)
-                        # plt.show()
                         if not average_psd.shape == lfp_psd.shape:
                             print "Reshaping", lfp_psd.shape, freqs.shape, freqs
                             average_psd = np.zeros(lfp_psd.shape)
@@ -590,17 +635,52 @@ class NeuralSimulation:
                         welch_freqs = freqs
                         average_psd += lfp_psd
                         cell_count += 1
-                    print cell_count
                     F = average_psd / cell_count
 
                     sim_name = '%s_%s_%s_%s_%+1.1f_%1.5fuS' % (self.cell_name, self.input_type,
                                                    input_sec, distribution, mu, self.param_dict['syn_weight'])
-                    self.plot_F(welch_freqs, F, sim_name, mu, distribution, input_sec)
-                    print sim_name
-                    # [plt.loglog(welch_freqs, F[idx]) for idx in range(0, 90, 30)]
-                    # plt.grid(True)
-                    # plt.show()
+                    self.plot_F(welch_freqs, F, sim_name)
+
                     np.save(join(self.sim_folder, 'F_%s.npy' % sim_name), F)
+        np.save(join(self.sim_folder, 'welch_freqs.npy'), welch_freqs)
+
+    def sum_shape_functions_classic(self):
+
+        secs = ['homogeneous', 'distal_tuft', 'basal']
+        conductance_types = ['active', 'passive', 'Ih_frozen']
+        holding_potentials = [-80, -60]
+
+        num_cells = 10
+        welch_freqs = np.zeros(10001)
+
+        for input_sec in secs:
+            for conductance_type in conductance_types:
+                for holding_potential in holding_potentials:
+                    average_psd = np.zeros((len(self.elec_x), 10001))
+                    cell_count = 0
+                    for cell_number in xrange(num_cells):
+                        sim_name = '%s_%s_%s_%s_%+d_%1.5fuS_%05d' % (self.cell_name, self.input_type, input_sec,
+                                                      conductance_type, holding_potential, self.param_dict['syn_weight'], cell_number)
+
+                        lfp = 1000 * np.load(join(self.sim_folder, 'sig_%s.npy' % sim_name))
+                        freqs, lfp_psd = tools.return_freq_and_psd_welch(lfp[:, :], self.welch_dict)
+                        if not average_psd.shape == lfp_psd.shape:
+                            print "Reshaping", lfp_psd.shape, freqs.shape, freqs
+                            average_psd = np.zeros(lfp_psd.shape)
+                        if not welch_freqs.shape == freqs.shape:
+                            print "Reshaping frequency"
+                        welch_freqs = freqs
+                        average_psd += lfp_psd
+                        cell_count += 1
+                    F = average_psd / cell_count
+
+                    sim_name = '%s_%s_%s_%s_%+d_%1.5fuS' % (self.cell_name, self.input_type, input_sec,
+                                                    conductance_type, holding_potential, self.param_dict['syn_weight'])
+
+                    self.plot_F(welch_freqs, F, sim_name)
+
+                    np.save(join(self.sim_folder, 'F_%s.npy' % sim_name), F)
+        np.save(join(self.sim_folder, 'welch_freqs.npy'), welch_freqs)
 
 
 if __name__ == '__main__':
@@ -608,4 +688,5 @@ if __name__ == '__main__':
     ns = NeuralSimulation(**distributed_delta_params)
 
     # ns.run_distributed_synaptic_simulation(-0.5, 'homogeneous', 'uniform', 0)
-    ns.sum_shape_functions()
+    ns.sum_shape_functions_classic()
+

@@ -51,7 +51,7 @@ class Population:
 
         self.timeres = 2**-4
         self.cut_off = 500
-        self.end_t = 10000
+        self.end_t = 1000
         scale = 4
 
         self.num_cells = 100 * scale ** 2
