@@ -1,8 +1,25 @@
 from __future__ import division
+import pylab as plt
+import numpy as np
 import os
 import sys
 from NeuralSimulation import NeuralSimulation
 
+def plot_population():
+    from param_dicts import small_population_params
+    ns = NeuralSimulation(**small_population_params)
+    pos = np.zeros((3, small_population_params['num_cells']))
+    for cell_number in range(small_population_params['num_cells']):
+        print cell_number
+        plt.seed(123 * cell_number)
+        cell = ns._return_cell(mu=0.0, distribution='uniform')
+        pos[:, cell_number] = cell.somapos
+    plt.subplot(121, xlabel='x', ylabel='y', aspect=1)
+    plt.scatter(pos[0, :], pos[1, :])
+
+    plt.subplot(122, xlabel='x', ylabel='z', aspect=1)
+    plt.scatter(pos[0, :], pos[2, :])
+    plt.show()
 
 
 def PopulationMPI():
@@ -89,6 +106,10 @@ def PopulationMPI():
         comm.send(None, dest=0, tag=tags.EXIT)
 
 if __name__ == '__main__':
+
+    plot_population()
+    sys.exit()
+
     # print sys.argv
     if len(sys.argv) == 5:
         from param_dicts import population_params

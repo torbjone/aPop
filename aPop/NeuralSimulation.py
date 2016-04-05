@@ -32,12 +32,8 @@ class NeuralSimulation:
         self.conductance_type = kwargs['conductance_type']
         self.username = os.getenv('USER')
 
-        if at_stallo:
-            self.root_folder = join('/global', 'work', self.username, 'aPop')
-        else:
-            self.root_folder = join('/home', self.username, 'work', 'aPop')
+        self.root_folder = kwargs['root_folder']
         self.neuron_models = join(self.root_folder, 'neuron_models')
-
         self.figure_folder = join(self.root_folder, self.param_dict['save_folder'])
         self.sim_folder = join(self.root_folder, self.param_dict['save_folder'], 'simulations')
 
@@ -92,7 +88,6 @@ class NeuralSimulation:
         # if not 'Ca_LVAst' in neuron.h.__dict__.keys():
         #     print "loading Ca"
 
-
         if self.cell_name != 'hay':
             raise NotImplementedError("Only works for Hay cell at the moment")
         if self.conductance_type is 'generic':
@@ -140,9 +135,15 @@ class NeuralSimulation:
                                      'hold_potential': self.holding_potential}]
             }
 
-        # neuron.h('forall delete_section()')
         cell = LFPy.Cell(**cell_params)
         cell.set_rotation(z=2*np.pi*np.random.random())
+        if 'name' in self.param_dict.keys() and 'population' in self.param_dict['name']:
+            x, y = 2 * (np.random.random(2) - 0.5) * self.param_dict['population_radius']
+            while np.sqrt(x**2 + y**2) > self.param_dict['population_radius']:
+                x, y = 2 * (np.random.random(2) - 0.5) * self.param_dict['population_radius']
+            z = self.param_dict['layer_5_thickness'] * (np.random.random() - 0.5)
+            #print "Population simulation, x,y,z= ", x, y, z
+            cell.set_pos(xpos=x, ypos=y, zpos=z)
         return cell
 
     def save_neural_sim_single_input_data(self, cell, electrode, input_sec, mu, distribution, cell_number):
@@ -153,24 +154,21 @@ class NeuralSimulation:
             cell.imem = cell.imem[:, -cut_off_idx:]
             cell.vmem = cell.vmem[:, -cut_off_idx:]
 
-        # tau = '%1.2f' % taum if type(taum) in [float, int] else taum
-        # dist_dict = self._get_distribution(dist_dict, cell)
         if self.conductance_type is 'generic':
             sim_name = '%s_%s_%s_%s_%+1.1f_%1.5fuS_%05d' % (self.cell_name, self.input_type, input_sec, distribution,
                                                             mu, self.param_dict['syn_weight'], cell_number)
         else:
              sim_name = '%s_%s_%s_%s_%+d_%1.5fuS_%05d' % (self.cell_name, self.input_type, input_sec,
-                                                      self.conductance_type, self.holding_potential, self.param_dict['syn_weight'], cell_number)
+                                                          self.conductance_type, self.holding_potential,
+                                                          self.param_dict['syn_weight'], cell_number)
 
-        np.save(join(self.sim_folder, 'tvec_%s_%s.npy' % (self.cell_name, self.input_type)), cell.tvec)
         np.save(join(self.sim_folder, 'sig_%s.npy' % sim_name), np.dot(electrode.electrodecoeff, cell.imem))
 
-        if cell_number % 500 == 0:
+        if cell_number == 0:
+            np.save(join(self.sim_folder, 'tvec_%s_%s.npy' % (self.cell_name, self.input_type)), cell.tvec)
             np.save(join(self.sim_folder, 'vmem_%s.npy' % sim_name), cell.vmem)
             np.save(join(self.sim_folder, 'imem_%s.npy' % sim_name), cell.imem)
             np.save(join(self.sim_folder, 'synidx_%s.npy' % sim_name), cell.synidx)
-
-        if cell_number == 0:
 
             np.save(join(self.sim_folder, 'elec_x_%s.npy' % self.cell_name), electrode.x)
             np.save(join(self.sim_folder, 'elec_y_%s.npy' % self.cell_name), electrode.y)
@@ -188,7 +186,7 @@ class NeuralSimulation:
             np.save(join(self.sim_folder, 'diam_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.diam)
 
     def run_distributed_synaptic_simulation(self, input_region, cell_number, mu=None, distribution=None):
-        plt.seed(123 * cell_number)
+
         if self.conductance_type is 'generic':
             sim_name = '%s_%s_%s_%s_%+1.1f_%1.5fuS_%05d' % (self.cell_name, self.input_type,
                                                         input_region, distribution, mu,
@@ -201,12 +199,13 @@ class NeuralSimulation:
             return
 
         electrode = LFPy.RecExtElectrode(**self.electrode_parameters)
-
+        plt.seed(123 * cell_number)
         cell = self._return_cell(mu, distribution)
         cell, syn = self._make_distributed_synaptic_stimuli(cell, input_region)
         cell.simulate(rec_imem=True, rec_vmem=True, electrode=electrode)
         self.save_neural_sim_single_input_data(cell, electrode, input_region, mu, distribution, cell_number)
-        self._draw_all_elecs_with_distance(cell, electrode, input_region, mu, distribution, cell_number)
+        if cell_number < 10:
+            self._draw_all_elecs_with_distance(cell, electrode, input_region, mu, distribution, cell_number)
 
     def run_asymmetry_simulation(self, mu, fraction, distribution, cell_number):
         plt.seed(123 * cell_number)
@@ -517,10 +516,7 @@ class NeuralSimulation:
         fig.suptitle(sim_name)
         LFP = 1000 * np.load(join(self.sim_folder, 'sig_%s.npy' % sim_name))[:, :]
 
-        #if self.input_type is 'distributed_delta':
         freqs, sig_psd = tools.return_freq_and_psd_welch(LFP, self.welch_dict)
-        #else:
-        #    freqs, sig_psd = tools.return_freq_and_psd(self.timeres_python/1000., LFP)
 
         cutoff_dist = 1000
         dist_clr = lambda dist: plt.cm.Greys(np.log(dist) / np.log(cutoff_dist))

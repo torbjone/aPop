@@ -100,7 +100,7 @@ def biophys_zuchkova(**kwargs):
         make_cell_uniform(Vrest=kwargs['hold_potential'])
 
 def biophys_generic(**kwargs):
-    print "Inserting generic conductances"
+    # print "Inserting generic conductances"
     # v = kwargs['hold_potential']
     if 'auto' in kwargs['tau_w']:
         # mAlpha = 0.001 * 6.43 * (v + 154.9)/(np.exp((v + 154.9) / 11.9) - 1.)
