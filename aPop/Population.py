@@ -2,24 +2,56 @@ from __future__ import division
 import pylab as plt
 import numpy as np
 import os
+from os.path import join
+import LFPy
 import sys
 from NeuralSimulation import NeuralSimulation
 
-def plot_population():
-    from param_dicts import small_population_params
-    ns = NeuralSimulation(**small_population_params)
-    pos = np.zeros((3, small_population_params['num_cells']))
-    for cell_number in range(small_population_params['num_cells']):
-        print cell_number
-        plt.seed(123 * cell_number)
-        cell = ns._return_cell(mu=0.0, distribution='uniform')
-        pos[:, cell_number] = cell.somapos
-    plt.subplot(121, xlabel='x', ylabel='y', aspect=1)
-    plt.scatter(pos[0, :], pos[1, :])
 
-    plt.subplot(122, xlabel='x', ylabel='z', aspect=1)
-    plt.scatter(pos[0, :], pos[2, :])
-    plt.show()
+def initialize_population(param_dict):
+    print "Initializing cell positions and rotations ..."
+    x_y_z_rot = np.zeros((param_dict['num_cells'], 4))
+    for cell_number in range(param_dict['num_cells']):
+        plt.seed(123 * cell_number)
+        rotation = 2*np.pi*np.random.random()
+        z = param_dict['layer_5_thickness'] * (np.random.random() - 0.5)
+        x, y = 2 * (np.random.random(2) - 0.5) * param_dict['population_radius']
+        while np.sqrt(x**2 + y**2) > param_dict['population_radius']:
+            x, y = 2 * (np.random.random(2) - 0.5) * param_dict['population_radius']
+        x_y_z_rot[cell_number, :] = [x, y, z, rotation]
+    np.save(join(param_dict['root_folder'], param_dict['save_folder'],
+                         'x_y_z_rot_%s.npy' % param_dict['name']), x_y_z_rot)
+    print "Initializing input spike trains"
+    plt.seed(123)
+    num_synapses = 1000
+    firing_rate = 5
+    num_trains = int(num_synapses/0.01)
+    all_spiketimes = {}
+    input_method = LFPy.inputgenerators.stationary_poisson
+    for idx in xrange(num_trains):
+        all_spiketimes[idx] = input_method(1, firing_rate, -param_dict['cut_off'], param_dict['end_t'])[0]
+    np.save(join(param_dict['root_folder'], param_dict['save_folder'],
+                         'all_spike_trains_%s.npy' % param_dict['name']), all_spiketimes)
+
+
+def plot_population(param_dict):
+    print "Plotting population"
+    x_y_z_rot = np.load(join(param_dict['root_folder'], param_dict['save_folder'],
+                         'x_y_z_rot_%s.npy' % param_dict['name']))
+    all_spiketimes = np.load(join(param_dict['root_folder'], param_dict['save_folder'],
+                         'all_spike_trains_%s.npy' % param_dict['name'])).item()
+
+    plt.subplot(221, xlabel='x', ylabel='y', aspect=1, frameon=False)
+    plt.scatter(x_y_z_rot[:, 0], x_y_z_rot[:, 1])
+
+    plt.subplot(222, xlabel='x', ylabel='z', aspect=1, frameon=False)
+    plt.scatter(x_y_z_rot[:, 0], x_y_z_rot[:, 2])
+
+    plt.subplot(212, ylabel='Cell number', xlabel='Time', title='Raster plot', frameon=False)
+    for idx in range(1000):
+        plt.scatter(all_spiketimes[idx], np.ones(len(all_spiketimes[idx])) * idx, edgecolors='none', s=4)
+
+    plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], 'population_%s.png' % param_dict['name']))
 
 
 def PopulationMPI():
@@ -106,8 +138,9 @@ def PopulationMPI():
         comm.send(None, dest=0, tag=tags.EXIT)
 
 if __name__ == '__main__':
-
-    plot_population()
+    from param_dicts import small_population_params
+    initialize_population(small_population_params)
+    plot_population(small_population_params)
     sys.exit()
 
     # print sys.argv

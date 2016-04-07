@@ -81,7 +81,7 @@ class NeuralSimulation:
         self.max_freq = self.param_dict['max_freqs'] if 'max_freqs' in self.param_dict else 500
         self.num_tsteps = round(self.end_t/self.timeres_python + 1)
 
-    def _return_cell(self, mu=None, distribution=None):
+    def _return_cell(self, mu=None, distribution=None, cell_x_y_z_rotation=None):
         if not 'i_QA' in neuron.h.__dict__.keys():
             print "loading QA"
             neuron.load_mechanisms(join(self.neuron_models))
@@ -136,14 +136,10 @@ class NeuralSimulation:
             }
 
         cell = LFPy.Cell(**cell_params)
-        cell.set_rotation(z=2*np.pi*np.random.random())
-        if 'name' in self.param_dict.keys() and 'population' in self.param_dict['name']:
-            x, y = 2 * (np.random.random(2) - 0.5) * self.param_dict['population_radius']
-            while np.sqrt(x**2 + y**2) > self.param_dict['population_radius']:
-                x, y = 2 * (np.random.random(2) - 0.5) * self.param_dict['population_radius']
-            z = self.param_dict['layer_5_thickness'] * (np.random.random() - 0.5)
-            #print "Population simulation, x,y,z= ", x, y, z
-            cell.set_pos(xpos=x, ypos=y, zpos=z)
+        if cell_x_y_z_rotation is not None:
+            cell.set_rotation(z=cell_x_y_z_rotation[3])
+
+            cell.set_pos(xpos=cell_x_y_z_rotation[0], ypos=cell_x_y_z_rotation[1], zpos=cell_x_y_z_rotation[2])
         return cell
 
     def save_neural_sim_single_input_data(self, cell, electrode, input_sec, mu, distribution, cell_number):
@@ -200,7 +196,9 @@ class NeuralSimulation:
 
         electrode = LFPy.RecExtElectrode(**self.electrode_parameters)
         plt.seed(123 * cell_number)
-        cell = self._return_cell(mu, distribution)
+        x_y_z_rot = np.load(os.path.join(self.param_dict['root_folder'], self.param_dict['save_folder'],
+                         'x_y_z_rot_%s.npy' % self.param_dict['name']))
+        cell = self._return_cell(mu, distribution, x_y_z_rot[cell_number])
         cell, syn = self._make_distributed_synaptic_stimuli(cell, input_region)
         cell.simulate(rec_imem=True, rec_vmem=True, electrode=electrode)
         self.save_neural_sim_single_input_data(cell, electrode, input_region, mu, distribution, cell_number)
@@ -226,7 +224,7 @@ class NeuralSimulation:
         # Define synapse parameters
         synapse_params = {
             'e': 0.,                   # reversal potential
-            'syntype': 'ExpSyn',       # synapse type
+            'syntype': 'ExpSynI',       # synapse type
             'tau': self.param_dict['syn_tau'],                # syn. time constant
             'weight': self.param_dict['syn_weight'],            # syn. weight
             'record_current': False,
@@ -249,16 +247,20 @@ class NeuralSimulation:
             maxpos = 10000
             minpos = -10000
         else:
-            # input_pos = input_sec
-            # maxpos = 10000
-            # minpos = -10000
             raise RuntimeError("Use other input section")
-        num_synapses = 1000
+        num_synapses = self.param_dict['num_synapses']
         cell_input_idxs = cell.get_rand_idx_area_norm(section=input_pos, nidx=num_synapses,
                                                       z_min=minpos, z_max=maxpos)
         spike_trains = LFPy.inputgenerators.stationary_poisson(num_synapses, 5, cell.tstartms, cell.tstopms)
+
+        all_spiketimes = np.load(join(self.param_dict['root_folder'], self.param_dict['save_folder'],
+                         'all_spike_trains_%s.npy' % self.param_dict['name'])).item()
+
+        spike_train_idxs = np.array(random.sample(np.arange(int(num_synapses/self.correlation)), num_synapses))
+        # np.random.choice(random.sample(np.arange(int(num_synapses/self.correlation)), num_synapses, replace=False)
+
+
         synapses = self.set_input_spiketrain(cell, cell_input_idxs, spike_trains, synapse_params)
-        #self.input_plot(cell, cell_input_idxs, spike_trains)
 
         return cell, synapses
 

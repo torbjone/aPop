@@ -44,6 +44,8 @@ distributed_delta_params = {'input_type': 'distributed_delta',
                             'save_folder': 'shape_function',
                             'root_folder': root_folder,
                             'electrode_parameters': electrode_parameters,
+                            'num_synapses': 1000,
+
                             }
 
 vsd_params = {'input_type': 'distributed_delta',
@@ -80,6 +82,7 @@ distributed_delta_classic_params = {'input_type': 'distributed_delta',
                             'save_folder': 'shape_function',
                             'root_folder': root_folder,
                             'electrode_parameters': electrode_parameters,
+                            'num_synapses': 1000,
                             }
 
 scale = 2
@@ -90,8 +93,8 @@ population_sizes = np.arange(dr, population_radius + dr, dr)
 layer_5_thickness = 200 # From Markram (2015): Thickness L1-L5: 1382 um. Hay cell height: 1169 um. 1382 - 1169 = 213 um
 small_population_params = {'input_type': 'distributed_delta',
                            'name': 'small_population',
-                           'timeres_NEURON': 2**-4,
-                           'timeres_python': 2**-4,
+                           'timeres_NEURON': 2**-3,
+                           'timeres_python': 2**-3,
                            'population_scale': scale,   # 10 means full population
                            'num_cells': num_cells,
                            'population_radius': population_radius,
@@ -106,7 +109,9 @@ small_population_params = {'input_type': 'distributed_delta',
                            'holding_potential': -80,
                            'conductance_type': 'generic',
                            'save_folder': 'population',
-                            'electrode_parameters': electrode_parameters,
+                           'electrode_parameters': electrode_parameters,
+                           'root_folder': root_folder,
+                           'num_synapses': 1000,
                            }
 
 
