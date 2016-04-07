@@ -181,18 +181,18 @@ if __name__ == '__main__':
             mu = float(sys.argv[1])
             distribution = sys.argv[3]
             ns = NeuralSimulation(**distributed_delta_params)
-            kwargs = {'mu': mu, 'input_region': input_region,
-                      'distribution': distribution, 'cell_number': cell_number} #mu, input_sec, channel_dist, cell_idx
+            distributed_delta_classic_params.update({'mu': mu, 'input_region': input_region,
+                      'distribution': distribution, 'cell_number': cell_number}) #mu, input_sec, channel_dist, cell_idx
         else:
             from param_dicts import distributed_delta_classic_params
             conductance_type = sys.argv[1]
             holding_potential = int(sys.argv[3])
-            kwargs = {'input_region': input_region,
-                      'cell_number': cell_number} #mu, input_sec, channel_dist, cell_idx
-            distributed_delta_classic_params.update({'conductance_type': conductance_type,
+            distributed_delta_classic_params.update({'input_region': input_region,
+                                                     'cell_number': cell_number,
+                                                     'conductance_type': conductance_type,
                                                      'holding_potential': holding_potential})
             ns = NeuralSimulation(**distributed_delta_classic_params)
-        ns.run_distributed_synaptic_simulation(**kwargs)
+        ns.run_distributed_synaptic_simulation()
     elif len(sys.argv) == 2 and sys.argv[1] == 'MPIgeneric':
         ShapeFunctionMPIgeneric()
     elif len(sys.argv) == 2 and sys.argv[1] == 'MPIclassic':
