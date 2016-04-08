@@ -69,11 +69,9 @@ class Population:
         self.num_tsteps = round((self.end_t - 0) / self.timeres + 1)
         self.tvec = np.linspace(0, self.end_t, self.num_tsteps)
 
-
         self.stem = self.get_simulation_stem(model, input_region, conductance_type, holding_potential,
                                              correlation, weight)
 
-        
         self.divide_into_welch = 8.
         self.welch_dict = {'Fs': 1000 / self.timeres,
                            'NFFT': int(self.num_tsteps/self.divide_into_welch),
@@ -674,9 +672,6 @@ def MPI_population_size_sum():
     rank = comm.rank        # rank of this process
     status = MPI.Status()   # get MPI status object
     num_workers = size - 1
-
-
-
 
     if rank == 0:
         # Master process executes code below

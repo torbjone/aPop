@@ -1,7 +1,83 @@
 from __future__ import division
 import os
+from os.path import join
 import sys
+import numpy as np
 from NeuralSimulation import NeuralSimulation
+import tools
+
+def sum_shape_functions_classic(param_dict):
+
+    secs = ['homogeneous', 'distal_tuft', 'basal']
+    conductance_types = ['active', 'passive', 'Ih_frozen']
+    holding_potentials = [-80, -60]
+
+    num_cells = 10
+    welch_freqs = np.zeros(10001)
+    for input_region in secs:
+        for conductance_type in conductance_types:
+            for holding_potential in holding_potentials:
+                average_psd = np.zeros((len(param_dict['electrode_parameters']['x']), 10001))
+                cell_count = 0
+                for cell_number in xrange(num_cells):
+                    param_dict.update({'input_region': input_region,
+                                                             'cell_number': cell_number,
+                                                             'conductance_type': conductance_type,
+                                                             'holding_potential': holding_potential})
+                    ns = NeuralSimulation(**param_dict)
+                    lfp = 1000 * np.load(join(ns.sim_folder, 'sig_%s.npy' % ns.sim_name))
+                    freqs, lfp_psd = tools.return_freq_and_psd_welch(lfp[:, :], ns.welch_dict)
+                    if not average_psd.shape == lfp_psd.shape:
+                        print "Reshaping", lfp_psd.shape, freqs.shape, freqs
+                        average_psd = np.zeros(lfp_psd.shape)
+                    if not welch_freqs.shape == freqs.shape:
+                        print "Reshaping frequency"
+                    welch_freqs = freqs
+                    average_psd += lfp_psd
+                    cell_count += 1
+                F = average_psd / cell_count
+
+                ns.plot_F(welch_freqs, F)
+
+                np.save(join(ns.sim_folder, 'F_%s.npy' % ns.population_sim_name), F)
+    np.save(join(ns.sim_folder, 'welch_freqs.npy'), welch_freqs)
+
+
+def sum_shape_functions_generic(param_dict):
+
+    num_cells = 100
+    welch_freqs = np.zeros(10001)
+    # print self.elec_x[range(0, 90, 30)], self.elec_y[range(0, 90, 30)], self.elec_z[range(0, 90, 30)]
+    for input_region in param_dict['input_regions']:
+        for distribution in param_dict['distributions']:
+            for mu in param_dict['mus']:
+                average_psd = np.zeros((len(param_dict['electrode_parameters']['x']), 10001))
+                cell_count = 0
+                for cell_number in xrange(num_cells):
+                    param_dict.update({'input_region': input_region,
+                                       'cell_number': cell_number,
+                                       'mu': mu,
+                                       'distribution': distribution})
+                    ns = NeuralSimulation(**param_dict)
+                    sim_name = ns.sim_name
+                    lfp = 1000 * np.load(join(ns.sim_folder, 'sig_%s.npy' % sim_name))
+                    freqs, lfp_psd = tools.return_freq_and_psd_welch(lfp[:, :], ns.welch_dict)
+                    if not average_psd.shape == lfp_psd.shape:
+                        print "Reshaping", lfp_psd.shape, freqs.shape, freqs
+                        average_psd = np.zeros(lfp_psd.shape)
+                    if not welch_freqs.shape == freqs.shape:
+                        print "Reshaping frequency"
+                    welch_freqs = freqs
+                    average_psd += lfp_psd
+                    cell_count += 1
+                F = average_psd / cell_count
+
+                ns.plot_F(welch_freqs, F)
+
+                np.save(join(ns.sim_folder, 'F_%s.npy' % ns.population_sim_name), F)
+    np.save(join(ns.sim_folder, 'welch_freqs.npy'), welch_freqs)
+
+
 
 def ShapeFunctionMPIgeneric():
     """ Run with
