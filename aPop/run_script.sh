@@ -15,7 +15,7 @@
 #cp $filename /global/work/torbness/aLFP/$folder
 cd /global/work/torbness/aPop/aPop
 
-mpirun -np 32 python ShapeFunction.py MPI
+mpirun -np 32 python Population.py MPI
 
-python ShapeFunction.py sum
+python Population.py sum
 
