@@ -178,8 +178,8 @@ class NeuralSimulation:
         cell, syn = self._make_distributed_synaptic_stimuli(cell)
         cell.simulate(rec_imem=True, rec_vmem=True, electrode=electrode)
         self.save_neural_sim_single_input_data(cell, electrode)
-        # if self.cell_number < 10:
-        self._draw_all_elecs_with_distance(cell, electrode)
+        if not self.cell_number % 100:
+            self._draw_all_elecs_with_distance(cell, electrode)
 
     def run_asymmetry_simulation(self, mu, fraction, distribution, cell_number):
         plt.seed(123 * cell_number)
@@ -224,7 +224,6 @@ class NeuralSimulation:
             minpos = -10000
         else:
             raise RuntimeError("Use other input section")
-            raise RuntimeError("Use other input section")
         num_synapses = self.param_dict['num_synapses']
         cell_input_idxs = cell.get_rand_idx_area_norm(section=input_pos, nidx=num_synapses,
                                                       z_min=minpos, z_max=maxpos)
@@ -237,7 +236,7 @@ class NeuralSimulation:
 
             # spike_train_idxs = np.array(random.sample(np.arange(int(num_synapses/self.correlation)), num_synapses))
             spike_train_idxs = np.random.choice(np.arange(int(num_synapses/self.correlation)), num_synapses, replace=False)
-            print np.sort(spike_train_idxs)
+            # print np.sort(spike_train_idxs)
 
             spike_trains = [all_spiketimes[idx] for idx in spike_train_idxs]
 

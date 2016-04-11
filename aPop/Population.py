@@ -65,13 +65,13 @@ def sum_population_generic(param_dict):
     x_y_z_rot = np.load(os.path.join(param_dict['root_folder'], param_dict['save_folder'],
                          'x_y_z_rot_%s.npy' % param_dict['name']))
     print param_dict['population_radii']
-    num_cells = 5
+    num_cells = 1000
     num_tsteps = round(param_dict['end_t']/param_dict['timeres_python'] + 1)
     for input_region in param_dict['input_regions']:
         for distribution in param_dict['distributions']:
             for mu in param_dict['mus']:
                 for correlation in param_dict['correlations']:
-
+                    print input_region, distribution, mu, correlation
                     summed_sig = np.zeros((len(param_dict['electrode_parameters']['x']), num_tsteps))
                     # Cells are numbered with increasing distance from population center. We exploit this
                     subpopulation_idx = 0
@@ -134,7 +134,7 @@ def PopulationMPI():
 
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
-        num_cells = 400
+        num_cells = 1000
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['mus']) *
                      len(param_dict['distributions']) * len(param_dict['correlations']) * (num_cells))
 
