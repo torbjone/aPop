@@ -1,4 +1,10 @@
 from __future__ import division
+if 'DISPLAY' not in os.environ:
+    import matplotlib
+    matplotlib.use('Agg')
+    at_stallo = True
+else:
+    at_stallo = False
 import os
 from os.path import join
 import sys
