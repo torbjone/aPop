@@ -1,4 +1,5 @@
 from __future__ import division
+import os
 if 'DISPLAY' not in os.environ:
     import matplotlib
     matplotlib.use('Agg')
