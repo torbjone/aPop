@@ -18,7 +18,6 @@ import tools
 class NeuralSimulation:
     def __init__(self, **kwargs):
         self.input_type = kwargs['input_type']
-
         self.input_region = kwargs['input_region']
         self.name = kwargs['name']
         self.cell_number = kwargs['cell_number'] if 'cell_number' in kwargs else None
@@ -69,7 +68,6 @@ class NeuralSimulation:
                                                self.input_region, self.correlation, self.cell_number)
         return sim_name
 
-
     def _set_input_params(self):
         self.timeres_NEURON = self.param_dict['timeres_NEURON']
         self.timeres_python = self.param_dict['timeres_python']
@@ -78,7 +76,6 @@ class NeuralSimulation:
 
         self.max_freq = self.param_dict['max_freqs'] if 'max_freqs' in self.param_dict else 500
         self.num_tsteps = round(self.end_t/self.timeres_python + 1)
-
 
     def _return_cell(self, cell_x_y_z_rotation=None):
         if not 'i_QA' in neuron.h.__dict__.keys():
@@ -163,7 +160,6 @@ class NeuralSimulation:
             np.save(join(self.sim_folder, 'zmid_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.zmid)
             np.save(join(self.sim_folder, 'diam_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.diam)
 
-
     def run_distributed_synaptic_simulation(self):
 
         if os.path.isfile(join(self.sim_folder, 'sig_%s.npy' % self.sim_name)):
@@ -171,14 +167,20 @@ class NeuralSimulation:
             return
 
         electrode = LFPy.RecExtElectrode(**self.electrode_parameters)
-        x_y_z_rot = np.load(os.path.join(self.param_dict['root_folder'], self.param_dict['save_folder'],
-                         'x_y_z_rot_%s.npy' % self.param_dict['name']))
         plt.seed(123 * self.cell_number)
-        cell = self._return_cell(x_y_z_rot[self.cell_number])
+        if 'shape_function' in self.name:
+            x_y_z_rot = np.array([0, 0, 0, 2*np.pi*np.random.random()])
+        elif 'population' in self.name:
+            x_y_z_rot = np.load(os.path.join(self.param_dict['root_folder'], self.param_dict['save_folder'],
+                             'x_y_z_rot_%s.npy' % self.param_dict['name']))[self.cell_number]
+        else:
+            raise RuntimeError("Something wrong with simulation set-up!")
+
+        cell = self._return_cell(x_y_z_rot)
         cell, syn = self._make_distributed_synaptic_stimuli(cell)
         cell.simulate(rec_imem=True, rec_vmem=True, electrode=electrode)
         self.save_neural_sim_single_input_data(cell, electrode)
-        if not self.cell_number % 100:
+        if ('shape_function' in self.name) or (not self.cell_number % 100):
             self._draw_all_elecs_with_distance(cell, electrode)
 
     def run_asymmetry_simulation(self, mu, fraction, distribution, cell_number):
@@ -193,7 +195,6 @@ class NeuralSimulation:
         cell.simulate(rec_imem=True, rec_vmem=True, electrode=electrode)
         self.save_neural_sim_single_input_data(cell, electrode, 'asymmetry_%1.2f' % fraction, mu, distribution, cell_number)
         self._draw_all_elecs_with_distance(cell, electrode, 'asymmetry_%1.2f' % fraction, mu, distribution, cell_number)
-
 
     def _make_distributed_synaptic_stimuli(self, cell):
 
@@ -225,8 +226,7 @@ class NeuralSimulation:
         else:
             raise RuntimeError("Use other input section")
         num_synapses = self.param_dict['num_synapses']
-        cell_input_idxs = cell.get_rand_idx_area_norm(section=input_pos, nidx=num_synapses,
-                                                      z_min=minpos, z_max=maxpos)
+        cell_input_idxs = cell.get_rand_idx_area_norm(section=input_pos, nidx=num_synapses, z_min=minpos, z_max=maxpos)
         firing_rate = self.param_dict['input_firing_rate']
         if self.correlation < 1e-6:
             spike_trains = LFPy.inputgenerators.stationary_poisson(num_synapses, firing_rate, cell.tstartms, cell.tstopms)

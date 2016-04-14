@@ -15,6 +15,85 @@ import sys
 from NeuralSimulation import NeuralSimulation
 import tools
 
+def return_elec_row_col(elec_number, elec_x, elec_z):
+    """ Return the subplot number for the distance study
+    """
+    num_elec_cols = len(set(elec_x))
+    num_elec_rows = len(set(elec_z))
+    elec_idxs = np.arange(len(elec_x)).reshape(num_elec_rows, num_elec_cols)
+    row, col = np.array(np.where(elec_idxs == elec_number))[:, 0]
+    return row, col
+
+def plot_population_LFP(param_dict):
+
+    folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
+
+    for input_region in param_dict['input_regions']:
+        for distribution in param_dict['distributions']:
+            for correlation in param_dict['correlations']:
+                param_dict.update({'input_region': input_region,
+                               'cell_number': 0,
+                               'distribution': distribution,
+                               'correlation': correlation,
+                               })
+
+                param_dict['mu'] = 0.0
+                ns = NeuralSimulation(**param_dict)
+                name = 'summed_signal_%s_350um' % ns.population_sim_name
+
+                param_dict['mu'] = -0.5
+                ns = NeuralSimulation(**param_dict)
+                name_reg = 'summed_signal_%s_350um' % ns.population_sim_name
+
+                param_dict['mu'] = 2.0
+                ns = NeuralSimulation(**param_dict)
+                name_res = 'summed_signal_%s_350um' % ns.population_sim_name
+
+                xmid = np.load(join(folder, 'xmid_hay_generic.npy'))
+                zmid = np.load(join(folder, 'zmid_hay_generic.npy'))
+                xstart = np.load(join(folder, 'xstart_hay_generic.npy'))
+                zstart = np.load(join(folder, 'zstart_hay_generic.npy'))
+                xend = np.load(join(folder, 'xend_hay_generic.npy'))
+                zend = np.load(join(folder, 'zend_hay_generic.npy'))
+
+                synidx = np.load(join(folder, 'synidx_%s.npy' % ns.sim_name))
+
+                lfp = np.load(join(folder, '%s.npy' % name))
+                lfp_reg = np.load(join(folder, '%s.npy' % name_reg))
+                lfp_res = np.load(join(folder, '%s.npy' % name_res))
+                elec_x = param_dict['electrode_parameters']['x']
+                elec_z = param_dict['electrode_parameters']['z']
+                # print elec_x.reshape(3, 30)
+                # print elec_z.reshape(3, 30)
+                plt.close('all')
+                fig = plt.figure(figsize=(18, 10))
+                fig.suptitle(name)
+                ax_morph = fig.add_subplot(1, 6, 1, aspect=1, frameon=False, xticks=[])
+                [ax_morph.plot([xstart[idx], xend[idx]], [zstart[idx], zend[idx]], lw=1.5, color='0.5', zorder=0, alpha=1)
+                    for idx in xrange(len(xmid))]
+                ax_morph.plot(xmid[synidx], zmid[synidx], '.', c='green', ms=4)
+                fig.subplots_adjust(right=0.99, wspace=0.5, hspace=0.3)
+                num_elec_cols = 30
+                col_cut_off = 20
+
+                for elec in range(lfp.shape[0]):
+                    row, col = return_elec_row_col(elec, elec_x, elec_z)
+                    if col % 4 != 0 or col > col_cut_off:
+                        continue
+                    num_plot_cols = col_cut_off/4 + 2
+                    plot_number = row * num_plot_cols + col/4 + 2
+                    ax = fig.add_subplot(3, num_plot_cols, plot_number, aspect=0.5, ylim=[1e-14, 1e-6], xlim=[1e0, 5e2],
+                                         title='%1.1f $\mu$m' % (elec_x[elec]))
+                    freq, psd = tools.return_freq_and_psd_welch(lfp[elec], ns.welch_dict)
+                    freq, psd_reg = tools.return_freq_and_psd_welch(lfp_reg[elec], ns.welch_dict)
+                    freq, psd_res = tools.return_freq_and_psd_welch(lfp_res[elec], ns.welch_dict)
+                    ax.loglog(freq, psd[0], 'k')
+                    ax.loglog(freq, psd_reg[0], 'r')
+                    ax.loglog(freq, psd_res[0], 'b')
+
+                plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], '%s.png' % name))
+                plt.close('all')
+
 def initialize_population(param_dict):
     print "Initializing cell positions and rotations ..."
     x_y_z_rot = np.zeros((param_dict['num_cells'], 4))
@@ -199,6 +278,11 @@ if __name__ == '__main__':
         from param_dicts import generic_population_params as param_dict
     else:
         from param_dicts import classic_population_params as param_dict
+
+
+    plot_population_LFP(param_dict)
+    sys.exit()
+
 
     if len(sys.argv) >= 3:
         cell_number = int(sys.argv[3])

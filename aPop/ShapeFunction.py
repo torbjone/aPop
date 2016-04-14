@@ -52,7 +52,7 @@ def sum_shape_functions_classic(param_dict):
 
 def sum_shape_functions_generic(param_dict):
 
-    num_cells = 100
+    num_cells = 10
     welch_freqs = np.zeros(10001)
     # print self.elec_x[range(0, 90, 30)], self.elec_y[range(0, 90, 30)], self.elec_z[range(0, 90, 30)]
     for input_region in param_dict['input_regions']:
@@ -66,8 +66,7 @@ def sum_shape_functions_generic(param_dict):
                                        'mu': mu,
                                        'distribution': distribution})
                     ns = NeuralSimulation(**param_dict)
-                    sim_name = ns.sim_name
-                    lfp = 1000 * np.load(join(ns.sim_folder, 'sig_%s.npy' % sim_name))
+                    lfp = 1000 * np.load(join(ns.sim_folder, 'sig_%s.npy' % ns.sim_name))
                     freqs, lfp_psd = tools.return_freq_and_psd_welch(lfp[:, :], ns.welch_dict)
                     if not average_psd.shape == lfp_psd.shape:
                         print "Reshaping", lfp_psd.shape, freqs.shape, freqs
@@ -86,7 +85,7 @@ def sum_shape_functions_generic(param_dict):
 
 
 
-def ShapeFunctionMPIgeneric():
+def ShapeFunctionMPIgeneric(param_dict):
     """ Run with
         mpirun -np 4 python example_mpi.py
     """
@@ -113,19 +112,14 @@ def ShapeFunctionMPIgeneric():
 
     if rank == 0:
 
-        secs = ['homogeneous', 'distal_tuft', 'basal']
-        mus = [-0.5, 0.0, 2.0]
-        dists = ['uniform', 'linear_increase', 'linear_decrease']
-
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
-        num_cells = 100
-        num_tasks = len(secs) * len(mus) * len(dists) * (num_cells - 50)
-
-        for input_sec in secs:
-            for channel_dist in dists:
-                for mu in mus:
-                    for cell_idx in xrange(50, num_cells):
+        num_cells = 10
+        num_tasks = len(param_dict['input_regions']) * len(param_dict['mus']) * len(param_dict['distributions']) * (num_cells - 0)
+        for input_region in param_dict['input_regions']:
+            for distribution in param_dict['distributions']:
+                for mu in param_dict['mus']:
+                    for cell_idx in xrange(0, num_cells):
                         task += 1
                         sent = False
                         while not sent:
@@ -133,7 +127,7 @@ def ShapeFunctionMPIgeneric():
                             source = status.Get_source()
                             tag = status.Get_tag()
                             if tag == tags.READY:
-                                comm.send([input_sec, channel_dist, mu, cell_idx], dest=source, tag=tags.START)
+                                comm.send([input_region, distribution, mu, cell_idx], dest=source, tag=tags.START)
                                 print "\033[95m Sending task %d/%d to worker %d\033[0m" % (task, num_tasks, source)
                                 sent = True
                             elif tag == tags.DONE:
@@ -170,7 +164,7 @@ def ShapeFunctionMPIgeneric():
         comm.send(None, dest=0, tag=tags.EXIT)
 
 
-def ShapeFunctionMPIclassic():
+def ShapeFunctionMPIclassic(param_dict):
     """ Run with
         mpirun -np 4 python example_mpi.py
     """
@@ -254,7 +248,7 @@ def ShapeFunctionMPIclassic():
         comm.send(None, dest=0, tag=tags.EXIT)
 
 if __name__ == '__main__':
-    conductance = 'classic'
+    conductance = 'generic'
 
     if len(sys.argv) == 5:
         cell_number = int(sys.argv[4])
@@ -263,9 +257,9 @@ if __name__ == '__main__':
             from param_dicts import distributed_delta_params
             mu = float(sys.argv[1])
             distribution = sys.argv[3]
-            ns = NeuralSimulation(**distributed_delta_params)
-            distributed_delta_classic_params.update({'mu': mu, 'input_region': input_region,
+            distributed_delta_params.update({'mu': mu, 'input_region': input_region,
                       'distribution': distribution, 'cell_number': cell_number}) #mu, input_sec, channel_dist, cell_idx
+            ns = NeuralSimulation(**distributed_delta_params)
         else:
             from param_dicts import distributed_delta_classic_params
             conductance_type = sys.argv[1]
@@ -277,15 +271,15 @@ if __name__ == '__main__':
             ns = NeuralSimulation(**distributed_delta_classic_params)
         ns.run_distributed_synaptic_simulation()
     elif len(sys.argv) == 2 and sys.argv[1] == 'MPIgeneric':
-        ShapeFunctionMPIgeneric()
+        from param_dicts import distributed_delta_params
+        ShapeFunctionMPIgeneric(distributed_delta_params)
     elif len(sys.argv) == 2 and sys.argv[1] == 'MPIclassic':
-        ShapeFunctionMPIclassic()
+        from param_dicts import distributed_delta_classic_params
+        ShapeFunctionMPIclassic(distributed_delta_classic_params)
     elif len(sys.argv) == 2 and sys.argv[1] == 'sum':
         if conductance is 'generic':
             from param_dicts import distributed_delta_params
-            ns = NeuralSimulation(**distributed_delta_params)
-            ns.sum_shape_functions_generic()
+            sum_shape_functions_generic(distributed_delta_params)
         else:
             from param_dicts import distributed_delta_classic_params
-            ns = NeuralSimulation(**distributed_delta_classic_params)
-            ns.sum_shape_functions_classic()
+            sum_shape_functions_classic(distributed_delta_classic_params)
