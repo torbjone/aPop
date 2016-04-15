@@ -7,7 +7,7 @@ import numpy as np
 import pylab as plt
 import LFPy
 import tools
-
+from NeuralSimulation import NeuralSimulation
 
 def plot_all_shape_functions(params):
     cell_name = params['cell_name']
@@ -17,12 +17,16 @@ def plot_all_shape_functions(params):
         mus = [-0.5, 0.0, 2.0]
         dists = ['uniform', 'linear_increase', 'linear_decrease']
 
-        for input_sec in secs:
+        for input_region in secs:
             for distribution in dists:
                 for mu in mus:
-
-                    sim_name = '%s_%s_%s_%s_%+1.1f_%1.5fuS' % (cell_name, input_type,
-                                                   input_sec, distribution, mu, params['syn_weight'])
+                    params.update({'input_region': input_region,
+                                   'cell_number': 0,
+                                   'mu': mu,
+                                    'distribution': distribution,
+                                   })
+                    ns = NeuralSimulation(**params)
+                    sim_name = ns.population_sim_name
                     plot_F(params, sim_name)
     else:
         secs = ['homogeneous', 'distal_tuft', 'basal']
@@ -81,7 +85,7 @@ def plot_F(params, sim_name):
 
     elec_x = params['electrode_parameters']['x']
     elec_z = params['electrode_parameters']['z']
-    im_dict = {'cmap': 'hot', 'norm': LogNorm(), 'vmin': 1e-11, 'vmax': 1.e-7}
+    im_dict = {'cmap': 'hot', 'norm': LogNorm(), 'vmin': 1e-16, 'vmax': 1.e-10}
     ax_dict = {'xscale': 'log', 'yscale': 'log', 'xlim': [10, 1000], 'ylim': [1, 500],
                }
     plt.close('all')
@@ -92,11 +96,11 @@ def plot_F(params, sim_name):
 
     f_clr = lambda idx: plt.cm.Blues(0.1 + idx / len(plot_freqs))
 
-    ax_f_apic = fig.add_subplot(3, 8, 5, xlim=[10, 1000], ylim=[1e-12, 1e-7],
+    ax_f_apic = fig.add_subplot(3, 8, 5, xlim=[10, 1000], ylim=[1e-16, 1e-10],
                                 ylabel='mV$^2$/Hz', xlabel='distance ($\mu$m)')
-    ax_f_middle = fig.add_subplot(3, 8, 13, xlim=[10, 1000], ylim=[1e-12, 1e-7],
+    ax_f_middle = fig.add_subplot(3, 8, 13, xlim=[10, 1000], ylim=[1e-16, 1e-10],
                                   ylabel='mV$^2$/Hz', xlabel='distance ($\mu$m)')
-    ax_f_soma = fig.add_subplot(3, 8, 21, xlim=[10, 1000], ylim=[1e-12, 1e-7],
+    ax_f_soma = fig.add_subplot(3, 8, 21, xlim=[10, 1000], ylim=[1e-16, 1e-10],
                                 ylabel='mV$^2$/Hz', xlabel='distance ($\mu$m)')
 
     ax_r_apic = fig.add_subplot(3, 8, 6, xlim=[1, 500], ylim=[10, 400],
@@ -220,5 +224,5 @@ def plot_F(params, sim_name):
 
 
 if __name__ == '__main__':
-    from param_dicts import distributed_delta_classic_params
-    plot_all_shape_functions(distributed_delta_classic_params)
+    from param_dicts import distributed_delta_params
+    plot_all_shape_functions(distributed_delta_params)

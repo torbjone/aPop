@@ -522,7 +522,7 @@ class NeuralSimulation:
         fig.savefig(join(self.figure_folder, 'LFP_%s.png' % self.sim_name))
 
     def plot_F(self, freqs, sig_psd):
-
+        print "Plotting shape function"
         plt.close('all')
         fig = plt.figure(figsize=[18, 9])
         fig.subplots_adjust(right=0.97, left=0.05)
@@ -546,7 +546,7 @@ class NeuralSimulation:
             xend = np.load(join(self.sim_folder, 'xend_hay_active.npy'))
             zend = np.load(join(self.sim_folder, 'zend_hay_active.npy'))
 
-        synidx = np.load(join(self.sim_folder, 'synidx_%s.npy' % self.sim_name))
+        synidx = np.load(join(self.sim_folder, 'synidx_%s_00000.npy' % self.population_sim_name))
 
         [cell_ax.plot([xstart[idx], xend[idx]], [zstart[idx], zend[idx]],
                  lw=1.5, color='0.5', zorder=0, alpha=1)

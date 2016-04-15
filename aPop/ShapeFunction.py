@@ -78,9 +78,9 @@ def sum_shape_functions_generic(param_dict):
                     cell_count += 1
                 F = average_psd / cell_count
 
+                np.save(join(ns.sim_folder, 'F_%s.npy' % ns.population_sim_name), F)
                 ns.plot_F(welch_freqs, F)
 
-                np.save(join(ns.sim_folder, 'F_%s.npy' % ns.population_sim_name), F)
     np.save(join(ns.sim_folder, 'welch_freqs.npy'), welch_freqs)
 
 
