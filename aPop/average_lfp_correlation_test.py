@@ -38,8 +38,8 @@ def calculate_average_coherence(param_dict, mu, input_region, distribution, corr
     param_dict['cell_number'] = 0
 
     ns = NeuralSimulation(**param_dict)
-    num_cells = 200
-    num_pairs = 100
+    num_cells = 1000
+    num_pairs = 1000
     name = ns.population_sim_name
     normalize = lambda sig: (sig - np.average(sig, axis=1).reshape(90, 1))/np.std(sig, axis=1).reshape(90, 1)
 
@@ -48,9 +48,9 @@ def calculate_average_coherence(param_dict, mu, input_region, distribution, corr
     plt.close('all')
     counter = 0
     for idx, pair in enumerate(pairs):
-        print idx, pair
+        # print idx, pair
         if pair[0] == pair[1]:
-            print "EQUAL signals"
+            # print "EQUAL signals"
             continue
         counter += 1
         param_dict['cell_number'] = pair[0]
