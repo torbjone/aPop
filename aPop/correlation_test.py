@@ -3,64 +3,98 @@ from os.path import join
 import numpy as np
 import pylab as plt
 from matplotlib import mlab
+from scipy import signal
+import scipy.fftpack as sf
 
-name = 'sig_generic_population_hay_generic_linear_increase_2.0_distal_tuft_0.00'
-name2 = 'sig_generic_population_hay_generic_linear_increase_2.0_distal_tuft_1.00'
-folder = join(os.getenv('HOME'), 'work', 'aPop', 'population', 'simulations')
-s0 = np.load(join(folder, '%s_00001.npy' % name))[:1, :]
-s1 = np.load(join(folder, '%s_00002.npy' % name))[:1, :]
-s20 = np.load(join(folder, '%s_00001.npy' % name2))[:1, :]
-s21 = np.load(join(folder, '%s_00002.npy' % name2))[:1, :]
 
-s0 = (s0 - np.average(s0)) / np.std(s0)
-s1 = (s1 - np.average(s1)) / np.std(s1)
-s20 = (s20 - np.average(s20)) / np.std(s20)
-s21 = (s21 - np.average(s21)) / np.std(s21)
+def average_coherence(signals, timestep, smooth):
 
-# a = np.random.normal(0, 0.1, size=(1, 100000))
-# b = np.random.normal(0, 0.1, size=(1, 100000))
-# c = np.random.normal(0, 0.1, size=(1, 100000))
-# corr = .1
-# s0 = (1 - corr) * a + corr * c
-# s1 = (1 - corr) * b + corr * c
-# s0 /= np.std(s0)
-# s20 /= np.std(s20)
-# s1 /= np.std(s1)
-# s21 /= np.std(s21)
+    N_cells = signals.shape[0]
+    sample_freq = sf.fftfreq(signals.shape[1], d=timestep / 1000.)
+    pidxs = np.where(sample_freq >= 0)
+    xfft = sf.fft(signals, axis=1)
+    xfft_norm = xfft / (np.absolute(xfft))
+    freqs = sample_freq[pidxs]
+    xfft_norm_sum = xfft_norm.sum(axis=0)
+    phibar = (np.absolute(xfft_norm_sum) ** 2 - N_cells) / (N_cells * (N_cells - 1))
+    if smooth is None:
+        return freqs, phibar[pidxs]
+    else:
+        return np.convolve(np.ones(smooth, 'd')/smooth, freqs, mode='valid'), np.convolve(np.ones(smooth, 'd')/smooth, phibar[pidxs], mode='valid')
 
-# plt.plot(s0[0])
-# plt.plot(s1[0])
-# plt.show()
 
+def make_signal(num_cells, num_tsteps, correlation):
+    signal = np.zeros((num_cells, num_tsteps))
+    common_signal = np.random.normal(0, 1, size=num_tsteps)
+    for cell_idx in range(num_cells):
+        cell_signal = np.random.normal(0, 1, size=num_tsteps)
+        signal[cell_idx, :] = (1 - np.sqrt(correlation)) * cell_signal + np.sqrt(correlation) * common_signal
+    return signal
+
+
+def return_mean_coherence(s, num_cells, num_pairs):
+
+    pairs = np.random.random_integers(num_cells, size=(num_pairs, 2)) - 1
+    c_mean_mlab = np.array([])
+    c_mean_scipy = np.array([])
+    freq_mlab = []
+    freq_scipy = []
+    counter = 0
+    for idx, pair in enumerate(pairs):
+        if pair[0] == pair[1]:
+            continue
+        counter += 1
+        freq_scipy, c_scipy = signal.coherence(s[pair[0], :], s[pair[1], :], **welch_scipy)
+        c_mlab, freq_mlab = mlab.cohere(s[pair[0], :], s[pair[1], :], **welch_mlab)
+        if idx == 0:
+            c_mean_mlab = c_mlab
+            c_mean_scipy = c_scipy
+        else:
+            c_mean_mlab[:] += c_mlab
+            c_mean_scipy[:] += c_scipy
+
+    c_mean_mlab /= counter
+    c_mean_scipy /= counter
+    return freq_mlab, c_mean_mlab, freq_scipy, c_mean_scipy
+
+num_tsteps = 10000
+num_cells = 1000
+num_pairs = 1000
+correlation = .01
+
+s = make_signal(num_cells, num_tsteps, correlation)
+normalize = lambda sig: (sig - np.average(sig[:, :, None], axis=1))/np.std(sig[:, :, None], axis=1)
+
+s = normalize(s)
 
 timeres_python = 2**-3
-num_tsteps = s0.shape[1]
+
 divide_into_welch = 10. # 8.
-welch_dict = {'Fs': 1000 / timeres_python,
-                   'NFFT': int(num_tsteps/divide_into_welch),
-                   'noverlap': int(num_tsteps/divide_into_welch/2.),
-                   'window': plt.window_hanning,
-                   'detrend': plt.detrend_mean,
-                   'scale_by_freq': True,
+
+welch_mlab = {'Fs': 1000 / timeres_python,
+               'NFFT': int(num_tsteps/divide_into_welch),
+               'noverlap': int(num_tsteps/divide_into_welch/2.),
+               'window': plt.window_hanning,
+               'detrend': plt.detrend_mean,
+               'scale_by_freq': True,
+               }
+
+welch_scipy = {'fs': 1000 / timeres_python,
+                   'nfft': int(num_tsteps/divide_into_welch),
+                    'window': "hanning",
+                   'detrend': 'constant',
+                   # 'scale_by_freq': True,
                    }
 
-print s0.shape
+f_phi, c_phi = average_coherence(s, timeres_python, smooth=20)
+print f_phi
 
-psd0, freqs = mlab.psd(s0[0, :], **welch_dict)
-psd20, freqs = mlab.psd(s20[0, :], **welch_dict)
-psd1, freqs = mlab.psd(s1[0, :], **welch_dict)
-psd21, freqs = mlab.psd(s21[0, :], **welch_dict)
+freq_mlab, c_mean_mlab, freq_scipy, c_mean_scipy = return_mean_coherence(s, num_cells, num_pairs)
 
-c, f = mlab.cohere(s0[0, :], s1[0, :], **welch_dict)
-c2, f2 = mlab.cohere(s20[0, :], s21[0, :], **welch_dict)
 
-# print c
-plt.subplot(121)
-plt.loglog(freqs, psd0, 'k')
-plt.loglog(freqs, psd20, 'g')
-plt.loglog(freqs, psd1, 'gray')
-plt.loglog(freqs, psd21, 'c')
-plt.subplot(122)
-plt.loglog(f, np.abs(c), 'k')
-plt.loglog(f, np.abs(c2), 'g')
+plt.subplot(111, ylim=[1e-5, 2e0])
+plt.loglog(f_phi, c_phi, 'g')
+plt.loglog(freq_scipy, np.ones(len(freq_scipy)) * correlation, lw=2)
+plt.loglog(freq_mlab, (c_mean_mlab), 'k')
+plt.loglog(freq_scipy, c_mean_scipy, 'r')
 plt.show()

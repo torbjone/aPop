@@ -35,7 +35,7 @@ distributed_delta_params = {'name': 'shape_function',
                             'cell_name': 'hay',
                             'timeres_python': 2**-4,
                             'cut_off': 200,
-                            'end_t': 10000,
+                            'end_t': 10000, # 2**13 - dt
                             'syn_tau': 0.1,
                             'syn_weight': 1e-4,
                             'correlation': 0.0,
@@ -86,6 +86,7 @@ distributed_delta_classic_params = {'input_type': 'distributed_delta',
                             }
 
 scale = 10
+dt = 2**-3
 num_cells = 100 * scale ** 2
 population_radius = 100. * scale
 # dr = 50.
@@ -94,15 +95,15 @@ population_radii = np.arange(dr, population_radius + dr, dr)
 layer_5_thickness = 200  # From Markram (2015): Thickness L1-L5: 1382 um. Hay cell height: 1169 um. 1382 - 1169 = 213 um
 generic_population_params = {'input_type': 'distributed_delta',
                              'name': 'generic_population',
-                             'timeres_NEURON': 2**-3,
-                             'timeres_python': 2**-3,
+                             'timeres_NEURON': dt,
+                             'timeres_python': dt,
                              'population_scale': scale,  # 10 means full population
                              'num_cells': num_cells,
                              'population_radius': population_radius,
                              'population_radii': population_radii,
                              'layer_5_thickness': layer_5_thickness,
                              'cut_off': 200,
-                             'end_t': 2000,
+                             'end_t': 2000, #2048 - dt,
                              'syn_tau': 0.1,
                              'syn_weight': 1e-4,
                              'max_freq': 500,
@@ -133,3 +134,8 @@ asymmetry_params = {'input_type': 'distributed_asymmetry',
                             'asymmetry_fractions': [0.80],
                             'save_folder': 'asymmetry',
                             }
+
+if __name__ == '__main__':
+    from NeuralSimulation import NeuralSimulation
+    generic_population_params.update({'input_region': 'homogeneous', 'mu': 0.0, 'correlation': 0.0, 'cell_number': 0})
+    ns = NeuralSimulation(**generic_population_params)

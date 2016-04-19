@@ -53,12 +53,18 @@ class NeuralSimulation:
         self.divide_into_welch = 10. # 8.
         self.welch_dict = {'Fs': 1000 / self.timeres_python,
                            'NFFT': int(self.num_tsteps/self.divide_into_welch),
-                           'noverlap': int(self.num_tsteps/self.divide_into_welch/2.),
+                           # 'noverlap': int(self.num_tsteps/self.divide_into_welch/2.),
                            'window': plt.window_hanning,
                            'detrend': plt.detrend_mean,
                            'scale_by_freq': True,
                            }
-
+        self.welch_dict_scipy = {'fs': 1000 / self.timeres_python,
+                           'nfft': int(self.num_tsteps/self.divide_into_welch),
+                           # 'noverlap': int(self.num_tsteps/self.divide_into_welch/2.),
+                           # 'window': 'hanning',
+                           # 'detrend': 'constant',
+                           # 'scale_by_freq': True,
+                           }
     def get_simulation_name(self):
         if self.conductance_type is 'generic':
             conductance = '%s_%s_%1.1f' % (self.conductance_type, self.distribution, self.mu)
@@ -76,6 +82,7 @@ class NeuralSimulation:
 
         self.max_freq = self.param_dict['max_freqs'] if 'max_freqs' in self.param_dict else 500
         self.num_tsteps = round(self.end_t/self.timeres_python + 1)
+
 
     def _return_cell(self, cell_x_y_z_rotation=None):
         if not 'i_QA' in neuron.h.__dict__.keys():
