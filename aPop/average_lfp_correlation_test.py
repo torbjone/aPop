@@ -76,11 +76,16 @@ def calculate_average_coherence(param_dict, mu, input_region, distribution, corr
     param_dict['cell_number'] = 0
 
     ns = NeuralSimulation(**param_dict)
+    name = ns.population_sim_name
+
+    if os.path.isfile(join(ns.sim_folder, 'trick_coherence_%s.npy' % name)):
+        print "Skipping ", name
+        return
+
     # num_cells = 1000
-    num_cells = 200
+    num_cells = 1000
     # num_pairs = 1000
     # num_pairs = 100
-    name = ns.population_sim_name
     print name
     # normalize = lambda sig: (sig - np.average(sig, axis=1).reshape(90, 1))/np.std(sig, axis=1).reshape(90, 1)
 
@@ -125,10 +130,10 @@ def calculate_average_coherence(param_dict, mu, input_region, distribution, corr
     np.save(join(ns.sim_folder, 'trick_coherence_%s.npy' % name), c_phi)
     np.save(join(ns.sim_folder, 'trick_coherence_freq_%s.npy' % name), freq_c_phi)
 
-secs = ['homogeneous', 'distal_tuft', 'basal'][2:]
-mus = [-0.5, 0.0, 2.0][1:2]
-dists = ['uniform', 'linear_increase', 'linear_decrease'][:1]
-correlations = [0., 0.1, 1.0][::2]
+secs = ['homogeneous', 'distal_tuft', 'basal']
+mus = [-0.5, 0.0, 2.0]
+dists = ['uniform', 'linear_increase', 'linear_decrease']
+correlations = [0., 0.1, 1.0]
 from param_dicts import generic_population_params
 for input_region in secs:
     for distribution in dists:
