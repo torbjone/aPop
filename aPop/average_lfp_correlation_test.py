@@ -10,7 +10,7 @@ import numpy as np
 import pylab as plt
 from matplotlib import mlab
 from NeuralSimulation import NeuralSimulation
-from scipy.signal import coherence
+# from scipy.signal import coherence
 import scipy.fftpack as sf
 
 
