@@ -14,27 +14,38 @@ from NeuralSimulation import NeuralSimulation
 import scipy.fftpack as sf
 
 
-def average_coherence(signals, timestep, smooth):
+def average_coherence(num_cells, timestep, smooth, param_dict):
     # print "Calculating average coherence (Leski et al., 2013)"
-    N_cells = signals.shape[0]
-    sample_freq = sf.fftfreq(signals.shape[-1], d=timestep / 1000.)
+    # signals = load_all_signals(num_cells, param_dict)
+    num_tsteps = int(round(param_dict['end_t']/param_dict['timeres_python'] + 1))
+    # signals = np.zeros((num_cells, len(param_dict['electrode_parameters']['x']), num_tsteps))
+    sample_freq = sf.fftfreq(num_tsteps, d=timestep / 1000.)
     pidxs = np.where(sample_freq >= 0)
-    # xfft = sf.fft(signals, axis=1)
-    # TODO: MAKE THIS PER ELECTRODE INSTEAD???
-    xfft = sf.fft(signals, axis=2)
-    # print "FFT Done", xfft.shape
-    xfft_norm = xfft / (np.absolute(xfft))
     freqs = sample_freq[pidxs]
-    xfft_norm_sum = xfft_norm.sum(axis=0)
-    c_phi = (np.absolute(xfft_norm_sum) ** 2 - N_cells) / (N_cells * (N_cells - 1))
+
+    xfft_norm_sum = np.zeros((len(param_dict['electrode_parameters']['x']), len(freqs)), dtype=complex)
+    for cell_idx in range(num_cells):
+        if cell_idx % 100 == 0:
+            print cell_idx
+        param_dict['cell_number'] = cell_idx
+        ns = NeuralSimulation(**param_dict)
+        # signals[cell_idx, :, :] = np.load(join(ns.sim_folder, 'sig_%s.npy' % ns.sim_name))
+        s = sf.fft(np.load(join(ns.sim_folder, 'sig_%s.npy' % ns.sim_name)), axis=1)[:, pidxs[0]]
+        s_norm = s / np.abs(s)
+        xfft_norm_sum[:] += s_norm[:]
+
+    # xfft = sf.fft(signals, axis=2)
+    # xfft_norm = xfft / (np.absolute(xfft))
+    # xfft_norm_sum = xfft_norm.sum(axis=0)
+    c_phi = (np.abs(xfft_norm_sum) ** 2 - num_cells) / (num_cells * (num_cells - 1))
 
     if smooth is None:
-        return freqs, c_phi[:, pidxs]
+        return freqs, c_phi
     else:
         smooth_freq = np.convolve(np.ones(smooth, 'd')/smooth, freqs, mode='valid')
-        smooth_c_phi = np.zeros((signals.shape[1], len(smooth_freq)))
-        for elec in range(signals.shape[1]):
-            smooth_c_phi[elec, :] = np.convolve(np.ones(smooth, 'd')/smooth, c_phi[elec, pidxs[0]], mode='valid')
+        smooth_c_phi = np.zeros((c_phi.shape[0], len(smooth_freq)))
+        for elec in range(c_phi.shape[0]):
+            smooth_c_phi[elec, :] = np.convolve(np.ones(smooth, 'd')/smooth, c_phi[elec, :], mode='valid')
         return smooth_freq, smooth_c_phi
 
 
@@ -82,15 +93,11 @@ def calculate_average_coherence(param_dict, mu, input_region, distribution, corr
         print "Skipping ", name
         return
 
-    # num_cells = 1000
     num_cells = 1000
-    # num_pairs = 1000
-    # num_pairs = 100
     print name
     # normalize = lambda sig: (sig - np.average(sig, axis=1).reshape(90, 1))/np.std(sig, axis=1).reshape(90, 1)
 
-    signals = load_all_signals(num_cells, param_dict)
-    freq_c_phi, c_phi = average_coherence(signals, ns.timeres_python, 15)
+    freq_c_phi, c_phi = average_coherence(num_cells, ns.timeres_python, 15, param_dict)
 
     # pairs = np.random.random_integers(num_cells, size=(num_pairs, 2)) - 1
     # c_mean = np.array([])
@@ -134,6 +141,7 @@ secs = ['homogeneous', 'distal_tuft', 'basal']
 mus = [-0.5, 0.0, 2.0]
 dists = ['uniform', 'linear_increase', 'linear_decrease']
 correlations = [0., 0.1, 1.0]
+
 from param_dicts import generic_population_params
 for input_region in secs:
     for distribution in dists:
