@@ -127,9 +127,9 @@ generic_population_params = {'input_type': 'distributed_delta',
                              'num_synapses': 1000,
                              'input_firing_rate': 5,
                              'input_regions': ['homogeneous', 'distal_tuft', 'basal'][2:],
-                             'mus': [-0.5, 0.0, 2.0][1:2],
+                             'mus': [-0.5, 0.0, 2.0],
                              'distributions': ['uniform', 'linear_increase', 'linear_decrease'][:1],
-                             'correlations': [0.0, 0.1, 1.0][::2]
+                             'correlations': [0.0, 0.1, 1.0]
                              }
 
 

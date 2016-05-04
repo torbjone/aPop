@@ -87,7 +87,7 @@ def plot_F(params, sim_name):
 
     elec_x = params['electrode_parameters']['x']
     elec_z = params['electrode_parameters']['z']
-    im_dict = {'cmap': 'hot', 'norm': LogNorm(), 'vmin': 1e-10, 'vmax': 1.e-4}
+    im_dict = {'cmap': 'hot', 'norm': LogNorm(), 'vmin': 1e-10, 'vmax': 1.e-3}
     ax_dict = {'xscale': 'log', 'yscale': 'log', 'xlim': [10, 1000], 'ylim': [1, 500],
                }
     plt.close('all')
@@ -98,11 +98,11 @@ def plot_F(params, sim_name):
 
     f_clr = lambda idx: plt.cm.Blues(0.1 + idx / len(plot_freqs))
 
-    ax_f_apic = fig.add_subplot(3, 8, 5, xlim=[10, 1000], ylim=[1e-10, 1e-4],
+    ax_f_apic = fig.add_subplot(3, 8, 5, xlim=[10, 1000], ylim=[1e-10, 1e-3],
                                 ylabel='$\mu$V$^2$/Hz', xlabel='distance ($\mu$m)')
-    ax_f_middle = fig.add_subplot(3, 8, 13, xlim=[10, 1000], ylim=[1e-10, 1e-4],
+    ax_f_middle = fig.add_subplot(3, 8, 13, xlim=[10, 1000], ylim=[1e-10, 1e-3],
                                   ylabel='$\mu$V$^2$/Hz', xlabel='distance ($\mu$m)')
-    ax_f_soma = fig.add_subplot(3, 8, 21, xlim=[10, 1000], ylim=[1e-10, 1e-4],
+    ax_f_soma = fig.add_subplot(3, 8, 21, xlim=[10, 1000], ylim=[1e-10, 1e-3],
                                 ylabel='$\mu$V$^2$/Hz', xlabel='distance ($\mu$m)')
 
     ax_r_apic = fig.add_subplot(3, 8, 6, xlim=[1, 500], ylim=[10, 400],
