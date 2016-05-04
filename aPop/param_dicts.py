@@ -19,8 +19,6 @@ username = os.getenv('USER')
     Understand how G0 and G1 works first!
     Don't use Welch at all?
     Turn of smoothing in coherence calc
-    Can I use dt = 2**-3 if I increase synaptic time? Does it still look white?
-    Use first 100 population cells to calculate shape function?
 """
 
 if at_stallo:
@@ -128,10 +126,10 @@ generic_population_params = {'input_type': 'distributed_delta',
                              'root_folder': root_folder,
                              'num_synapses': 1000,
                              'input_firing_rate': 5,
-                             'input_regions': ['homogeneous', 'distal_tuft', 'basal'],
-                             'mus': [-0.5, 0.0, 2.0],
-                             'distributions': ['uniform', 'linear_increase', 'linear_decrease'],
-                             'correlations': [0.0, 0.1, 1.0]
+                             'input_regions': ['homogeneous', 'distal_tuft', 'basal'][2:],
+                             'mus': [-0.5, 0.0, 2.0][1:2],
+                             'distributions': ['uniform', 'linear_increase', 'linear_decrease'][:1],
+                             'correlations': [0.0, 0.1, 1.0][::2]
                              }
 
 

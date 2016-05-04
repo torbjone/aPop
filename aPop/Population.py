@@ -304,10 +304,8 @@ if __name__ == '__main__':
     else:
         from param_dicts import classic_population_params as param_dict
 
-
-    plot_population_LFP(param_dict)
-    sys.exit()
-
+    # plot_population_LFP(param_dict)
+    # sys.exit()
 
     if len(sys.argv) >= 3:
         cell_number = int(sys.argv[3])
