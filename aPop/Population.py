@@ -1,4 +1,5 @@
 from __future__ import division
+import param_dicts
 import os
 if 'DISPLAY' not in os.environ:
     import matplotlib
@@ -28,9 +29,9 @@ def plot_population_LFP(param_dict):
 
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
 
-    for input_region in param_dict['input_regions']:
-        for distribution in param_dict['distributions']:
-            for correlation in param_dict['correlations']:
+    for input_region in param_dict['input_regions'][2:]:
+        for distribution in param_dict['distributions'][:1]:
+            for correlation in param_dict['correlations'][::2]:
                 param_dict.update({'input_region': input_region,
                                'cell_number': 0,
                                'distribution': distribution,
@@ -40,6 +41,28 @@ def plot_population_LFP(param_dict):
                 param_dict['mu'] = 0.0
                 ns = NeuralSimulation(**param_dict)
                 name = 'summed_signal_%s_350um' % ns.population_sim_name
+                coherence = np.load(join(ns.sim_folder, 'trick_coherence_%s.npy' % ns.population_sim_name))
+                coherence_freq = np.load(join(ns.sim_folder, 'trick_coherence_freq_%s.npy' % ns.population_sim_name))
+
+
+                sim_folder = join(param_dict['root_folder'], 'shape_function', 'simulations')
+                F_name = 'shape_function_hay_generic_%s_%1.1f_%s_0.00' % (distribution, 0.0, input_region)
+                F = np.load(join(sim_folder, 'F_%s.npy' % F_name))
+                F_freq = np.load(join(sim_folder, 'welch_freqs.npy'))
+
+                print coherence.shape, F_freq.shape, coherence_freq.shape
+                print F_freq[1] - F_freq[0], coherence_freq[1] - coherence_freq[0]
+
+                print F_freq, coherence_freq
+
+                bin_psd = np.zeros(len(mlab_freqs))
+                df = mlab_freqs[1] - mlab_freqs[0]
+                print name
+                for m, mfreq in enumerate(mlab_freqs):
+                    # print mfreq - df/2, mfreq, mfreq + df/2, freqs[(freqs >= mfreq - df/2) & (freqs < mfreq + df/2)]
+                    bin_psd[m] = np.average(ff_psd[(freqs >= mfreq - df/2) & (freqs < mfreq + df/2)])
+
+
 
                 param_dict['mu'] = -0.5
                 ns = NeuralSimulation(**param_dict)
@@ -48,6 +71,8 @@ def plot_population_LFP(param_dict):
                 param_dict['mu'] = 2.0
                 ns = NeuralSimulation(**param_dict)
                 name_res = 'summed_signal_%s_350um' % ns.population_sim_name
+
+
 
                 xmid = np.load(join(folder, 'xmid_hay_generic.npy'))
                 zmid = np.load(join(folder, 'zmid_hay_generic.npy'))
@@ -85,11 +110,11 @@ def plot_population_LFP(param_dict):
                     ax = fig.add_subplot(3, num_plot_cols, plot_number, aspect=0.5, ylim=[1e-14, 1e-6], xlim=[1e0, 5e2],
                                          title='%1.1f $\mu$m' % (elec_x[elec]))
                     freq, psd = tools.return_freq_and_psd_welch(lfp[elec], ns.welch_dict)
-                    freq, psd_reg = tools.return_freq_and_psd_welch(lfp_reg[elec], ns.welch_dict)
-                    freq, psd_res = tools.return_freq_and_psd_welch(lfp_res[elec], ns.welch_dict)
+                    # freq, psd_reg = tools.return_freq_and_psd_welch(lfp_reg[elec], ns.welch_dict)
+                    # freq, psd_res = tools.return_freq_and_psd_welch(lfp_res[elec], ns.welch_dict)
                     ax.loglog(freq, psd[0], 'k')
-                    ax.loglog(freq, psd_reg[0], 'r')
-                    ax.loglog(freq, psd_res[0], 'b')
+                    # ax.loglog(freq, psd_reg[0], 'r')
+                    # ax.loglog(freq, psd_res[0], 'b')
 
                 plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], '%s.png' % name))
                 plt.close('all')

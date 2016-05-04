@@ -1,4 +1,5 @@
 from __future__ import division
+import param_dicts
 import os
 import sys
 from os.path import join
@@ -70,8 +71,8 @@ class NeuralSimulation:
             conductance = '%s_%s_%1.1f' % (self.conductance_type, self.distribution, self.mu)
         else:
             conductance = self.conductance_type
-        sim_name = '%s_%s_%s_%s_%1.2f_%05d' % (self.name, self.cell_name, conductance,
-                                               self.input_region, self.correlation, self.cell_number)
+        sim_name = '%s_%s_%s_%s_%1.2f_%05d' % (self.name, self.cell_name, self.input_region, conductance,
+                                               self.correlation, self.cell_number)
         return sim_name
 
     def _set_input_params(self):
@@ -86,8 +87,10 @@ class NeuralSimulation:
 
     def _return_cell(self, cell_x_y_z_rotation=None):
         if not 'i_QA' in neuron.h.__dict__.keys():
-            print "loading QA"
-            neuron.load_mechanisms(join(self.neuron_models))
+            # print "loading QA"
+            from suppress_print import suppress_stdout_stderr
+            with suppress_stdout_stderr():
+                neuron.load_mechanisms(join(self.neuron_models))
 
         if self.cell_name != 'hay':
             raise NotImplementedError("Only works for Hay cell at the moment")
@@ -169,9 +172,9 @@ class NeuralSimulation:
 
     def run_distributed_synaptic_simulation(self):
 
-        if os.path.isfile(join(self.sim_folder, 'sig_%s.npy' % self.sim_name)):
-            print "Skipping ", self.sim_name
-            return
+        # if os.path.isfile(join(self.sim_folder, 'sig_%s.npy' % self.sim_name)):
+        #     print "Skipping ", self.sim_name
+        #     return
 
         electrode = LFPy.RecExtElectrode(**self.electrode_parameters)
         plt.seed(123 * self.cell_number)
@@ -278,7 +281,6 @@ class NeuralSimulation:
         maxpos = 600
         minpos = -10000
 
-
         if num_synapses_apic + num_synapses_basal != 1000:
             print num_synapses_basal, num_synapses_apic
             raise RuntimeError("Does not sum to 1000")
@@ -339,12 +341,20 @@ class NeuralSimulation:
         plot_psd = True
         if plot_psd:
             scale = 'log'
-            v_x_apic, [v_y_apic] = tools.return_freq_and_psd_welch(cell.vmem[apic_idx], self.welch_dict)
-            v_x_middle, [v_y_middle] = tools.return_freq_and_psd_welch(cell.vmem[middle_idx], self.welch_dict)
-            v_x_soma, [v_y_soma] = tools.return_freq_and_psd_welch(cell.vmem[soma_idx], self.welch_dict)
-            i_x_apic, [i_y_apic] = tools.return_freq_and_psd_welch(cell.imem[apic_idx], self.welch_dict)
-            i_x_middle, [i_y_middle] = tools.return_freq_and_psd_welch(cell.imem[middle_idx], self.welch_dict)
-            i_x_soma, [i_y_soma] = tools.return_freq_and_psd_welch(cell.imem[soma_idx], self.welch_dict)
+            # v_x_apic, [v_y_apic] = tools.return_freq_and_psd_welch(cell.vmem[apic_idx], self.welch_dict)
+            # v_x_middle, [v_y_middle] = tools.return_freq_and_psd_welch(cell.vmem[middle_idx], self.welch_dict)
+            # v_x_soma, [v_y_soma] = tools.return_freq_and_psd_welch(cell.vmem[soma_idx], self.welch_dict)
+            # i_x_apic, [i_y_apic] = tools.return_freq_and_psd_welch(cell.imem[apic_idx], self.welch_dict)
+            # i_x_middle, [i_y_middle] = tools.return_freq_and_psd_welch(cell.imem[middle_idx], self.welch_dict)
+            # i_x_soma, [i_y_soma] = tools.return_freq_and_psd_welch(cell.imem[soma_idx], self.welch_dict)
+
+            v_x_apic, [v_y_apic] = tools.return_freq_and_psd(self.timeres_python/1000., cell.vmem[apic_idx])
+            v_x_middle, [v_y_middle] = tools.return_freq_and_psd(self.timeres_python/1000., cell.vmem[middle_idx])
+            v_x_soma, [v_y_soma] = tools.return_freq_and_psd(self.timeres_python/1000., cell.vmem[soma_idx])
+            i_x_apic, [i_y_apic] = tools.return_freq_and_psd(self.timeres_python/1000., cell.imem[apic_idx])
+            i_x_middle, [i_y_middle] = tools.return_freq_and_psd(self.timeres_python/1000., cell.imem[middle_idx])
+            i_x_soma, [i_y_soma] = tools.return_freq_and_psd(self.timeres_python/1000., cell.imem[soma_idx])
+
         else:
             scale ='linear'
             v_x_apic, v_y_apic = cell.tvec, cell.vmem[apic_idx]
@@ -404,7 +414,8 @@ class NeuralSimulation:
         LFP = 1000 * electrode.LFP#np.load(join(self.sim_folder, 'sig_%s.npy' % sim_name))[:, :]
 
         if self.input_type is 'distributed_delta':
-            freqs, sig_psd = tools.return_freq_and_psd_welch(LFP, self.welch_dict)
+            # freqs, sig_psd = tools.return_freq_and_psd_welch(LFP, self.welch_dict)
+            freqs, sig_psd = tools.return_freq_and_psd(self.timeres_python/1000., LFP)
         else:
             freqs, sig_psd = tools.return_freq_and_psd(self.timeres_python/1000., LFP)
 
@@ -419,7 +430,7 @@ class NeuralSimulation:
 
             row, col = self._return_elec_row_col(elec)
             all_elec_ax[row].loglog(freqs, sig_psd[elec, :], color=clr, lw=1)
-            all_elec_n_ax[row].loglog(freqs, sig_psd[elec, :] / np.max(sig_psd[elec, :]), color=clr, lw=1)
+            all_elec_n_ax[row].loglog(freqs, sig_psd[elec, :] / np.max(sig_psd[elec, 1:]), color=clr, lw=1)
 
         [ax.grid(True) for ax in all_elec_ax + all_elec_n_ax +
          [ax_i_apic, ax_i_middle, ax_i_soma, ax_v_apic, ax_v_middle, ax_v_soma]]
@@ -580,7 +591,7 @@ class NeuralSimulation:
 
             row, col = self._return_elec_row_col(elec)
             all_elec_ax[row].loglog(freqs, sig_psd[elec, :], color=clr, lw=1)
-            all_elec_n_ax[row].loglog(freqs, sig_psd[elec, :] / np.max(sig_psd[elec, :]), color=clr, lw=1)
+            all_elec_n_ax[row].loglog(freqs, sig_psd[elec, :] / np.max(sig_psd[elec, 1:]), color=clr, lw=1)
 
         [ax.grid(True) for ax in all_elec_ax + all_elec_n_ax]
 
@@ -592,9 +603,8 @@ class NeuralSimulation:
 
 
 if __name__ == '__main__':
-    from param_dicts import distributed_delta_params
-    ns = NeuralSimulation(**distributed_delta_params)
-
-    # ns.run_distributed_synaptic_simulation(-0.5, 'homogeneous', 'uniform', 0)
-    ns.sum_shape_functions_classic()
+    from param_dicts import shape_function_params
+    shape_function_params.update({'mu': -0.5, 'input_region': 'basal', 'distribution': 'linear_decrease', 'cell_number': 0})
+    ns = NeuralSimulation(**shape_function_params)
+    ns.run_distributed_synaptic_simulation()
 

@@ -1,14 +1,27 @@
-import numpy as np
+from __future__ import division
 import os
 from os.path import join
+from suppress_print import suppress_stdout_stderr
+with suppress_stdout_stderr():
+     import neuron
 if 'DISPLAY' not in os.environ:
     import matplotlib
     matplotlib.use('Agg')
     at_stallo = True
 else:
     at_stallo = False
-
+import numpy as np
 username = os.getenv('USER')
+
+"""
+    TODO: dt = 2**-3, end_T = 2**10 - dt
+    Uniform, 0.0, basal input
+    Understand how G0 and G1 works first!
+    Don't use Welch at all?
+    Turn of smoothing in coherence calc
+    Can I use dt = 2**-3 if I increase synaptic time? Does it still look white?
+    Use first 100 population cells to calculate shape function?
+"""
 
 if at_stallo:
     root_folder = join('/global', 'work', username, 'aPop')
@@ -29,34 +42,35 @@ electrode_parameters = {
 
 # Time resolution of 2**-4 is almost identical to 2**-5
 # root_folder = os.path.join(os.getenv('HOME'), 'work', 'aPop')
-distributed_delta_params = {'name': 'shape_function',
+dt = 2**-3
+shape_function_params = {'name': 'shape_function',
                             'input_type': 'distributed_delta',
-                            'timeres_NEURON': 2**-4,
+                            'timeres_NEURON': dt,
                             'cell_name': 'hay',
-                            'timeres_python': 2**-4,
-                            'cut_off': 200,
-                            'end_t': 10000, # 2**13 - dt
-                            'syn_tau': 0.1,
-                            'syn_weight': 1e-4,
+                            'timeres_python': dt,
+                            'cut_off': 2000,
+                            'end_t': 2**10 - dt,
+                            'syn_tau': dt * 3,
+                            'syn_weight': 1e-3,
                             'correlation': 0.0,
-                            'max_freq': 500,
-                            'holding_potential': -80,
-                            'conductance_type': 'generic',
-                            'save_folder': 'shape_function',
-                            'root_folder': root_folder,
-                            'electrode_parameters': electrode_parameters,
-                            'num_synapses': 1000,
-                             'input_firing_rate': 5,
-                             'input_regions': ['homogeneous', 'distal_tuft', 'basal'],
-                             'mus': [-0.5, 0.0, 2.0],
-                             'distributions': ['uniform', 'linear_increase', 'linear_decrease'],
-                            }
+                         'max_freq': 500,
+                         'holding_potential': -80,
+                         'conductance_type': 'generic',
+                         'save_folder': 'shape_function',
+                         'root_folder': root_folder,
+                         'electrode_parameters': electrode_parameters,
+                         'num_synapses': 1000,
+                         'input_firing_rate': 5,
+                         'input_regions': ['homogeneous', 'distal_tuft', 'basal'],
+                         'mus': [-0.5, 0.0, 2.0],
+                         'distributions': ['uniform', 'linear_increase', 'linear_decrease'],
+                         }
 
 vsd_params = {'input_type': 'distributed_delta',
                             'timeres_NEURON': 2**-4,
                             'cell_name': 'hay',
                             'timeres_python': 2**-4,
-                            'cut_off': 100,
+                            'cut_off': 2000,
                             'end_t': 100,
                             'syn_tau': 0.1,
                             'syn_weight': 1e-3,
@@ -72,10 +86,10 @@ distributed_delta_classic_params = {'input_type': 'distributed_delta',
                             'timeres_NEURON': 2**-4,
                             'cell_name': 'hay',
                             'timeres_python': 2**-4,
-                            'cut_off': 200,
+                            'cut_off': 2000,
                             'end_t': 10000,
                             'syn_tau': 0.1,
-                            'syn_weight': 1e-4,
+                            'syn_weight': 1e-3,
                             'max_freq': 500,
                             'conductance_type': None,
                             'holding_potential': None,
@@ -102,10 +116,10 @@ generic_population_params = {'input_type': 'distributed_delta',
                              'population_radius': population_radius,
                              'population_radii': population_radii,
                              'layer_5_thickness': layer_5_thickness,
-                             'cut_off': 200,
-                             'end_t': 2000, #2048 - dt,
-                             'syn_tau': 0.1,
-                             'syn_weight': 1e-4,
+                             'cut_off': 2000,
+                             'end_t': 2**10 - dt,
+                             'syn_tau': dt * 3,
+                             'syn_weight': 1e-3,
                              'max_freq': 500,
                              'holding_potential': -80,
                              'conductance_type': 'generic',
@@ -122,12 +136,12 @@ generic_population_params = {'input_type': 'distributed_delta',
 
 
 asymmetry_params = {'input_type': 'distributed_asymmetry',
-                            'timeres_NEURON': 2**-4,
-                            'timeres_python': 2**-4,
-                            'cut_off': 200,
-                            'end_t': 10000,
+                            'timeres_NEURON': dt,
+                            'timeres_python': dt,
+                            'cut_off': 2000,
+                            'end_t': 2**10 - dt,
                             'syn_tau': 0.1,
-                            'syn_weight': 1e-4,
+                            'syn_weight': 1e-3,
                             'max_freq': 500,
                             'holding_potential': -80,
                             'conductance_type': 'generic',
@@ -137,5 +151,5 @@ asymmetry_params = {'input_type': 'distributed_asymmetry',
 
 if __name__ == '__main__':
     from NeuralSimulation import NeuralSimulation
-    generic_population_params.update({'input_region': 'homogeneous', 'mu': 0.0, 'correlation': 0.0, 'cell_number': 0})
+    generic_population_params.update({'input_region': 'distal_tuft', 'mu': 0.0, 'correlation': 0.0, 'cell_number': 0})
     ns = NeuralSimulation(**generic_population_params)

@@ -1,4 +1,5 @@
 from __future__ import division
+import param_dicts
 import os
 import sys
 from os.path import join
@@ -20,6 +21,7 @@ def plot_all_shape_functions(params):
         for input_region in secs:
             for distribution in dists:
                 for mu in mus:
+                    print input_region, distribution, mu
                     params.update({'input_region': input_region,
                                    'cell_number': 0,
                                    'mu': mu,
@@ -70,11 +72,11 @@ def return_r_star(F, r):
 
 
 def plot_F(params, sim_name):
-    sim_folder = join(params['root_folder'], params['save_folder'], 'simulations')
     figure_folder = join(params['root_folder'], params['save_folder'])
-    max_freq = params['max_freq']
+    sim_folder = join(params['root_folder'], params['save_folder'], 'simulations')
     F = np.load(join(sim_folder, 'F_%s.npy' % sim_name))
     freqs = np.load(join(sim_folder, 'welch_freqs.npy'))
+    max_freq = params['max_freq']
     cut_idx_freq = np.argmin(np.abs(freqs - max_freq)) + 1
 
     plot_freqs = [1, 15, 50, 100, 500]
@@ -85,7 +87,7 @@ def plot_F(params, sim_name):
 
     elec_x = params['electrode_parameters']['x']
     elec_z = params['electrode_parameters']['z']
-    im_dict = {'cmap': 'hot', 'norm': LogNorm(), 'vmin': 1e-16, 'vmax': 1.e-10}
+    im_dict = {'cmap': 'hot', 'norm': LogNorm(), 'vmin': 1e-10, 'vmax': 1.e-4}
     ax_dict = {'xscale': 'log', 'yscale': 'log', 'xlim': [10, 1000], 'ylim': [1, 500],
                }
     plt.close('all')
@@ -96,19 +98,19 @@ def plot_F(params, sim_name):
 
     f_clr = lambda idx: plt.cm.Blues(0.1 + idx / len(plot_freqs))
 
-    ax_f_apic = fig.add_subplot(3, 8, 5, xlim=[10, 1000], ylim=[1e-16, 1e-10],
-                                ylabel='mV$^2$/Hz', xlabel='distance ($\mu$m)')
-    ax_f_middle = fig.add_subplot(3, 8, 13, xlim=[10, 1000], ylim=[1e-16, 1e-10],
-                                  ylabel='mV$^2$/Hz', xlabel='distance ($\mu$m)')
-    ax_f_soma = fig.add_subplot(3, 8, 21, xlim=[10, 1000], ylim=[1e-16, 1e-10],
-                                ylabel='mV$^2$/Hz', xlabel='distance ($\mu$m)')
+    ax_f_apic = fig.add_subplot(3, 8, 5, xlim=[10, 1000], ylim=[1e-10, 1e-4],
+                                ylabel='$\mu$V$^2$/Hz', xlabel='distance ($\mu$m)')
+    ax_f_middle = fig.add_subplot(3, 8, 13, xlim=[10, 1000], ylim=[1e-10, 1e-4],
+                                  ylabel='$\mu$V$^2$/Hz', xlabel='distance ($\mu$m)')
+    ax_f_soma = fig.add_subplot(3, 8, 21, xlim=[10, 1000], ylim=[1e-10, 1e-4],
+                                ylabel='$\mu$V$^2$/Hz', xlabel='distance ($\mu$m)')
 
     ax_r_apic = fig.add_subplot(3, 8, 6, xlim=[1, 500], ylim=[10, 400],
-                                ylabel='r$_*$', xlabel='frequency (Hz')
+                                ylabel='r$_*$', xlabel='frequency (Hz)')
     ax_r_middle = fig.add_subplot(3, 8, 14, xlim=[1, 500], ylim=[10, 400],
-                                  ylabel='r$_*$', xlabel='frequency (Hz')
+                                  ylabel='r$_*$', xlabel='frequency (Hz)')
     ax_r_soma = fig.add_subplot(3, 8, 22, xlim=[1, 500], ylim=[10, 400],
-                                ylabel='r$_*$', xlabel='frequency (Hz')
+                                ylabel='r$_*$', xlabel='frequency (Hz)')
 
     lines = []
     line_names = []
@@ -155,16 +157,16 @@ def plot_F(params, sim_name):
         line_names.append('%d Hz' % plot_freqs[id])
     plt.subplot(344, title='Apical region', **ax_dict)
     plt.pcolormesh(elec_x[:30], freqs, F.reshape(3, 30, cut_idx_freq)[0].T, **im_dict)
-    plt.colorbar(label='mV$^2$/Hz')
+    plt.colorbar(label='$\mu$V$^2$/Hz')
     fig.legend(lines, line_names, frameon=False, loc='lower center', ncol=len(plot_freqs))
 
     plt.subplot(348, title='Middle region', **ax_dict)
     plt.pcolormesh(elec_x[:30], freqs, F.reshape(3, 30, cut_idx_freq)[1].T, **im_dict)
-    plt.colorbar(label='mV$^2$/Hz')
+    plt.colorbar(label='$\mu$V$^2$/Hz')
 
     plt.subplot(3, 4, 12, title='Soma region', xlabel='distance ($\mu$m)', ylabel='frequency (Hz)', **ax_dict)
     plt.pcolormesh(elec_x[:30], freqs, F.reshape(3, 30, cut_idx_freq)[2].T, **im_dict)
-    plt.colorbar(label='mV$^2$/Hz')
+    plt.colorbar(label='$\mu$V$^2$/Hz')
 
     scale = 'log'
     cell_ax = fig.add_subplot(1, 4, 1, aspect=1, frameon=False, xticks=[], yticks=[])
@@ -210,19 +212,19 @@ def plot_F(params, sim_name):
         row, col = _return_elec_row_col(elec, elec_x, elec_z)
 
         all_elec_ax[row].loglog(freqs, F[elec, :], color=clr, lw=1)
-        all_elec_n_ax[row].loglog(freqs, F[elec, :] / np.max(F[elec, :]), color=clr, lw=1)
+        all_elec_n_ax[row].loglog(freqs, F[elec, :] / np.max(F[elec, 1:]), color=clr, lw=1)
 
     [ax.grid(True) for ax in all_elec_ax + all_elec_n_ax]
-    [ax.set_ylabel('mV$^2$/Hz') for ax in all_elec_ax]
+    [ax.set_ylabel('$\mu$V$^2$/Hz') for ax in all_elec_ax]
     [ax.set_xlabel('Hz') for ax in all_elec_ax + all_elec_n_ax]
     simplify_axes(all_elec_ax + all_elec_n_ax + [ax_f_apic, ax_f_middle, ax_f_soma] + [ax_r_apic, ax_r_middle, ax_r_soma])
     for ax in all_elec_ax + all_elec_n_ax:
-        max_exponent = np.ceil(np.log10(np.max([np.max(l.get_ydata()) for l in ax.get_lines()])))
+        max_exponent = np.ceil(np.log10(np.max([np.max(l.get_ydata()[1:]) for l in ax.get_lines()])))
         ax.set_ylim([10**(max_exponent - 4), 10**max_exponent])
     fig.suptitle(sim_name)
     fig.savefig(join(figure_folder, 'F_%s.png' % sim_name))
 
 
 if __name__ == '__main__':
-    from param_dicts import distributed_delta_params
-    plot_all_shape_functions(distributed_delta_params)
+    from param_dicts import shape_function_params
+    plot_all_shape_functions(shape_function_params)

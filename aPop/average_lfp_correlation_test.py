@@ -1,4 +1,5 @@
 import os
+import param_dicts
 from os.path import join
 if 'DISPLAY' not in os.environ:
     import matplotlib
@@ -97,7 +98,7 @@ def calculate_average_coherence(param_dict, mu, input_region, distribution, corr
     print name
     # normalize = lambda sig: (sig - np.average(sig, axis=1).reshape(90, 1))/np.std(sig, axis=1).reshape(90, 1)
 
-    freq_c_phi, c_phi = average_coherence(num_cells, ns.timeres_python, 15, param_dict)
+    freq_c_phi, c_phi = average_coherence(num_cells, ns.timeres_python, None, param_dict)
 
     # pairs = np.random.random_integers(num_cells, size=(num_pairs, 2)) - 1
     # c_mean = np.array([])
