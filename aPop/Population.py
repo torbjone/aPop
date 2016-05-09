@@ -269,7 +269,7 @@ def sum_population_mpi(param_dict):
     status = MPI.Status()   # get MPI status object
     num_workers = size - 1
     num_cells = 2000
-    num_tsteps = round(param_dict['end_t']/param_dict['timeres_python'] + 1)
+    num_tsteps = int(round(param_dict['end_t']/param_dict['timeres_python'] + 1))
 
     if size == 1:
         print "Can't do MPI with one core!"
