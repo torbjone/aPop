@@ -6,7 +6,7 @@ with suppress_stdout_stderr():
      import neuron
 if 'DISPLAY' not in os.environ:
     import matplotlib
-    matplotlib.use('Agg')
+    matplotlib.use('Agg', warn=False)
     at_stallo = True
 else:
     at_stallo = False
