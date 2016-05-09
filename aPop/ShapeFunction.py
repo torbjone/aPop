@@ -3,7 +3,7 @@ import param_dicts
 import os
 if 'DISPLAY' not in os.environ:
     import matplotlib
-    matplotlib.use('Agg')
+    matplotlib.use('Agg', warn=False)
     at_stallo = True
 else:
     at_stallo = False
