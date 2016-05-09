@@ -15,6 +15,7 @@ import LFPy
 import sys
 from NeuralSimulation import NeuralSimulation
 import tools
+import scipy.fftpack as sf
 
 def return_elec_row_col(elec_number, elec_x, elec_z):
     """ Return the subplot number for the distance study
@@ -29,9 +30,9 @@ def plot_population_LFP(param_dict):
 
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
 
-    for input_region in param_dict['input_regions'][2:]:
-        for distribution in param_dict['distributions'][:1]:
-            for correlation in param_dict['correlations'][::2]:
+    for input_region in param_dict['input_regions']:
+        for distribution in param_dict['distributions']:
+            for correlation in param_dict['correlations']:
                 param_dict.update({'input_region': input_region,
                                'cell_number': 0,
                                'distribution': distribution,
@@ -41,8 +42,8 @@ def plot_population_LFP(param_dict):
                 param_dict['mu'] = 0.0
                 ns = NeuralSimulation(**param_dict)
                 name = 'summed_signal_%s_350um' % ns.population_sim_name
-                coherence = np.load(join(ns.sim_folder, 'trick_coherence_%s.npy' % ns.population_sim_name))
-                coherence_freq = np.load(join(ns.sim_folder, 'trick_coherence_freq_%s.npy' % ns.population_sim_name))
+                # coherence = np.load(join(ns.sim_folder, 'trick_coherence_%s.npy' % ns.population_sim_name))
+                # coherence_freq = np.load(join(ns.sim_folder, 'trick_coherence_freq_%s.npy' % ns.population_sim_name))
 
 
                 sim_folder = join(param_dict['root_folder'], 'shape_function', 'simulations')
@@ -50,18 +51,17 @@ def plot_population_LFP(param_dict):
                 F = np.load(join(sim_folder, 'F_%s.npy' % F_name))
                 F_freq = np.load(join(sim_folder, 'welch_freqs.npy'))
 
-                print coherence.shape, F_freq.shape, coherence_freq.shape
-                print F_freq[1] - F_freq[0], coherence_freq[1] - coherence_freq[0]
+                # print coherence.shape, F_freq.shape, coherence_freq.shape
+                # print F_freq[1] - F_freq[0], coherence_freq[1] - coherence_freq[0]
 
-                print F_freq, coherence_freq
+                # print F_freq, coherence_freq
 
-                bin_psd = np.zeros(len(mlab_freqs))
-                df = mlab_freqs[1] - mlab_freqs[0]
-                print name
-                for m, mfreq in enumerate(mlab_freqs):
+                # bin_psd = np.zeros(len(mlab_freqs))
+                # df = mlab_freqs[1] - mlab_freqs[0]
+                # print name
+                # for m, mfreq in enumerate(mlab_freqs):
                     # print mfreq - df/2, mfreq, mfreq + df/2, freqs[(freqs >= mfreq - df/2) & (freqs < mfreq + df/2)]
-                    bin_psd[m] = np.average(ff_psd[(freqs >= mfreq - df/2) & (freqs < mfreq + df/2)])
-
+                    # bin_psd[m] = np.average(ff_psd[(freqs >= mfreq - df/2) & (freqs < mfreq + df/2)])
 
 
                 param_dict['mu'] = -0.5
@@ -71,8 +71,7 @@ def plot_population_LFP(param_dict):
                 param_dict['mu'] = 2.0
                 ns = NeuralSimulation(**param_dict)
                 name_res = 'summed_signal_%s_350um' % ns.population_sim_name
-
-
+                # print name_res
 
                 xmid = np.load(join(folder, 'xmid_hay_generic.npy'))
                 zmid = np.load(join(folder, 'zmid_hay_generic.npy'))
@@ -86,6 +85,10 @@ def plot_population_LFP(param_dict):
                 lfp = np.load(join(folder, '%s.npy' % name))
                 lfp_reg = np.load(join(folder, '%s.npy' % name_reg))
                 lfp_res = np.load(join(folder, '%s.npy' % name_res))
+
+                # print lfp - lfp_res
+                # print lfp_res
+
                 elec_x = param_dict['electrode_parameters']['x']
                 elec_z = param_dict['electrode_parameters']['z']
                 # print elec_x.reshape(3, 30)
@@ -107,14 +110,14 @@ def plot_population_LFP(param_dict):
                         continue
                     num_plot_cols = col_cut_off/4 + 2
                     plot_number = row * num_plot_cols + col/4 + 2
-                    ax = fig.add_subplot(3, num_plot_cols, plot_number, aspect=0.5, ylim=[1e-14, 1e-6], xlim=[1e0, 5e2],
+                    ax = fig.add_subplot(3, num_plot_cols, plot_number, aspect=0.5, ylim=[1e-9, 1e-0], xlim=[1e0, 5e2],
                                          title='%1.1f $\mu$m' % (elec_x[elec]))
-                    freq, psd = tools.return_freq_and_psd_welch(lfp[elec], ns.welch_dict)
-                    # freq, psd_reg = tools.return_freq_and_psd_welch(lfp_reg[elec], ns.welch_dict)
-                    # freq, psd_res = tools.return_freq_and_psd_welch(lfp_res[elec], ns.welch_dict)
+                    freq, psd = tools.return_freq_and_psd(ns.timeres_python/1000., lfp[elec])
+                    freq, psd_reg = tools.return_freq_and_psd(ns.timeres_python/1000.,  lfp_reg[elec])
+                    freq, psd_res = tools.return_freq_and_psd(ns.timeres_python/1000., lfp_res[elec])
                     ax.loglog(freq, psd[0], 'k')
-                    # ax.loglog(freq, psd_reg[0], 'r')
-                    # ax.loglog(freq, psd_res[0], 'b')
+                    ax.loglog(freq, psd_reg[0], 'r')
+                    ax.loglog(freq, psd_res[0], 'b')
 
                 plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], '%s.png' % name))
                 plt.close('all')
@@ -171,50 +174,165 @@ def plot_population(param_dict):
                      'population_%s.png' % param_dict['name']))
 
 
+def sum_one_population(param_dict, num_cells, num_tsteps):
+
+    x_y_z_rot = np.load(os.path.join(param_dict['root_folder'], param_dict['save_folder'],
+                             'x_y_z_rot_%s.npy' % param_dict['name']))
+    summed_sig = np.zeros((len(param_dict['electrode_parameters']['x']), num_tsteps))
+    # Cells are numbered with increasing distance from population center. We exploit this
+    subpopulation_idx = 0
+    ns = None
+    pop_radius = 0
+
+    sample_freq = sf.fftfreq(num_tsteps, d=param_dict['timeres_python'] / 1000.)
+    pidxs = np.where(sample_freq >= 0)
+    # freqs = sample_freq[pidxs]
+    xfft_norm_sum = np.zeros((len(param_dict['electrode_parameters']['x']), len(pidxs[0])), dtype=complex)
+
+    for cell_number in xrange(num_cells):
+        param_dict.update({'cell_number': cell_number})
+
+        r = np.sqrt(x_y_z_rot[cell_number, 0]**2 + x_y_z_rot[cell_number, 1]**2)
+        pop_radius = param_dict['population_radii'][subpopulation_idx]
+
+        ns = NeuralSimulation(**param_dict)
+        sim_name = ns.sim_name
+        lfp = 1000 * np.load(join(ns.sim_folder, 'sig_%s.npy' % sim_name))  # uV
+        s = sf.fft(lfp, axis=1)[:, pidxs[0]]
+        s_norm = s / np.abs(s)
+
+        # freqs, lfp_psd = tools.return_freq_and_psd_welch(lfp[:, :], ns.welch_dict)
+        if not summed_sig.shape == lfp.shape:
+            print "Reshaping LFP time signal", lfp.shape
+            summed_sig = np.zeros(lfp.shape)
+
+        if not xfft_norm_sum.shape == s_norm.shape:
+            print "Reshaping coherence signal", xfft_norm_sum.shape, s_norm.shape
+            xfft_norm_sum = np.zeros(s_norm.shape)
+
+        xfft_norm_sum[:] += s_norm[:]
+
+        if r > pop_radius:
+            print "Saving population of radius ", pop_radius
+            print "r(-1): ", np.sqrt(x_y_z_rot[cell_number - 1, 0]**2 + x_y_z_rot[cell_number - 1, 1]**2)
+            print "r: ", r
+            np.save(join(ns.sim_folder, 'summed_signal_%s_%dum.npy' %
+                         (ns.population_sim_name, pop_radius)), summed_sig)
+            subpopulation_idx += 1
+        summed_sig += lfp
+    print "Saving population of radius ", pop_radius
+    np.save(join(ns.sim_folder, 'summed_signal_%s_%dum.npy' %
+                 (ns.population_sim_name, pop_radius)), summed_sig)
+
+    c_phi = (np.abs(xfft_norm_sum) ** 2 - num_cells) / (num_cells * (num_cells - 1))
+    np.save(join(ns.sim_folder, 'c_phi_%s.npy' % ns.population_sim_name), c_phi)
+    # plot_summed_signal(summed_sig)
+
+
 def sum_population_generic(param_dict):
 
     x_y_z_rot = np.load(os.path.join(param_dict['root_folder'], param_dict['save_folder'],
                          'x_y_z_rot_%s.npy' % param_dict['name']))
-    print param_dict['population_radii']
-    num_cells = 1000
+    # print param_dict['population_radii']
+    num_cells = 2000
     num_tsteps = round(param_dict['end_t']/param_dict['timeres_python'] + 1)
     for input_region in param_dict['input_regions']:
+        param_dict.update({'input_region': input_region})
         for distribution in param_dict['distributions']:
+            param_dict.update({'distribution': distribution})
             for mu in param_dict['mus']:
+                param_dict.update({'mu': mu})
                 for correlation in param_dict['correlations']:
+                    param_dict.update({'correlation': correlation})
                     print input_region, distribution, mu, correlation
-                    summed_sig = np.zeros((len(param_dict['electrode_parameters']['x']), num_tsteps))
-                    # Cells are numbered with increasing distance from population center. We exploit this
-                    subpopulation_idx = 0
-                    for cell_number in xrange(num_cells):
-                        r = np.sqrt(x_y_z_rot[cell_number, 0]**2 + x_y_z_rot[cell_number, 1]**2)
-                        pop_radius = param_dict['population_radii'][subpopulation_idx]
-                        param_dict.update({'input_region': input_region,
-                                           'cell_number': cell_number,
-                                           'mu': mu,
-                                           'distribution': distribution,
-                                           'correlation': correlation})
-                        ns = NeuralSimulation(**param_dict)
-                        sim_name = ns.sim_name
-                        lfp = 1000 * np.load(join(ns.sim_folder, 'sig_%s.npy' % sim_name))
-                        # freqs, lfp_psd = tools.return_freq_and_psd_welch(lfp[:, :], ns.welch_dict)
-                        if not summed_sig.shape == lfp.shape:
-                            print "Reshaping ", lfp.shape
-                            summed_sig = np.zeros(lfp.shape)
+                    sum_one_population(param_dict, num_cells, x_y_z_rot, num_tsteps)
 
-                        if r > pop_radius:
-                            print "Saving population of radius ", pop_radius
-                            print "r(-1): ", np.sqrt(x_y_z_rot[cell_number - 1, 0]**2 + x_y_z_rot[cell_number - 1, 1]**2)
-                            print "r: ", r
-                            np.save(join(ns.sim_folder, 'summed_signal_%s_%dum.npy' %
-                                         (ns.population_sim_name, pop_radius)), summed_sig)
-                            subpopulation_idx += 1
-                        summed_sig += lfp
-                    print "Saving population of radius ", pop_radius
-                    np.save(join(ns.sim_folder, 'summed_signal_%s_%dum.npy' %
-                                 (ns.population_sim_name, pop_radius)), summed_sig)
-                    # plot_summed_signal(summed_sig)
 
+def sum_population_mpi(param_dict):
+    """ Run with
+        mpirun -np 4 python example_mpi.py
+    """
+    from mpi4py import MPI
+
+    class Tags:
+        def __init__(self):
+            self.READY = 0
+            self.DONE = 1
+            self.EXIT = 2
+            self.START = 3
+            self.ERROR = 4
+    tags = Tags()
+    # Initializations and preliminaries
+    comm = MPI.COMM_WORLD   # get MPI communicator object
+    size = comm.size        # total number of processes
+    rank = comm.rank        # rank of this process
+    status = MPI.Status()   # get MPI status object
+    num_workers = size - 1
+    num_cells = 2000
+    num_tsteps = round(param_dict['end_t']/param_dict['timeres_python'] + 1)
+
+    if size == 1:
+        print "Can't do MPI with one core!"
+        sys.exit()
+
+    if rank == 0:
+
+        print("\033[95m Master starting with %d workers\033[0m" % num_workers)
+
+        task = 0
+        num_tasks = (len(param_dict['input_regions']) * len(param_dict['mus']) *
+                     len(param_dict['distributions']) * len(param_dict['correlations']))
+
+        # print param_dict['population_radii']
+
+        for input_region in param_dict['input_regions']:
+            param_dict.update({'input_region': input_region})
+            for distribution in param_dict['distributions']:
+                param_dict.update({'distribution': distribution})
+                for mu in param_dict['mus']:
+                    param_dict.update({'mu': mu})
+                    for correlation in param_dict['correlations']:
+                        param_dict.update({'correlation': correlation})
+                        print input_region, distribution, mu, correlation
+                        task += 1
+                        sent = False
+                        while not sent:
+                            data = comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
+                            source = status.Get_source()
+                            tag = status.Get_tag()
+                            if tag == tags.READY:
+                                comm.send([param_dict], dest=source, tag=tags.START)
+                                print "\033[95m Sending task %d/%d to worker %d\033[0m" % (task, num_tasks, source)
+                                sent = True
+                            elif tag == tags.DONE:
+                                print "\033[95m Worker %d completed task %d/%d\033[0m" % (source, task, num_tasks)
+                            elif tag == tags.ERROR:
+                                print "\033[91mMaster detected ERROR at node %d. Aborting...\033[0m" % source
+                                for worker in range(1, num_workers + 1):
+                                    comm.send([None], dest=worker, tag=tags.EXIT)
+                                sys.exit()
+
+        for worker in range(1, num_workers + 1):
+            comm.send([None], dest=worker, tag=tags.EXIT)
+        print("\033[95m Master finishing\033[0m")
+    else:
+        while True:
+            comm.send(None, dest=0, tag=tags.READY)
+            [param_dict] = comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
+            tag = status.Get_tag()
+            if tag == tags.START:
+                # Do the work here
+                try:
+                    sum_one_population(param_dict, num_cells, num_tsteps)
+                except:
+                    print "\033[91mNode %d exiting with ERROR\033[0m" % rank
+                    comm.send(None, dest=0, tag=tags.ERROR)
+                    sys.exit()
+                comm.send(None, dest=0, tag=tags.DONE)
+            elif tag == tags.EXIT:
+                print "\033[93m%d exiting\033[0m" % rank
+                break
+        comm.send(None, dest=0, tag=tags.EXIT)
 
 def PopulationMPI():
     """ Run with
@@ -337,4 +455,5 @@ if __name__ == '__main__':
     elif len(sys.argv) == 2 and sys.argv[1] == 'MPI':
         PopulationMPI()
     elif len(sys.argv) == 2 and sys.argv[1] == 'sum':
-        sum_population_generic(param_dict)
+        sum_population_mpi(param_dict)
+        # sum_population_generic(param_dict)

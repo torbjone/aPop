@@ -40,14 +40,14 @@ def average_coherence(num_cells, timestep, smooth, param_dict):
     # xfft_norm_sum = xfft_norm.sum(axis=0)
     c_phi = (np.abs(xfft_norm_sum) ** 2 - num_cells) / (num_cells * (num_cells - 1))
 
-    if smooth is None:
-        return freqs, c_phi
-    else:
-        smooth_freq = np.convolve(np.ones(smooth, 'd')/smooth, freqs, mode='valid')
-        smooth_c_phi = np.zeros((c_phi.shape[0], len(smooth_freq)))
-        for elec in range(c_phi.shape[0]):
-            smooth_c_phi[elec, :] = np.convolve(np.ones(smooth, 'd')/smooth, c_phi[elec, :], mode='valid')
-        return smooth_freq, smooth_c_phi
+    # if smooth is None:
+    return freqs, c_phi
+    # else:
+    #     smooth_freq = np.convolve(np.ones(smooth, 'd')/smooth, freqs, mode='valid')
+    #     smooth_c_phi = np.zeros((c_phi.shape[0], len(smooth_freq)))
+    #     for elec in range(c_phi.shape[0]):
+    #         smooth_c_phi[elec, :] = np.convolve(np.ones(smooth, 'd')/smooth, c_phi[elec, :], mode='valid')
+    #     return smooth_freq, smooth_c_phi
 
 
 def plot_sig_to_elec_grid(x, y):
