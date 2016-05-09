@@ -254,7 +254,7 @@ if __name__ == '__main__':
     if len(sys.argv) == 5:
         cell_number = int(sys.argv[4])
         input_region = sys.argv[2]
-        if conductance is 'generic':
+        if conductance == 'generic':
             from param_dicts import shape_function_params
             mu = float(sys.argv[1])
             distribution = sys.argv[3]
@@ -278,7 +278,7 @@ if __name__ == '__main__':
         from param_dicts import distributed_delta_classic_params
         ShapeFunctionMPIclassic(distributed_delta_classic_params)
     elif len(sys.argv) == 2 and sys.argv[1] == 'sum':
-        if conductance is 'generic':
+        if conductance == 'generic':
             from param_dicts import shape_function_params
             sum_all_shape_functions_generic(shape_function_params)
         else:

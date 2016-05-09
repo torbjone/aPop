@@ -67,7 +67,8 @@ class NeuralSimulation:
                            # 'scale_by_freq': True,
                            }
     def get_simulation_name(self):
-        if self.conductance_type is 'generic':
+        if self.conductance_type == 'generic':
+
             conductance = '%s_%s_%1.1f' % (self.conductance_type, self.distribution, self.mu)
         else:
             conductance = self.conductance_type
@@ -94,7 +95,7 @@ class NeuralSimulation:
 
         if self.cell_name != 'hay':
             raise NotImplementedError("Only works for Hay cell at the moment")
-        if self.conductance_type is 'generic':
+        if self.conductance_type == 'generic':
             # print "Loading Hay"
             sys.path.append(join(self.neuron_models, 'hay'))
             from hay_active_declarations import active_declarations
@@ -402,7 +403,7 @@ class NeuralSimulation:
         cell_ax.plot(cell.xmid[apic_idx], cell.zmid[apic_idx], 'D', ms=10, c=apic_clr)
         cell_ax.plot(cell.xmid[middle_idx], cell.zmid[middle_idx], 'D', ms=10, c=middle_clr)
         cell_ax.plot(cell.xmid[soma_idx], cell.zmid[soma_idx], 'D', ms=10, c=soma_clr)
-        # if self.conductance_type is 'generic':
+        # if self.conductance_type == 'generic':
         #     sim_name = '%s_%s_%s_%s_%+1.1f_%1.5fuS_%05d' % (self.cell_name, self.input_type,
         #                                                 input_region, distribution, mu,
         #                                                 self.param_dict['syn_weight'], cell_number)
@@ -413,7 +414,7 @@ class NeuralSimulation:
         fig.suptitle(self.sim_name)
         LFP = 1000 * electrode.LFP#np.load(join(self.sim_folder, 'sig_%s.npy' % sim_name))[:, :]
 
-        if self.input_type is 'distributed_delta':
+        if self.input_type == 'distributed_delta':
             # freqs, sig_psd = tools.return_freq_and_psd_welch(LFP, self.welch_dict)
             freqs, sig_psd = tools.return_freq_and_psd(self.timeres_python/1000., LFP)
         else:
@@ -549,7 +550,7 @@ class NeuralSimulation:
         scale = 'log'
         cell_ax = fig.add_subplot(1, 3, 1, aspect=1, frameon=False, xticks=[], yticks=[])
 
-        if self.conductance_type is 'generic':
+        if self.conductance_type == 'generic':
             xmid = np.load(join(self.sim_folder, 'xmid_hay_generic.npy'))
             zmid = np.load(join(self.sim_folder, 'zmid_hay_generic.npy'))
             xstart = np.load(join(self.sim_folder, 'xstart_hay_generic.npy'))

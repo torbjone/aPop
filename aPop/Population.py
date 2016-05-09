@@ -417,7 +417,7 @@ def PopulationMPI():
 
 if __name__ == '__main__':
     conductance = 'generic'
-    if conductance is 'generic':
+    if conductance == 'generic':
         from param_dicts import generic_population_params as param_dict
     else:
         from param_dicts import classic_population_params as param_dict
@@ -429,7 +429,7 @@ if __name__ == '__main__':
         cell_number = int(sys.argv[3])
         input_region = sys.argv[1]
         correlation = float(sys.argv[2])
-        if conductance is 'generic':
+        if conductance == 'generic':
             distribution = sys.argv[4]
             mu = float(sys.argv[5])
             param_dict.update({'input_region': input_region,
