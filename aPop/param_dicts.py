@@ -13,13 +13,6 @@ else:
 import numpy as np
 username = os.getenv('USER')
 
-"""
-    TODO: dt = 2**-3, end_T = 2**10 - dt
-    Uniform, 0.0, basal input
-    Understand how G0 and G1 works first!
-    Don't use Welch at all?
-    Turn of smoothing in coherence calc
-"""
 
 if at_stallo:
     root_folder = join('/global', 'work', username, 'aPop')
@@ -126,9 +119,9 @@ generic_population_params = {'input_type': 'distributed_delta',
                              'root_folder': root_folder,
                              'num_synapses': 1000,
                              'input_firing_rate': 5,
-                             'input_regions': ['homogeneous', 'distal_tuft', 'basal'][2:],
+                             'input_regions': ['homogeneous', 'distal_tuft', 'basal'],
                              'mus': [-0.5, 0.0, 2.0],
-                             'distributions': ['uniform', 'linear_increase', 'linear_decrease'][:1],
+                             'distributions': ['uniform', 'linear_increase', 'linear_decrease'],
                              'correlations': [0.0, 0.1, 1.0]
                              }
 

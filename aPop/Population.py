@@ -46,142 +46,6 @@ def plot_sig_to_elec_grid(x, y):
         # plt.loglog(x2, y2[bottom_idxs[col]])
 
 
-
-def plot_simple_model_LFP(param_dict):
-
-    folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
-    pop_size = 500
-    max_freq = param_dict['max_freq']
-
-
-    for input_region in param_dict['input_regions']:
-        for distribution in param_dict['distributions']:
-            for correlation in param_dict['correlations']:
-                param_dict.update({'input_region': input_region,
-                               'cell_number': 0,
-                               'distribution': distribution,
-                               'correlation': correlation,
-                               })
-
-
-                param_dict['mu'] = 0.0
-                ns = NeuralSimulation(**param_dict)
-                name = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
-                c_phi = np.load(join(ns.sim_folder, 'c_phi_%s.npy' % ns.population_sim_name))
-
-                sim_folder = join(param_dict['root_folder'], 'shape_function', 'simulations')
-
-                F_name = 'F_shape_function_hay_%s_%s_%s_%1.1f_%1.2f' % (input_region, ns.conductance_type,
-                                                                        distribution, param_dict['mu'], 0.0)
-                r_star_soma_name = 'r_star_soma_shape_function_hay_%s_%s_%s_%1.1f_%1.2f' % (input_region, ns.conductance_type,
-                                                                        distribution, param_dict['mu'], 0.0)
-                F = np.load(join(sim_folder, '%s.npy' % F_name))
-                freqs = np.load(join(sim_folder, 'freqs.npy'))
-                cut_idx_freq = np.argmin(np.abs(freqs - max_freq)) + 1
-                plt.close('all')
-                fig = plt.figure()
-                plot_sig_to_elec_grid(freqs, c_phi)
-                plt.savefig(join(ns.figure_folder, 'coherence_%s.png' % name))
-                # print c_phi.shape, F.shape
-                r_star_soma = np.load(join(sim_folder, '%s.npy' % r_star_soma_name))
-                # r_star_apic = np.load(join(sim_folder, '%s.npy' % r_star_soma_name))
-                # r_star_soma = np.load(join(sim_folder, '%s.npy' % r_star_soma_name))
-                F0_soma = F[30, :]
-
-                G0 = np.zeros(F.shape)
-                G1 = np.zeros(F.shape)
-                rho = 3000. * 1e-6
-                r_e = param_dict['electrode_parameters']['x'][0]
-                for r_idx, dist in enumerate(param_dict['electrode_parameters']['x']):
-                    if param_dict['electrode_parameters']['z'][r_idx] > 10:
-                        # print "skip row", r_idx
-                        continue
-                    for f_idx, freq in enumerate(freqs[:cut_idx_freq]):
-                        if dist <= r_star_soma[f_idx]:
-                            G0[r_idx, f_idx] = F0_soma[f_idx] * rho * np.pi * r_e * (2 * dist - r_e)
-                        else:
-                            G0[r_idx, f_idx] = F0_soma[f_idx] * rho * np.pi * r_e * (3*r_star_soma[f_idx] - r_e - r_star_soma[f_idx]**3 / dist**2)
-
-                        if dist <= r_star_soma[f_idx]:
-                            G1[r_idx, f_idx] = 1./9 * F0_soma[f_idx] * rho ** 2 * np.pi**2 * (r_e**2 - 4 * r_e**0.5 * dist**(3./2))**2
-                        else:
-                            G1[r_idx, f_idx] = 1./9 * F0_soma[f_idx] * rho ** 2 * np.pi**2 * r_e * (r_e**(3./2) - (4 + 6. * np.log(dist/r_star_soma[f_idx])) * r_star_soma[f_idx]**(3./2))**2
-
-                print c_phi.shape, G0.shape
-                P = (1. - c_phi[60, :]) * G0 + c_phi[60, :] * G1
-                print G1[60, :], G0[60, :], c_phi[60, :], P[60, :]
-                # print P[60, :]
-                param_dict['mu'] = -0.5
-                ns = NeuralSimulation(**param_dict)
-                name_reg = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
-
-                param_dict['mu'] = 2.0
-                ns = NeuralSimulation(**param_dict)
-                name_res = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
-                # print name_res
-
-                xmid = np.load(join(folder, 'xmid_hay_generic.npy'))
-                zmid = np.load(join(folder, 'zmid_hay_generic.npy'))
-                xstart = np.load(join(folder, 'xstart_hay_generic.npy'))
-                zstart = np.load(join(folder, 'zstart_hay_generic.npy'))
-                xend = np.load(join(folder, 'xend_hay_generic.npy'))
-                zend = np.load(join(folder, 'zend_hay_generic.npy'))
-
-                synidx = np.load(join(folder, 'synidx_%s.npy' % ns.sim_name))
-
-                lfp = np.load(join(folder, '%s.npy' % name))
-                lfp_reg = np.load(join(folder, '%s.npy' % name_reg))
-                lfp_res = np.load(join(folder, '%s.npy' % name_res))
-                # print P[60, :]
-                # print lfp[60, :]
-                # print lfp - lfp_res
-                # print lfp_res
-
-                elec_x = param_dict['electrode_parameters']['x']
-                elec_z = param_dict['electrode_parameters']['z']
-                # print elec_x.reshape(3, 30)
-                # print elec_z.reshape(3, 30)
-                plt.close('all')
-                fig = plt.figure(figsize=(18, 10))
-                fig.suptitle(name)
-                ax_morph = fig.add_subplot(1, 6, 1, aspect=1, frameon=False, xticks=[])
-                [ax_morph.plot([xstart[idx], xend[idx]], [zstart[idx], zend[idx]], lw=1.5, color='0.5', zorder=0, alpha=1)
-                    for idx in xrange(len(xmid))]
-                ax_morph.plot(xmid[synidx], zmid[synidx], '.', c='green', ms=4)
-                fig.subplots_adjust(right=0.99, wspace=0.5, hspace=0.3)
-                num_elec_cols = 30
-                col_cut_off = 20
-
-                for elec in range(lfp.shape[0]):
-                    if not elec == 60:
-                        continue
-
-                    row, col = return_elec_row_col(elec, elec_x, elec_z)
-                    if col % 4 != 0 or col > col_cut_off:
-                        continue
-                    num_plot_cols = col_cut_off/4 + 2
-                    plot_number = row * num_plot_cols + col/4 + 2
-                    ax = fig.add_subplot(3, num_plot_cols, plot_number, aspect=0.5, ylim=[1e-9, 1e-0], xlim=[1e0, 5e2],
-                                         title='%1.1f $\mu$m' % (elec_x[elec]))
-
-                    freq, psd = tools.return_freq_and_psd(ns.timeres_python/1000., lfp[elec])
-                    freq, psd_reg = tools.return_freq_and_psd(ns.timeres_python/1000.,  lfp_reg[elec])
-                    freq, psd_res = tools.return_freq_and_psd(ns.timeres_python/1000., lfp_res[elec])
-
-                    ax.loglog(freq, psd[0], 'k.')
-                    ax.loglog(freq, P[elec], 'c--')
-
-                    # ax.loglog(freq, psd_reg[0], 'r')
-                    # ax.loglog(freq, psd_res[0], 'b')
-                    # if elec == 60:
-                    #     print psd[0]
-                    #     print P[elec]
-
-                plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], '%s.png' % name))
-                plt.close('all')
-                #sys.exit()
-
-
 def return_simple_model(param_dict, pop_size, ns):
 
     c_phi = np.load(join(ns.sim_folder, 'c_phi_%s.npy' % ns.population_sim_name))
@@ -418,7 +282,6 @@ def sum_one_population(param_dict, num_cells, num_tsteps):
 
     c_phi = (np.abs(xfft_norm_sum) ** 2 - num_cells) / (num_cells * (num_cells - 1))
     np.save(join(ns.sim_folder, 'c_phi_%s.npy' % ns.population_sim_name), c_phi)
-    # plot_summed_signal(summed_sig)
 
 
 def sum_population_generic(param_dict):
@@ -614,8 +477,8 @@ if __name__ == '__main__':
     else:
         from param_dicts import classic_population_params as param_dict
 
-    plot_population_LFP(param_dict)
-    sys.exit()
+    # plot_population_LFP(param_dict)
+    # sys.exit()
 
     if len(sys.argv) >= 3:
         cell_number = int(sys.argv[3])
