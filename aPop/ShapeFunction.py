@@ -71,10 +71,10 @@ def sum_shape_function(param_dict, input_region, distribution, mu, num_cells):
 
         average_psd += lfp_psd
         cell_count += 1
-    F = average_psd / cell_count
+    F2 = average_psd / cell_count
     ns = NeuralSimulation(**param_dict)
-    np.save(join(ns.sim_folder, 'F_%s.npy' % ns.population_sim_name), F)
-    ns.plot_F(freqs, F)
+    np.save(join(ns.sim_folder, 'F_%s.npy' % ns.population_sim_name), F2)
+    ns.plot_F(freqs, F2)
     np.save(join(ns.sim_folder, 'freqs.npy'), freqs)
 
 def sum_all_shape_functions_generic(param_dict):

@@ -75,7 +75,7 @@ def plot_F(params, sim_name):
     figure_folder = join(params['root_folder'], params['save_folder'])
     sim_folder = join(params['root_folder'], params['save_folder'], 'simulations')
     F = np.load(join(sim_folder, 'F_%s.npy' % sim_name))
-    freqs = np.load(join(sim_folder, 'welch_freqs.npy'))
+    freqs = np.load(join(sim_folder, 'freqs.npy'))
     max_freq = params['max_freq']
     cut_idx_freq = np.argmin(np.abs(freqs - max_freq)) + 1
 
@@ -119,7 +119,7 @@ def plot_F(params, sim_name):
     r_star_middle = []
     r_star_apic = []
     f = []
-    for id in range(0, len(freqs), 10):
+    for id in range(0, len(freqs)):
         f.append(freqs[id])
         f_apic = F.reshape(3, 30, cut_idx_freq)[0][:, id]
         f_middle = F.reshape(3, 30, cut_idx_freq)[1][:, id]
@@ -127,6 +127,10 @@ def plot_F(params, sim_name):
         r_star_apic.append(return_r_star(np.sqrt(f_apic), r))
         r_star_middle.append(return_r_star(np.sqrt(f_middle), r))
         r_star_soma.append(return_r_star(np.sqrt(f_soma), r))
+
+    np.save(join(sim_folder, 'r_star_soma_%s.npy' % sim_name), np.array(r_star_soma))
+    np.save(join(sim_folder, 'r_star_middle_%s.npy' % sim_name), np.array(r_star_middle))
+    np.save(join(sim_folder, 'r_star_apic_%s.npy' % sim_name), np.array(r_star_apic))
 
     ax_r_apic.plot(f, r_star_apic, 'k')
     ax_r_middle.plot(f, r_star_middle, 'k')
