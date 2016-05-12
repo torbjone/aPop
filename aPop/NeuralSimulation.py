@@ -59,19 +59,13 @@ class NeuralSimulation:
                            'detrend': plt.detrend_mean,
                            'scale_by_freq': True,
                            }
-        self.welch_dict_scipy = {'fs': 1000 / self.timeres_python,
-                           'nfft': int(self.num_tsteps/self.divide_into_welch),
-                           # 'noverlap': int(self.num_tsteps/self.divide_into_welch/2.),
-                           # 'window': 'hanning',
-                           # 'detrend': 'constant',
-                           # 'scale_by_freq': True,
-                           }
+
     def get_simulation_name(self):
         if self.conductance_type == 'generic':
 
             conductance = '%s_%s_%1.1f' % (self.conductance_type, self.distribution, self.mu)
         else:
-            conductance = self.conductance_type
+            conductance = '%s_%+d' % (self.conductance_type, self.holding_potential)
         sim_name = '%s_%s_%s_%s_%1.2f_%05d' % (self.name, self.cell_name, self.input_region, conductance,
                                                self.correlation, self.cell_number)
         return sim_name
