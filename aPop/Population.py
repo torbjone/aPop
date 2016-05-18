@@ -478,7 +478,7 @@ def sum_population_generic(param_dict):
                     sum_one_population(param_dict, num_cells, num_tsteps)
 
 
-def sum_population_mpi(param_dict):
+def sum_population_mpi_generic(param_dict):
     """ Run with
         mpirun -np 4 python example_mpi.py
     """
@@ -563,6 +563,93 @@ def sum_population_mpi(param_dict):
                 print "\033[93m%d exiting\033[0m" % rank
                 break
         comm.send(None, dest=0, tag=tags.EXIT)
+
+def sum_population_mpi_classic(param_dict):
+    """ Run with
+        mpirun -np 4 python example_mpi.py
+    """
+    from mpi4py import MPI
+
+    class Tags:
+        def __init__(self):
+            self.READY = 0
+            self.DONE = 1
+            self.EXIT = 2
+            self.START = 3
+            self.ERROR = 4
+    tags = Tags()
+    # Initializations and preliminaries
+    comm = MPI.COMM_WORLD   # get MPI communicator object
+    size = comm.size        # total number of processes
+    rank = comm.rank        # rank of this process
+    status = MPI.Status()   # get MPI status object
+    num_workers = size - 1
+    num_cells = 2000
+    num_tsteps = int(round(param_dict['end_t']/param_dict['timeres_python'] + 1))
+
+    if size == 1:
+        print "Can't do MPI with one core!"
+        sys.exit()
+
+    if rank == 0:
+
+        print("\033[95m Master starting with %d workers\033[0m" % num_workers)
+
+        task = 0
+        num_tasks = (len(param_dict['input_regions']) * param_dict['holding_potentials'] *
+                     len(param_dict['conductance_types']) * len(param_dict['correlations']))
+
+        # print param_dict['population_radii']
+        for input_region in param_dict['input_regions']:
+            param_dict.update({'input_region': input_region})
+            for conductance_type in param_dict['conductance_types']:
+                param_dict.update({'conductance_type': conductance_type})
+                for correlation in param_dict['correlations']:
+                    param_dict.update({'correlation': correlation})
+                    for holding_potential in param_dict['holding_potentials']:
+                        param_dict.update({'holding_potential': holding_potential})
+                        print input_region, conductance_type, holding_potential, correlation
+                        task += 1
+                        sent = False
+                        while not sent:
+                            data = comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
+                            source = status.Get_source()
+                            tag = status.Get_tag()
+                            if tag == tags.READY:
+                                comm.send([param_dict], dest=source, tag=tags.START)
+                                print "\033[95m Sending task %d/%d to worker %d\033[0m" % (task, num_tasks, source)
+                                sent = True
+                            elif tag == tags.DONE:
+                                print "\033[95m Worker %d completed task %d/%d\033[0m" % (source, task, num_tasks)
+                            elif tag == tags.ERROR:
+                                print "\033[91mMaster detected ERROR at node %d. Aborting...\033[0m" % source
+                                for worker in range(1, num_workers + 1):
+                                    comm.send([None], dest=worker, tag=tags.EXIT)
+                                sys.exit()
+
+        for worker in range(1, num_workers + 1):
+            comm.send([None], dest=worker, tag=tags.EXIT)
+        print("\033[95m Master finishing\033[0m")
+    else:
+        while True:
+            comm.send(None, dest=0, tag=tags.READY)
+            [param_dict] = comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
+            tag = status.Get_tag()
+            if tag == tags.START:
+                # Do the work here
+                # try:
+                sum_one_population(param_dict, num_cells, num_tsteps)
+                # except:
+                #     print "\033[91mNode %d exiting with ERROR\033[0m" % rank
+                #     comm.send(None, dest=0, tag=tags.ERROR)
+                #     sys.exit()
+                comm.send(None, dest=0, tag=tags.DONE)
+            elif tag == tags.EXIT:
+                print "\033[93m%d exiting\033[0m" % rank
+                break
+        comm.send(None, dest=0, tag=tags.EXIT)
+
+
 
 def PopulationMPIgeneric():
     """ Run with
@@ -774,5 +861,8 @@ if __name__ == '__main__':
         else:
             PopulationMPIclassic()
     elif len(sys.argv) == 2 and sys.argv[1] == 'sum':
-        sum_population_mpi(param_dict)
+        if conductance == 'generic':
+            sum_population_mpi_generic(param_dict)
+        else:
+            sum_population_mpi_classic(param_dict)
         # sum_population_generic(param_dict)
