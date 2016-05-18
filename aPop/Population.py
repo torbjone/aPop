@@ -596,7 +596,7 @@ def sum_population_mpi_classic(param_dict):
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
 
         task = 0
-        num_tasks = (len(param_dict['input_regions']) * param_dict['holding_potentials'] *
+        num_tasks = (len(param_dict['input_regions']) * len(param_dict['holding_potentials']) *
                      len(param_dict['conductance_types']) * len(param_dict['correlations']))
 
         # print param_dict['population_radii']
