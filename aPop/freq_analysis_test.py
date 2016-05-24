@@ -3,7 +3,7 @@ import numpy as np
 import scipy.fftpack as ff
 from matplotlib import mlab as ml
 
-dt = 2**-4
+dt = 2**-3
 end_t = 2**10 - dt
 num_tsteps = round(end_t/dt + 1)
 
@@ -30,8 +30,6 @@ welch_dict = {'Fs': 1000. / dt ,
                    }
 
 mlab_psd, mlab_freqs = ml.psd(y, **welch_dict)
-# print freqs
-# print mlab_freqs
 
 print len(freqs), len(mlab_freqs)
 print freqs
@@ -39,18 +37,27 @@ print mlab_freqs
 Y = ff.fft(y)
 ff_psd = np.abs(Y[pidxs])**2 / len(Y[pidxs])
 
-bin_psd = np.zeros(len(mlab_freqs))
-df = mlab_freqs[1] - mlab_freqs[0]
 
-for m, mfreq in enumerate(mlab_freqs):
-    # print mfreq - df/2, mfreq, mfreq + df/2, freqs[(freqs >= mfreq - df/2) & (freqs < mfreq + df/2)]
-    bin_psd[m] = np.average(ff_psd[(freqs >= mfreq - df/2) & (freqs < mfreq + df/2)])
+def smooth_signal(new_x, old_x, y):
+    new_y = np.zeros(len(new_x))
+    df = new_x[1] - new_x[0]
+    for m, mfreq in enumerate(new_x):
+        new_y[m] = np.average(y[(old_x >= mfreq - df/2) & (old_x < mfreq + df/2)])
+    return new_y
+
+bin_psd = smooth_signal(mlab_freqs, freqs, ff_psd)
+
+smooth = 5
+smooth_freq = np.convolve(np.ones(smooth, 'd')/smooth, freqs, mode='valid')
+smooth_psd = np.convolve(np.ones(smooth, 'd')/smooth, ff_psd, mode='valid')
+
 
 plt.subplot(211)
 plt.loglog(freqs, input_amp**2 * len(input_amp), 'k')
 plt.loglog(freqs, ff_psd, 'b')
 plt.loglog(mlab_freqs, mlab_psd * len(mlab_psd), 'r')
 plt.loglog(mlab_freqs, bin_psd, 'g')
+plt.loglog(smooth_freq, smooth_psd, 'pink')
 plt.subplot(212)
 plt.plot(x, y)
 

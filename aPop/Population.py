@@ -7,6 +7,7 @@ if 'DISPLAY' not in os.environ:
     at_stallo = True
 else:
     at_stallo = False
+from plotting_convention import *
 import pylab as plt
 import numpy as np
 import os
@@ -17,7 +18,6 @@ from NeuralSimulation import NeuralSimulation
 import tools
 import scipy.fftpack as sf
 
-# TODO: Original Hay model simulations
 
 def return_elec_row_col(elec_number, elec_x, elec_z):
     """ Return the subplot number for the distance study
@@ -164,10 +164,10 @@ def return_simple_model(param_dict, pop_size, ns):
                                    (r_e**(3./2) - (4 + 6. * np.log(R/r_star[row_idx, f_idx])) *
                                     r_star[row_idx, f_idx]**(3./2))**2
     P = (1. - c_phi[:, :]) * G0 + c_phi[:, :] * G1
-    return P
+    return P, c_phi, F2
 
 
-def plot_population_LFP(param_dict):
+def plot_generic_population_LFP(param_dict):
 
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     pop_size = 500
@@ -254,6 +254,111 @@ def plot_population_LFP(param_dict):
                 plt.close('all')
                 #sys.exit()
 
+
+def plot_classic_population_LFP(param_dict):
+
+    folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
+    pop_size = 350
+
+    for input_region in param_dict['input_regions']:
+        for correlation in param_dict['correlations']:
+            param_dict.update({'input_region': input_region,
+                           'cell_number': 0,
+                           'correlation': correlation,
+                           })
+
+            param_dict['conductance_type'] = 'active'
+
+            ns = NeuralSimulation(**param_dict)
+            name_active = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
+            # P = return_simple_model(param_dict, pop_size, ns)
+            # c_phi = np.load(join(ns.sim_folder, 'c_phi_%s.npy' % ns.population_sim_name))
+
+            param_dict['conductance_type'] = 'passive'
+            ns = NeuralSimulation(**param_dict)
+            name_passive = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
+            # c_phi_reg = np.load(join(ns.sim_folder, 'c_phi_%s.npy' % ns.population_sim_name))
+            # P_reg = return_simple_model(param_dict, pop_size, ns)
+
+            param_dict['conductance_type'] = 'Ih'
+            ns = NeuralSimulation(**param_dict)
+            name_Ih = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
+            # P_res = return_simple_model(param_dict, pop_size, ns)
+            # c_phi_res = np.load(join(ns.sim_folder, 'c_phi_%s.npy' % ns.population_sim_name))
+
+            param_dict['conductance_type'] = 'Ih_frozen'
+            ns = NeuralSimulation(**param_dict)
+            name_Ih_frozen = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
+            # P_res = return_simple_model(param_dict, pop_size, ns)
+            # c_phi_res = np.load(join(ns.sim_folder, 'c_phi_%s.npy' % ns.population_sim_name))
+
+            xmid = np.load(join(folder, 'xmid_hay_active.npy'))
+            zmid = np.load(join(folder, 'zmid_hay_active.npy'))
+            xstart = np.load(join(folder, 'xstart_hay_active.npy'))
+            zstart = np.load(join(folder, 'zstart_hay_active.npy'))
+            xend = np.load(join(folder, 'xend_hay_active.npy'))
+            zend = np.load(join(folder, 'zend_hay_active.npy'))
+
+            synidx = np.load(join(folder, 'synidx_%s.npy' % ns.sim_name))
+            try:
+                lfp_active = np.load(join(folder, '%s.npy' % name_active))
+                lfp_passive = np.load(join(folder, '%s.npy' % name_passive))
+                lfp_Ih = np.load(join(folder, '%s.npy' % name_Ih))
+                lfp_Ih_frozen = np.load(join(folder, '%s.npy' % name_Ih_frozen))
+            except IOError:
+                continue
+            elec_x = param_dict['electrode_parameters']['x']
+            elec_z = param_dict['electrode_parameters']['z']
+
+            plt.close('all')
+            fig = plt.figure(figsize=(18, 10))
+            fig.suptitle(name_active)
+            ax_morph = fig.add_subplot(1, 6, 1, aspect=1, frameon=False, xticks=[])
+            [ax_morph.plot([xstart[idx], xend[idx]], [zstart[idx], zend[idx]], lw=1.5,
+                           color='0.5', zorder=0, alpha=1)
+                for idx in xrange(len(xmid))]
+            ax_morph.plot(xmid[synidx], zmid[synidx], '.', c='green', ms=4)
+            fig.subplots_adjust(right=0.99, wspace=0.5, hspace=0.3)
+            col_cut_off = 20
+
+            for elec in range(lfp_active.shape[0]):
+
+                row, col = return_elec_row_col(elec, elec_x, elec_z)
+                if col % 4 != 0 or col > col_cut_off:
+                    continue
+                num_plot_cols = col_cut_off/4 + 2
+                plot_number = row * num_plot_cols + col/4 + 2
+                ax = fig.add_subplot(3, num_plot_cols, plot_number, aspect=0.5, ylim=[1e-9, 1e1], xlim=[1e0, 5e2],
+                                     title='%1.1f $\mu$m' % (elec_x[elec]))
+
+                freq, psd_active = tools.return_freq_and_psd(ns.timeres_python/1000., lfp_active[elec])
+                freq, psd_passive = tools.return_freq_and_psd(ns.timeres_python/1000.,  lfp_passive[elec])
+                freq, psd_Ih = tools.return_freq_and_psd(ns.timeres_python/1000., lfp_Ih[elec])
+                freq, psd_Ih_frozen = tools.return_freq_and_psd(ns.timeres_python/1000., lfp_Ih_frozen[elec])
+
+                la, = ax.loglog(freq, psd_active[0], 'r', zorder=0, lw=2)
+                #ax.loglog(freq, P[elec], 'gray', zorder=1)
+                lk, = ax.loglog(freq, psd_passive[0], 'k', zorder=0, lw=2)
+                #ax.loglog(freq, P_reg[elec], 'pink', zorder=1)
+                lb, = ax.loglog(freq, psd_Ih[0], 'b', zorder=0, lw=2)
+                lf, = ax.loglog(freq, psd_Ih_frozen[0], 'c', zorder=0, lw=2)
+                #ax.loglog(freq, P_res[elec], 'cyan', zorder=1)
+            fig.legend([la, lk, lb, lf], ['active', 'passive', 'passive + Ih',  'passive + frozen Ih'], frameon=False, loc='lower center', ncol=4)
+
+            simplify_axes(fig.axes)
+
+            plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], '%s.png' % name_active))
+            plt.close('all')
+            sys.exit()
+
+def smooth_signal(new_x, old_x, y):
+    new_y = np.zeros(len(new_x))
+    df = new_x[1] - new_x[0]
+    for m, mfreq in enumerate(new_x):
+        new_y[m] = np.average(y[(old_x >= mfreq - df/2) & (old_x < mfreq + df/2)])
+    return new_y
+
+
 def plot_simple_model_LFP(param_dict):
 
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
@@ -269,20 +374,19 @@ def plot_simple_model_LFP(param_dict):
                                })
 
                 param_dict['mu'] = 0.0
-
                 ns = NeuralSimulation(**param_dict)
                 name = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
-                P = return_simple_model(param_dict, pop_size, ns)
+                P, c_phi, F2 = return_simple_model(param_dict, pop_size, ns)
 
                 param_dict['mu'] = -0.5
                 ns = NeuralSimulation(**param_dict)
                 name_reg = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
-                P_reg = return_simple_model(param_dict, pop_size, ns)
+                P_reg, c_phi_reg, F2_reg = return_simple_model(param_dict, pop_size, ns)
 
                 param_dict['mu'] = 2.0
                 ns = NeuralSimulation(**param_dict)
                 name_res = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
-                P_res = return_simple_model(param_dict, pop_size, ns)
+                P_res, c_phi_res, F2_res = return_simple_model(param_dict, pop_size, ns)
 
                 xmid = np.load(join(folder, 'xmid_hay_generic.npy'))
                 zmid = np.load(join(folder, 'zmid_hay_generic.npy'))
@@ -302,55 +406,142 @@ def plot_simple_model_LFP(param_dict):
 
                 plt.close('all')
                 fig = plt.figure(figsize=(18, 10))
-                fig.suptitle(name)
-                ax_morph = fig.add_subplot(1, 2, 1, aspect=1, frameon=False, xticks=[])
+                fig.subplots_adjust(right=0.99, wspace=0.5, hspace=0.3)
+
+                fig.suptitle('Input: %s     Channel distribution: %s        Correlation: %1.1f' %
+                             (input_region, distribution, correlation))
+                ax_morph = fig.add_subplot(1, 5, 1, aspect=1, frameon=False, xticks=[])
+
                 [ax_morph.plot([xstart[idx], xend[idx]], [zstart[idx], zend[idx]], lw=1.5,
                                color='0.5', zorder=0, alpha=1)
                     for idx in xrange(len(xmid))]
                 ax_morph.plot(xmid[synidx], zmid[synidx], '.', c='green', ms=4)
-                fig.subplots_adjust(right=0.99, wspace=0.5, hspace=0.3)
-                col_cut_off = 20
+
+                average_over = 3
 
                 for row, elec in enumerate([0, 30, 60]):
+                    ax_morph.plot(elec_x[elec], elec_z[elec], 'kD')
 
                     row, col = return_elec_row_col(elec, elec_x, elec_z)
-                    num_plot_cols = 3
+                    num_plot_cols = 6
                     plot_number = row * num_plot_cols + col/4 + 2
                     ax = fig.add_subplot(3, num_plot_cols, plot_number, ylim=[1e-5, 1e1], xlim=[1e0, 5e2],
-                                         title='Population LFP' % (elec_x[elec]))
+                                         title='Population LFP')
 
-                    freq, psd = tools.return_freq_and_psd(ns.timeres_python/1000., lfp[elec])
-                    freq, psd_reg = tools.return_freq_and_psd(ns.timeres_python/1000.,  lfp_reg[elec])
-                    freq, psd_res = tools.return_freq_and_psd(ns.timeres_python/1000., lfp_res[elec])
-
-                    ax.loglog(freq, psd[0], 'k', zorder=0)
-                    # ax.loglog(freq, P[elec], 'gray', zorder=1)
-                    ax.loglog(freq, psd_reg[0], 'r', zorder=0)
-                    # ax.loglog(freq, P_reg[elec], 'pink', zorder=1)
-                    ax.loglog(freq, psd_res[0], 'b', zorder=0)
-                    # ax.loglog(freq, P_res[elec], 'cyan', zorder=1)
-
-                    ax = fig.add_subplot(3, num_plot_cols, plot_number + 1, ylim=[1e-5, 1e1], xlim=[1e0, 5e2],
-                                         title='Simple model' % (elec_x[elec]))
-
-                    freq, psd = tools.return_freq_and_psd(ns.timeres_python/1000., lfp[elec])
-                    freq, psd_reg = tools.return_freq_and_psd(ns.timeres_python/1000.,  lfp_reg[elec])
-                    freq, psd_res = tools.return_freq_and_psd(ns.timeres_python/1000., lfp_res[elec])
+                    freq, psd, phase = tools.return_freq_and_psd_and_phase(ns.timeres_python/1000., lfp[elec])
+                    freq, psd_reg, phase_reg = tools.return_freq_and_psd_and_phase(ns.timeres_python/1000.,  lfp_reg[elec])
+                    freq, psd_res, phase_res = tools.return_freq_and_psd_and_phase(ns.timeres_python/1000., lfp_res[elec])
 
                     # ax.loglog(freq, psd[0], 'k', zorder=0)
-                    ax.loglog(freq, P[elec], 'k', zorder=1)
+                    smooth_psd = smooth_signal(freq[::average_over], freq, psd[0])
+                    ax.loglog(freq[::average_over], smooth_psd, 'k', zorder=0)
+
+                    smooth_psd_reg = smooth_signal(freq[::average_over], freq, psd_reg[0])
                     # ax.loglog(freq, psd_reg[0], 'r', zorder=0)
-                    ax.loglog(freq, P_reg[elec], 'r', zorder=1)
+                    ax.loglog(freq[::average_over], smooth_psd_reg, 'r', zorder=0)
+
+
+                    smooth_psd_res = smooth_signal(freq[::average_over], freq, psd_res[0])
                     # ax.loglog(freq, psd_res[0], 'b', zorder=0)
-                    ax.loglog(freq, P_res[elec], 'b', zorder=1)
+                    ax.loglog(freq[::average_over], smooth_psd_res, 'b', zorder=0)
 
 
+                    ax = fig.add_subplot(3, num_plot_cols, plot_number + 1, ylim=[1e-5, 1e1], xlim=[1e0, 5e2],
+                                         title='Simple model')
+
+                    smooth_P = smooth_signal(freq[::average_over], freq, P[elec])
+                    smooth_P_reg = smooth_signal(freq[::average_over], freq, P_reg[elec])
+                    smooth_P_res = smooth_signal(freq[::average_over], freq, P_res[elec])
 
 
+                    # ax.loglog(freq, P[elec], 'k', zorder=1)
+                    # ax.loglog(freq, P_reg[elec], 'r', zorder=1)
+                    # ax.loglog(freq, P_res[elec], 'b', zorder=1)
 
+                    ax.loglog(freq[::average_over], smooth_P, 'k', zorder=1)
+                    ax.loglog(freq[::average_over], smooth_P_reg, 'r', zorder=1)
+                    ax.loglog(freq[::average_over], smooth_P_res, 'b', zorder=1)
+
+                    ax = fig.add_subplot(3, num_plot_cols, plot_number + 2, ylim=[1e-5, 1e1], xlim=[1e0, 5e2],
+                                         title='Coherence')
+
+                    smooth_c = smooth_signal(freq[::average_over], freq, c_phi[elec])
+                    smooth_c_reg = smooth_signal(freq[::average_over], freq, c_phi_reg[elec])
+                    smooth_c_res = smooth_signal(freq[::average_over], freq, c_phi_res[elec])
+
+                    # ax.loglog(freq, c_phi[elec], 'k', zorder=1)
+                    # ax.loglog(freq, c_phi_reg[elec], 'r', zorder=1)
+                    # ax.loglog(freq, c_phi_res[elec], 'b', zorder=1)
+
+                    ax.loglog(freq[::average_over], smooth_c, 'k', zorder=1)
+                    ax.loglog(freq[::average_over], smooth_c_reg, 'r', zorder=1)
+                    ax.loglog(freq[::average_over], smooth_c_res, 'b', zorder=1)
+
+                    ax = fig.add_subplot(3, num_plot_cols, plot_number + 3, ylim=[1e-8, 1e-3], xlim=[1e0, 5e2],
+                                         title='Shape function')
+                    ax.loglog(freq, F2[elec], 'k', zorder=1)
+                    ax.loglog(freq, F2_reg[elec], 'r', zorder=1)
+                    ax.loglog(freq, F2_res[elec], 'b', zorder=1)
+
+                    ax = fig.add_subplot(3, num_plot_cols, plot_number + 4, xlim=[1e0, 50],
+                                         title='Phase')
+                    ax.semilogx(freq, phase[0], 'k', zorder=1)
+                    ax.semilogx(freq, phase_reg[0], 'r', zorder=1)
+                    ax.semilogx(freq, phase_res[0], 'b', zorder=1)
+
+                simplify_axes(fig.axes)
                 plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], 'simple_model_%s.png' % name))
                 plt.close('all')
-                #sys.exit()
+
+def plot_LFP_time_trace(param_dict):
+
+    param_dict.update({'input_region': 'distal_tuft',
+                       'cell_number': 0,
+                       'mu': 0.0,
+                       'distribution': 'linear_increase',
+                       'correlation': 1.0,
+                       })
+    folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
+    pop_size = 500
+
+    param_dict['mu'] = 0.0
+    ns = NeuralSimulation(**param_dict)
+    name = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
+
+    param_dict['mu'] = -0.5
+    ns = NeuralSimulation(**param_dict)
+
+    name_reg = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
+
+    param_dict['mu'] = 2.0
+    ns = NeuralSimulation(**param_dict)
+    name_res = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
+
+    lfp = np.load(join(folder, '%s.npy' % name))
+    lfp_reg = np.load(join(folder, '%s.npy' % name_reg))
+    lfp_res = np.load(join(folder, '%s.npy' % name_res))
+    tvec = np.arange(ns.num_tsteps) * ns.timeres_python
+
+    elecs = np.array([0, 30, 60])
+    plt.subplot(311, xlim=[000, 1000])
+    plt.plot(tvec, lfp[0] - lfp[0, 0], 'k')
+    plt.plot(tvec, lfp_reg[0] - lfp_reg[0, 0], 'r')
+    plt.plot(tvec, lfp_res[0] - lfp_res[0, 0], 'b')
+
+    plt.subplot(312, xlim=[00, 1000])
+    plt.plot(tvec, lfp[30] - lfp[30, 0], 'k')
+    plt.plot(tvec, lfp_reg[30] - lfp_reg[30, 0], 'r')
+    plt.plot(tvec, lfp_res[30] - lfp_res[30, 0], 'b')
+
+    plt.subplot(313, xlim=[00, 1000])
+    plt.plot(tvec, lfp[60] - lfp[60, 0], 'k')
+    plt.plot(tvec, lfp_reg[60] - lfp_reg[60, 0], 'r')
+    plt.plot(tvec, lfp_res[60] - lfp_res[60, 0], 'b')
+
+    plt.show()
+
+
+
 
 
 def initialize_population(param_dict):
@@ -816,15 +1007,17 @@ def PopulationMPIclassic():
 
 
 if __name__ == '__main__':
-    # conductance = 'generic'
-    conductance = 'classic'
+    conductance = 'generic'
+    # conductance = 'classic'
     if conductance == 'generic':
         from param_dicts import generic_population_params as param_dict
     else:
         from param_dicts import classic_population_params as param_dict
 
-    # plot_population_LFP(param_dict)
+    # plot_generic_population_LFP(param_dict)
+    # plot_classic_population_LFP(param_dict)
     # plot_simple_model_LFP(param_dict)
+    # plot_LFP_time_trace(param_dict)
     # plot_coherence(param_dict)
     # sys.exit()
 

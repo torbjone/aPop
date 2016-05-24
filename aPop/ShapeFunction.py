@@ -20,12 +20,12 @@ def sum_shape_functions_classic(param_dict):
     conductance_types = ['active', 'passive', 'Ih_frozen']
     holding_potentials = [-80, -60]
 
-    num_cells = 100
+    num_cells = 200
     freqs = np.zeros(10001)
     for input_region in secs:
         for conductance_type in conductance_types:
             for holding_potential in holding_potentials:
-                average_psd = np.zeros((len(param_dict['electrode_parameters']['x']), 10001))
+                average_psd = np.zeros((len(param_dict['electrode_parameters']['x']), 2**10))
                 cell_count = 0
                 for cell_number in xrange(num_cells):
                     param_dict.update({'input_region': input_region,
@@ -47,10 +47,8 @@ def sum_shape_functions_classic(param_dict):
 
                 ns.plot_F(freqs, F)
 
-                np.save(join(ns.sim_folder, 'F_%s.npy' % ns.population_sim_name), F)
-    np.save(join(ns.sim_folder, 'welch_freqs.npy'), freqs)
-
-
+                np.save(join(ns.sim_folder, 'F2_%s.npy' % ns.population_sim_name), F)
+    np.save(join(ns.sim_folder, 'freqs.npy'), freqs)
 
 
 def sum_shape_function(param_dict, input_region, distribution, mu, num_cells):
@@ -73,13 +71,13 @@ def sum_shape_function(param_dict, input_region, distribution, mu, num_cells):
         cell_count += 1
     F2 = average_psd / cell_count
     ns = NeuralSimulation(**param_dict)
-    np.save(join(ns.sim_folder, 'F_%s.npy' % ns.population_sim_name), F2)
+    np.save(join(ns.sim_folder, 'F2_%s.npy' % ns.population_sim_name), F2)
     ns.plot_F(freqs, F2)
     np.save(join(ns.sim_folder, 'freqs.npy'), freqs)
 
 def sum_all_shape_functions_generic(param_dict):
 
-    num_cells = 100 if at_stallo else 5
+    num_cells = 200 if at_stallo else 5
     for input_region in param_dict['input_regions']:
         for distribution in param_dict['distributions']:
             for mu in param_dict['mus']:

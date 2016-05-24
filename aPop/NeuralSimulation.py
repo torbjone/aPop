@@ -27,7 +27,7 @@ class NeuralSimulation:
         self.correlation = kwargs['correlation'] if 'correlation' in kwargs else None
 
         self.param_dict = kwargs
-        self.cell_name = 'hay'
+        self.cell_name = kwargs['cell_name'] if 'cell_name' in kwargs else 'hay'
         self.max_freq = kwargs['max_freq']
         self.holding_potential = kwargs['holding_potential']
         self.conductance_type = kwargs['conductance_type']
@@ -62,7 +62,6 @@ class NeuralSimulation:
 
     def get_simulation_name(self):
         if self.conductance_type == 'generic':
-
             conductance = '%s_%s_%1.1f' % (self.conductance_type, self.distribution, self.mu)
         else:
             conductance = '%s_%+d' % (self.conductance_type, self.holding_potential)
@@ -87,53 +86,72 @@ class NeuralSimulation:
             with suppress_stdout_stderr():
                 neuron.load_mechanisms(join(self.neuron_models))
 
-        if self.cell_name != 'hay':
-            raise NotImplementedError("Only works for Hay cell at the moment")
-        if self.conductance_type == 'generic':
-            # print "Loading Hay"
-            sys.path.append(join(self.neuron_models, 'hay'))
-            from hay_active_declarations import active_declarations
+        if self.cell_name == 'hay':
+            if self.conductance_type == 'generic':
+                # print "Loading Hay"
+                sys.path.append(join(self.neuron_models, 'hay'))
+                from hay_active_declarations import active_declarations
+                cell_params = {
+                    'morphology': join(self.neuron_models, 'hay', 'cell1.hoc'),
+                    'v_init': self.holding_potential,
+                    'passive': False,           # switch on passive mechs
+                    'nsegs_method': 'lambda_f',  # method for setting number of segments,
+                    'lambda_f': 100,           # segments are isopotential at this frequency
+                    'timeres_NEURON': self.timeres_NEURON,   # dt of LFP and NEURON simulation.
+                    'timeres_python': self.timeres_python,
+                    'tstartms': -self.cut_off,          # start time, recorders start at t=0
+                    'tstopms': self.end_t,
+                    'custom_code': [join(self.neuron_models, 'hay', 'custom_codes.hoc')],
+                    'custom_fun': [active_declarations],  # will execute this function
+                    'custom_fun_args': [{'conductance_type': self.conductance_type,
+                                         'mu_factor': self.mu,
+                                         'g_pas': 0.00005,#0.0002, # / 5,
+                                         'distribution': self.distribution,
+                                         'tau_w': 'auto',
+                                         #'total_w_conductance': 6.23843378791,# / 5,
+                                         'avrg_w_bar': 0.00005, # Half of "original"!!!
+                                         'hold_potential': self.holding_potential}]
+                }
+            else:
+                sys.path.append(join(self.neuron_models, 'hay'))
+                neuron.load_mechanisms(join(self.neuron_models, 'hay', 'mod'))
+                from hay_active_declarations import active_declarations
+                cell_params = {
+                    'morphology': join(self.neuron_models, 'hay', 'cell1.hoc'),
+                    'v_init': self.holding_potential,
+                    'passive': False,           # switch on passive mechs
+                    'nsegs_method': 'lambda_f',  # method for setting number of segments,
+                    'lambda_f': 100,           # segments are isopotential at this frequency
+                    'timeres_NEURON': self.timeres_NEURON,   # dt of LFP and NEURON simulation.
+                    'timeres_python': self.timeres_python,
+                    'tstartms': -self.cut_off,          # start time, recorders start at t=0
+                    'tstopms': self.end_t,
+                    'custom_code': [join(self.neuron_models, 'hay', 'custom_codes.hoc')],
+                    'custom_fun': [active_declarations],  # will execute this function
+                    'custom_fun_args': [{'conductance_type': self.conductance_type,
+                                         'hold_potential': self.holding_potential}]
+                }
+        elif self.cell_name is 'infinite_neurite':
+            sys.path.append(join(self.neuron_models, 'infinite_neurite'))
+            from infinite_neurite_active_declarations import active_declarations
+            mu_1, mu_2 = np.array(self.conductance_type.split('_'), float)
+            print mu_1, mu_2
+            args = [{'mu_factor_1': mu_1, 'mu_factor_2': mu_2}]
             cell_params = {
-                'morphology': join(self.neuron_models, 'hay', 'cell1.hoc'),
+                'morphology': join(self.neuron_models, self.cell_name, 'infinite_neurite.hoc'),
                 'v_init': self.holding_potential,
-                'passive': False,           # switch on passive mechs
-                'nsegs_method': 'lambda_f',  # method for setting number of segments,
-                'lambda_f': 100,           # segments are isopotential at this frequency
+                'passive': False,
+                'nsegs_method': 'lambda_f',
+                'lambda_f': 500.,
                 'timeres_NEURON': self.timeres_NEURON,   # dt of LFP and NEURON simulation.
                 'timeres_python': self.timeres_python,
                 'tstartms': -self.cut_off,          # start time, recorders start at t=0
                 'tstopms': self.end_t,
-                'custom_code': [join(self.neuron_models, 'hay', 'custom_codes.hoc')],
-                'custom_fun': [active_declarations],  # will execute this function
-                'custom_fun_args': [{'conductance_type': self.conductance_type,
-                                     'mu_factor': self.mu,
-                                     'g_pas': 0.00005,#0.0002, # / 5,
-                                     'distribution': self.distribution,
-                                     'tau_w': 'auto',
-                                     #'total_w_conductance': 6.23843378791,# / 5,
-                                     'avrg_w_bar': 0.00005, # Half of "original"!!!
-                                     'hold_potential': self.holding_potential}]
+                'custom_fun': [active_declarations],
+                'custom_fun_args': args,
             }
         else:
-            sys.path.append(join(self.neuron_models, 'hay'))
-            neuron.load_mechanisms(join(self.neuron_models, 'hay', 'mod'))
-            from hay_active_declarations import active_declarations
-            cell_params = {
-                'morphology': join(self.neuron_models, 'hay', 'cell1.hoc'),
-                'v_init': self.holding_potential,
-                'passive': False,           # switch on passive mechs
-                'nsegs_method': 'lambda_f',  # method for setting number of segments,
-                'lambda_f': 100,           # segments are isopotential at this frequency
-                'timeres_NEURON': self.timeres_NEURON,   # dt of LFP and NEURON simulation.
-                'timeres_python': self.timeres_python,
-                'tstartms': -self.cut_off,          # start time, recorders start at t=0
-                'tstopms': self.end_t,
-                'custom_code': [join(self.neuron_models, 'hay', 'custom_codes.hoc')],
-                'custom_fun': [active_declarations],  # will execute this function
-                'custom_fun_args': [{'conductance_type': self.conductance_type,
-                                     'hold_potential': self.holding_potential}]
-            }
-
+            raise NotImplementedError("Cell name is not recognized")
         cell = LFPy.Cell(**cell_params)
         if cell_x_y_z_rotation is not None:
             cell.set_rotation(z=cell_x_y_z_rotation[3])
@@ -167,9 +185,9 @@ class NeuralSimulation:
 
     def run_distributed_synaptic_simulation(self):
 
-        if os.path.isfile(join(self.sim_folder, 'sig_%s.npy' % self.sim_name)):
-            print "Skipping ", self.sim_name
-            return
+        # if os.path.isfile(join(self.sim_folder, 'sig_%s.npy' % self.sim_name)):
+        #     print "Skipping ", self.sim_name
+        #     return
 
         electrode = LFPy.RecExtElectrode(**self.electrode_parameters)
         plt.seed(123 * self.cell_number)

@@ -153,6 +153,35 @@ classic_population_params = {'input_type': 'distributed_delta',
                              'conductance_types': ['active', 'passive', 'Ih', 'Ih_frozen'], #['uniform', 'linear_increase', 'linear_decrease'],
                              'correlations': [0.0, 0.1, 1.0]
                              }
+stick_population_params = {'input_type': 'distributed_delta',
+                             'name': 'stick_population',
+                             'timeres_NEURON': dt,
+                             'cell_name': 'infinite_neurite',
+                             'timeres_python': dt,
+                             'population_scale': scale,  # 10 means full population
+                             'num_cells': num_cells,
+                             'population_radius': population_radius,
+                             'population_radii': population_radii,
+                             'layer_5_thickness': layer_5_thickness,
+                             'cut_off': 200,
+                             'end_t': 2**12 - dt,
+                             'syn_tau': dt * 3,
+                             'syn_weight': 1e-3,
+                             'max_freq': 500,
+                             'holding_potential': -80,
+                             'conductance_type': 'generic',
+                             'save_folder': 'stick_population',
+                             'electrode_parameters': electrode_parameters,
+                             'root_folder': root_folder,
+                             'num_synapses': 1000,
+                             'input_firing_rate': 5,
+                             'input_regions': ['homogeneous', 'distal_tuft', 'basal'],
+                             'mus': [-0.5, 0.0, 2.0],
+                             'distributions': ['uniform', 'linear_increase', 'linear_decrease'],
+                             'correlations': [0.0, 0.1, 1.0]
+                             }
+
+
 
 
 
