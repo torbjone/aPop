@@ -113,7 +113,7 @@ def ShapeFunctionMPIgeneric(param_dict):
 
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
-        num_cells = 100 if at_stallo else 5
+        num_cells = 200 if at_stallo else 5
         num_tasks = len(param_dict['input_regions']) * len(param_dict['mus']) * len(param_dict['distributions']) * (num_cells - 0)
         for input_region in param_dict['input_regions']:
             for distribution in param_dict['distributions']:
