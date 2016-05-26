@@ -30,6 +30,8 @@ electrode_parameters = {
         'y': elec_y,
         'z': elec_z
 }
+stick_electrode_parameters = electrode_parameters.copy()
+stick_electrode_parameters['method'] = 'linesource'
 
 # Time resolution of 2**-4 is almost identical to 2**-5
 # root_folder = os.path.join(os.getenv('HOME'), 'work', 'aPop')
@@ -162,23 +164,26 @@ stick_population_params = {'input_type': 'distributed_delta',
                              'num_cells': num_cells,
                              'population_radius': population_radius,
                              'population_radii': population_radii,
-                             'layer_5_thickness': layer_5_thickness,
+                             'layer_5_thickness': 0,
                              'cut_off': 200,
-                             'end_t': 2**12 - dt,
+                             'end_t': 2**10 - dt,
                              'syn_tau': dt * 3,
                              'syn_weight': 1e-3,
                              'max_freq': 500,
                              'holding_potential': -80,
+                             'g_w_bar_scaling': 5.,
                              'conductance_type': 'generic',
                              'save_folder': 'stick_population',
-                             'electrode_parameters': electrode_parameters,
+                             'electrode_parameters': stick_electrode_parameters,
                              'root_folder': root_folder,
                              'num_synapses': 1000,
                              'input_firing_rate': 5,
-                             'input_regions': ['homogeneous', 'distal_tuft', 'basal'],
+                             'input_regions': ['top', 'bottom', 'homogeneous'],
                              'mus': [-0.5, 0.0, 2.0],
-                             'distributions': ['uniform', 'linear_increase', 'linear_decrease'],
-                             'correlations': [0.0, 0.1, 1.0]
+                             'distributions': ['uniform', 'increase'],
+                             'correlations': [0.0, 0.1, 1.0],
+                             'correlation': 0.0,
+
                              }
 
 

@@ -14,9 +14,9 @@ def plot_all_shape_functions(params):
     cell_name = params['cell_name']
     input_type = params['input_type']
     if params['conductance_type'] is 'generic':
-        secs = ['homogeneous', 'distal_tuft', 'basal']
-        mus = [-0.5, 0.0, 2.0]
-        dists = ['uniform', 'linear_increase', 'linear_decrease']
+        secs = params['input_regions']
+        mus = params['mus']
+        dists = params['distributions']
 
         for input_region in secs:
             for distribution in dists:
@@ -74,7 +74,7 @@ def return_r_star(F, r):
 def plot_F(params, sim_name):
     figure_folder = join(params['root_folder'], params['save_folder'])
     sim_folder = join(params['root_folder'], params['save_folder'], 'simulations')
-    F = np.load(join(sim_folder, 'F_%s.npy' % sim_name))
+    F = np.load(join(sim_folder, 'F2_%s.npy' % sim_name))
     freqs = np.load(join(sim_folder, 'freqs.npy'))
     max_freq = params['max_freq']
     cut_idx_freq = np.argmin(np.abs(freqs - max_freq)) + 1
@@ -175,12 +175,12 @@ def plot_F(params, sim_name):
     scale = 'log'
     cell_ax = fig.add_subplot(1, 4, 1, aspect=1, frameon=False, xticks=[], yticks=[])
     if params['conductance_type'] is 'generic':
-        xmid = np.load(join(sim_folder, 'xmid_hay_generic.npy'))
-        zmid = np.load(join(sim_folder, 'zmid_hay_generic.npy'))
-        xstart = np.load(join(sim_folder, 'xstart_hay_generic.npy'))
-        zstart = np.load(join(sim_folder, 'zstart_hay_generic.npy'))
-        xend = np.load(join(sim_folder, 'xend_hay_generic.npy'))
-        zend = np.load(join(sim_folder, 'zend_hay_generic.npy'))
+        xmid = np.load(join(sim_folder, 'xmid_%s_generic.npy' % param_dict['cell_name']))
+        zmid = np.load(join(sim_folder, 'zmid_%s_generic.npy' % param_dict['cell_name']))
+        xstart = np.load(join(sim_folder, 'xstart_%s_generic.npy' % param_dict['cell_name']))
+        zstart = np.load(join(sim_folder, 'zstart_%s_generic.npy' % param_dict['cell_name']))
+        xend = np.load(join(sim_folder, 'xend_%s_generic.npy' % param_dict['cell_name']))
+        zend = np.load(join(sim_folder, 'zend_%s_generic.npy' % param_dict['cell_name']))
     else:
         xmid = np.load(join(sim_folder, 'xmid_hay_active.npy'))
         zmid = np.load(join(sim_folder, 'zmid_hay_active.npy'))
@@ -230,5 +230,7 @@ def plot_F(params, sim_name):
 
 
 if __name__ == '__main__':
-    from param_dicts import shape_function_params
-    plot_all_shape_functions(shape_function_params)
+    # from param_dicts import shape_function_params as param_dict
+    from param_dicts import stick_population_params as param_dict
+    param_dict['name'] = 'stick_shape_function'
+    plot_all_shape_functions(param_dict)

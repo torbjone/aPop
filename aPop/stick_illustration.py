@@ -15,6 +15,7 @@ from os.path import join
 import LFPy
 import neuron
 import sys
+import matplotlib
 # from NeuralSimulation import NeuralSimulation
 # import tools
 
@@ -32,10 +33,19 @@ neuron.load_mechanisms(join(neuron_models))
 sys.path.append(join(neuron_models, 'infinite_neurite'))
 from infinite_neurite_active_declarations import active_declarations
 
-mu = -.5
+mu = 0.0
 g_w_bar_scaling = 5
 
-args = [{'mu_factor': mu, 'g_w_bar_scaling': g_w_bar_scaling}]
+input_region = 'homogeneous'
+distribution = 'uniform'
+cell_input_idxs = np.array([74, 24])
+spike_trains = np.array([[5], [5]])
+
+args = [{'mu_factor': mu,
+         'g_w_bar_scaling': g_w_bar_scaling,
+         'distribution': distribution,
+         }]
+
 cell_params = {
     'morphology': join(neuron_models, param_dict['cell_name'], 'infinite_neurite.hoc'),
     'v_init': param_dict['holding_potential'],
@@ -44,8 +54,8 @@ cell_params = {
     # 'lambda_f': None,
     'timeres_NEURON': param_dict['timeres_NEURON'],   # dt of LFP and NEURON simulation.
     'timeres_python': param_dict['timeres_python'],
-    'tstartms': -param_dict['cut_off'],          # start time, recorders start at t=0
-    'tstopms': param_dict['end_t'],
+    'tstartms': 0,          # start time, recorders start at t=0
+    'tstopms': 10,
     'custom_fun': [active_declarations],
     'custom_fun_args': args,
 }
@@ -71,13 +81,33 @@ synapse_params = {
     'record_current': False,
 }
 
-cell_input_idxs = cell.get_rand_idx_area_norm(section='allsec', nidx=1000, z_min=0)
-firing_rate = 5
-spike_trains = LFPy.inputgenerators.stationary_poisson(len(cell_input_idxs), firing_rate, cell.tstartms, cell.tstopms)
+
+
 
 synapses = set_input_spiketrain(cell, cell_input_idxs, spike_trains, synapse_params)
 
 cell.simulate(rec_imem=True, rec_vmem=True)
+
+time_idx = np.argmax(np.abs(cell.imem[cell_input_idxs[0], :]))
+x = np.linspace(-400, 400, 14)
+z = np.linspace(-400, 1400, 100)
+x, z = np.meshgrid(x, z)
+elec_x = x.flatten()
+elec_z = z.flatten()
+elec_y = np.ones(len(elec_x)) * 30
+
+electrode_parameters = {
+    'sigma': 0.3,              # extracellular conductivity
+    'x': elec_x,        # x,y,z-coordinates of contact points
+    'y': elec_y,
+    'z': elec_z,
+    'method': 'pointsource'
+}
+electrode = LFPy.RecExtElectrode(cell, **electrode_parameters)
+electrode.calc_lfp()
+sig_amp = 1e6 * electrode.LFP[:, time_idx].reshape(x.shape)
+
+lfp_rms = np.sqrt(np.average((sig_amp)**2))
 
 g_pas = []
 for sec in neuron.h.allsec():
@@ -89,12 +119,10 @@ g_pas = np.array(g_pas)
 
 conductance_clr = lambda g: plt.cm.Greys(g / np.max(g_pas))
 
-time_idx = len(cell.tvec)/1.5
-
 fig = plt.figure(figsize=[19, 10])
 fig.subplots_adjust(wspace=0.6)
-ax_lfp = fig.add_subplot(151, ylim=[-100, 1100], xlim=[-100, 100], aspect=1)
-ax_avrg_lfp = fig.add_subplot(154, ylim=[-100, 1100], xlim=[-100, 100], aspect=1)
+ax_lfp = fig.add_subplot(151, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.min(elec_x), np.max(elec_x)],
+                         aspect=1, frameon=False, xticks=[], yticks=[], title='LFP\nRMS: %1.3f nV' % lfp_rms)
 
 [ax_lfp.plot([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]], '-_',
              solid_capstyle='butt', ms=6, lw=cell.diam[idx], color=conductance_clr(g_pas[idx]), zorder=1)
@@ -104,45 +132,32 @@ ax_rc = fig.add_subplot(152, ylim=[-100, 1100], title='Transmembrane currents\nt
 ax_rc.plot([0, 0], [0, 1000], '--', c='gray')
 ax_rc.plot(cell.imem[:, time_idx], cell.zmid)
 
+logthresh = 1
+color_lim = np.max(np.abs(sig_amp)) / 1
 
-ax_avrg_rc = fig.add_subplot(155, ylim=[-100, 1100], title='Average transmembrane currents')
-ax_avrg_rc.plot([0, 0], [0, 1000], '--', c='gray')
-ax_avrg_rc.plot(np.average(cell.imem, axis=1), cell.zmid)
+vmax = color_lim
+vmin = -color_lim
+maxlog = int(np.ceil(np.log10(vmax)))
+minlog = int(np.ceil(np.log10(-vmin)))
 
-x = np.linspace(-100, 100, 7)
-z = np.linspace(-100, 1100, 35)
-x, z = np.meshgrid(x, z)
-elec_x = x.flatten()
-elec_z = z.flatten()
-elec_y = np.ones(len(elec_x)) * 2
+tick_locations = ([-(10**d) for d in xrange(minlog, -logthresh-1, -1)]
+                + [0.0]
+                + [(10**d) for d in xrange(-logthresh, maxlog+1)])
 
-electrode_parameters = {
-    'sigma': 0.3,              # extracellular conductivity
-    'x': elec_x,        # x,y,z-coordinates of contact points
-    'y': elec_y,
-    'z': elec_z,
-    'method': 'linesource'
-}
-electrode = LFPy.RecExtElectrode(cell, **electrode_parameters)
-electrode.calc_lfp()
-sig_amp = 1000 * electrode.LFP[:, time_idx].reshape(x.shape)
-
-color_lim = np.max(np.abs(sig_amp)) / 5
 img_lfp = ax_lfp.imshow(sig_amp, origin='lower', extent=[np.min(x), np.max(x), np.min(z), np.max(z)],
-              vmin=-color_lim, vmax=color_lim, interpolation='nearest', cmap=plt.cm.bwr, zorder=0)
-plt.colorbar(img_lfp, ax=ax_lfp)
-ax_v = fig.add_subplot(353, title='Membrane potential')
-[ax_v.plot(cell.tvec, cell.vmem[idx]) for idx in range(cell.totnsegs)]
-ax_v.plot([cell.tvec[time_idx], cell.tvec[time_idx]], [np.min(cell.vmem) - 0.1, np.max(cell.vmem) + 0.1], '--', c='gray')
-ax_i = fig.add_subplot(358, title='Membrane current')
-[ax_i.plot(cell.tvec, cell.imem[idx]) for idx in range(cell.totnsegs)]
-ax_i.plot([cell.tvec[time_idx], cell.tvec[time_idx]], [np.min(cell.imem) - 0.001, np.max(cell.imem) + 0.001], '--', c='gray')
+                        cmap=plt.cm.bwr, norm=matplotlib.colors.SymLogNorm(10**-logthresh),
+              vmin=vmin, vmax=vmax, interpolation='nearest', zorder=0)
 
-avrg_sig_amp = 1000 * np.average(electrode.LFP[:, :], axis=1).reshape(x.shape)
+cb = plt.colorbar(img_lfp, ax=ax_lfp, shrink=0.5, ticks=tick_locations)
+cb.set_label('nV', labelpad=-10)
 
-# color_lim = np.max(np.abs(avrg_sig_amp))
-img_avrg = ax_avrg_lfp.imshow(avrg_sig_amp, origin='lower', extent=[np.min(x), np.max(x), np.min(z), np.max(z)],
-              vmin=-color_lim, vmax=color_lim, interpolation='nearest', cmap=plt.cm.bwr, zorder=0)
-plt.colorbar(img_avrg, ax=ax_avrg_lfp)
+# ax_v = fig.add_subplot(353, title='Membrane potential')
+# [ax_v.plot(cell.tvec, cell.vmem[idx]) for idx in range(cell.totnsegs)]
+# ax_v.plot([cell.tvec[time_idx], cell.tvec[time_idx]], [np.min(cell.vmem) - 0.1, np.max(cell.vmem) + 0.1], '--', c='gray')
+# ax_i = fig.add_subplot(358, title='Membrane current')
+# [ax_i.plot(cell.tvec, cell.imem[idx]) for idx in range(cell.totnsegs)]
+# ax_i.plot([cell.tvec[time_idx], cell.tvec[time_idx]], [np.min(cell.imem) - 0.001, np.max(cell.imem) + 0.001], '--', c='gray')
 
-fig.savefig(join(root_folder, param_dict['save_folder'], 'stick_test_%+1.1f_%1.1f.png' % (mu, g_w_bar_scaling)))
+
+fig.savefig(join(root_folder, param_dict['save_folder'], 'illustration', 'stick_%+1.1f_%s_%s_%d.png' %
+                 (mu, input_region, distribution, len(cell_input_idxs))))

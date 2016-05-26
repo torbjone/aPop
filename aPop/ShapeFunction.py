@@ -77,7 +77,7 @@ def sum_shape_function(param_dict, input_region, distribution, mu, num_cells):
 
 def sum_all_shape_functions_generic(param_dict):
 
-    num_cells = 200 if at_stallo else 5
+    num_cells = 200 if at_stallo else 10
     for input_region in param_dict['input_regions']:
         for distribution in param_dict['distributions']:
             for mu in param_dict['mus']:
@@ -113,7 +113,7 @@ def ShapeFunctionMPIgeneric(param_dict):
 
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
-        num_cells = 200 if at_stallo else 5
+        num_cells = 200 if at_stallo else 10
         num_tasks = len(param_dict['input_regions']) * len(param_dict['mus']) * len(param_dict['distributions']) * (num_cells - 0)
         for input_region in param_dict['input_regions']:
             for distribution in param_dict['distributions']:
@@ -247,38 +247,52 @@ def ShapeFunctionMPIclassic(param_dict):
         comm.send(None, dest=0, tag=tags.EXIT)
 
 if __name__ == '__main__':
-    conductance = 'generic'
+    # conductance = 'generic'
+    conductance = 'stick_generic'
+
+    if conductance == 'generic':
+        from param_dicts import shape_function_params as param_dict
+    elif conductance == 'stick_generic':
+        from param_dicts import stick_population_params as param_dict
+    else:
+        from param_dicts import distributed_delta_classic_params as param_dict
 
     if len(sys.argv) == 5:
         cell_number = int(sys.argv[4])
         input_region = sys.argv[2]
         if conductance == 'generic':
-            from param_dicts import shape_function_params
             mu = float(sys.argv[1])
             distribution = sys.argv[3]
-            shape_function_params.update({'mu': mu, 'input_region': input_region,
+            param_dict.update({'mu': mu, 'input_region': input_region,
                       'distribution': distribution, 'cell_number': cell_number}) #mu, input_sec, channel_dist, cell_idx
-            ns = NeuralSimulation(**shape_function_params)
+            ns = NeuralSimulation(**param_dict)
+        elif conductance == 'stick_generic':
+
+            param_dict['name'] = 'stick_shape_function'
+            mu = float(sys.argv[1])
+            distribution = sys.argv[3]
+            param_dict.update({'mu': mu, 'input_region': input_region,
+                      'distribution': distribution, 'cell_number': cell_number}) #mu, input_sec, channel_dist, cell_idx
+            ns = NeuralSimulation(**param_dict)
         else:
-            from param_dicts import distributed_delta_classic_params
+
             conductance_type = sys.argv[1]
             holding_potential = int(sys.argv[3])
-            distributed_delta_classic_params.update({'input_region': input_region,
-                                                     'cell_number': cell_number,
-                                                     'conductance_type': conductance_type,
-                                                     'holding_potential': holding_potential})
-            ns = NeuralSimulation(**distributed_delta_classic_params)
+            param_dict.update({'input_region': input_region,
+                                'cell_number': cell_number,
+                                'conductance_type': conductance_type,
+                                'holding_potential': holding_potential})
+            ns = NeuralSimulation(**param_dict)
         ns.run_distributed_synaptic_simulation()
     elif len(sys.argv) == 2 and sys.argv[1] == 'MPIgeneric':
-        from param_dicts import shape_function_params
-        ShapeFunctionMPIgeneric(shape_function_params)
+        ShapeFunctionMPIgeneric(param_dict)
     elif len(sys.argv) == 2 and sys.argv[1] == 'MPIclassic':
-        from param_dicts import distributed_delta_classic_params
-        ShapeFunctionMPIclassic(distributed_delta_classic_params)
+        ShapeFunctionMPIclassic(param_dict)
     elif len(sys.argv) == 2 and sys.argv[1] == 'sum':
         if conductance == 'generic':
-            from param_dicts import shape_function_params
-            sum_all_shape_functions_generic(shape_function_params)
+            sum_all_shape_functions_generic(param_dict)
+        elif conductance == 'stick_generic':
+            param_dict['name'] = 'stick_shape_function'
+            sum_all_shape_functions_generic(param_dict)
         else:
-            from param_dicts import distributed_delta_classic_params
-            sum_shape_functions_classic(distributed_delta_classic_params)
+            sum_shape_functions_classic(param_dict)

@@ -51,7 +51,7 @@ def plot_sig_to_elec_grid(x, y):
 def plot_coherence(param_dict):
 
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
-    pop_size = 500
+    # pop_size = 500
 
     sim_folder = join(param_dict['root_folder'], 'shape_function', 'simulations')
     freqs = np.load(join(sim_folder, 'freqs.npy'))
@@ -69,18 +69,18 @@ def plot_coherence(param_dict):
                 param_dict['mu'] = 0.0
 
                 ns = NeuralSimulation(**param_dict)
-                name = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
+                name = 'summed_signal_%s' % (ns.population_sim_name)
                 c_phi = np.load(join(ns.sim_folder, 'c_phi_%s.npy' % ns.population_sim_name))
 
                 param_dict['mu'] = -0.5
                 ns = NeuralSimulation(**param_dict)
                 c_phi_reg = np.load(join(ns.sim_folder, 'c_phi_%s.npy' % ns.population_sim_name))
 
-                name_reg = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
+                # name_reg = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
 
                 param_dict['mu'] = 2.0
                 ns = NeuralSimulation(**param_dict)
-                name_res = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
+                # name_res = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
                 c_phi_res = np.load(join(ns.sim_folder, 'c_phi_%s.npy' % ns.population_sim_name))
 
 
@@ -111,7 +111,6 @@ def plot_coherence(param_dict):
                     plt.loglog(freqs, c_phi_res[bottom_idxs[col]], 'b')
                     # plt.loglog(x2, y2[bottom_idxs[col]])
 
-
                 plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], 'coherenece_%s.png' % name))
 
                 plt.close('all')
@@ -120,15 +119,18 @@ def plot_coherence(param_dict):
 def return_simple_model(param_dict, pop_size, ns):
 
     c_phi = np.load(join(ns.sim_folder, 'c_phi_%s.npy' % ns.population_sim_name))
-    sim_folder = join(param_dict['root_folder'], 'shape_function', 'simulations')
+    # sim_folder = join(param_dict['root_folder'], 'shape_function', 'simulations')
+    # F2_name = 'F2_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'], ns.conductance_type,
+    #                                                         param_dict['distribution'], param_dict['mu'], 0.0)
 
-    F2_name = 'F_shape_function_hay_%s_%s_%s_%1.1f_%1.2f' % (param_dict['input_region'], ns.conductance_type,
+    sim_folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
+    F2_name = 'F2_stick_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'], ns.conductance_type,
                                                             param_dict['distribution'], param_dict['mu'], 0.0)
-    r_star_soma_name = 'r_star_soma_shape_function_hay_%s_%s_%s_%1.1f_%1.2f' % (param_dict['input_region'],
+    r_star_soma_name = 'r_star_soma_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
                                         ns.conductance_type, param_dict['distribution'], param_dict['mu'], 0.0)
-    r_star_middle_name = 'r_star_middle_shape_function_hay_%s_%s_%s_%1.1f_%1.2f' % (param_dict['input_region'],
+    r_star_middle_name = 'r_star_middle_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
                                         ns.conductance_type, param_dict['distribution'], param_dict['mu'], 0.0)
-    r_star_apic_name = 'r_star_apic_shape_function_hay_%s_%s_%s_%1.1f_%1.2f' % (param_dict['input_region'],
+    r_star_apic_name = 'r_star_apic_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
                                         ns.conductance_type, param_dict['distribution'], param_dict['mu'], 0.0)
 
     F2 = np.load(join(sim_folder, '%s.npy' % F2_name))
@@ -185,31 +187,32 @@ def plot_generic_population_LFP(param_dict):
 
                 ns = NeuralSimulation(**param_dict)
                 name = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
-                P = return_simple_model(param_dict, pop_size, ns)
-                c_phi = np.load(join(ns.sim_folder, 'c_phi_%s.npy' % ns.population_sim_name))
+                # P = return_simple_model(param_dict, pop_size, ns)
+                # c_phi = np.load(join(ns.sim_folder, 'c_phi_%s.npy' % ns.population_sim_name))
 
                 param_dict['mu'] = -0.5
                 ns = NeuralSimulation(**param_dict)
-                c_phi_reg = np.load(join(ns.sim_folder, 'c_phi_%s.npy' % ns.population_sim_name))
+                # c_phi_reg = np.load(join(ns.sim_folder, 'c_phi_%s.npy' % ns.population_sim_name))
 
                 name_reg = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
-                P_reg = return_simple_model(param_dict, pop_size, ns)
+                # P_reg = return_simple_model(param_dict, pop_size, ns)
 
                 param_dict['mu'] = 2.0
                 ns = NeuralSimulation(**param_dict)
                 name_res = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
-                P_res = return_simple_model(param_dict, pop_size, ns)
-                c_phi_res = np.load(join(ns.sim_folder, 'c_phi_%s.npy' % ns.population_sim_name))
+                # P_res = return_simple_model(param_dict, pop_size, ns)
+                # c_phi_res = np.load(join(ns.sim_folder, 'c_phi_%s.npy' % ns.population_sim_name))
 
 
-                xmid = np.load(join(folder, 'xmid_hay_generic.npy'))
-                zmid = np.load(join(folder, 'zmid_hay_generic.npy'))
-                xstart = np.load(join(folder, 'xstart_hay_generic.npy'))
-                zstart = np.load(join(folder, 'zstart_hay_generic.npy'))
-                xend = np.load(join(folder, 'xend_hay_generic.npy'))
-                zend = np.load(join(folder, 'zend_hay_generic.npy'))
+                xmid = np.load(join(folder, 'xmid_%s_generic.npy' % ns.cell_name))
+                zmid = np.load(join(folder, 'zmid_%s_generic.npy' % ns.cell_name))
+                xstart = np.load(join(folder, 'xstart_%s_generic.npy' % ns.cell_name))
+                zstart = np.load(join(folder, 'zstart_%s_generic.npy' % ns.cell_name))
+                xend = np.load(join(folder, 'xend_%s_generic.npy' % ns.cell_name))
+                zend = np.load(join(folder, 'zend_%s_generic.npy' % ns.cell_name))
 
                 synidx = np.load(join(folder, 'synidx_%s.npy' % ns.sim_name))
+
 
                 lfp = np.load(join(folder, '%s.npy' % name))
                 lfp_reg = np.load(join(folder, '%s.npy' % name_reg))
@@ -388,12 +391,12 @@ def plot_simple_model_LFP(param_dict):
                 name_res = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
                 P_res, c_phi_res, F2_res = return_simple_model(param_dict, pop_size, ns)
 
-                xmid = np.load(join(folder, 'xmid_hay_generic.npy'))
-                zmid = np.load(join(folder, 'zmid_hay_generic.npy'))
-                xstart = np.load(join(folder, 'xstart_hay_generic.npy'))
-                zstart = np.load(join(folder, 'zstart_hay_generic.npy'))
-                xend = np.load(join(folder, 'xend_hay_generic.npy'))
-                zend = np.load(join(folder, 'zend_hay_generic.npy'))
+                xmid = np.load(join(folder, 'xmid_%s_generic.npy' % param_dict['cell_name']))
+                zmid = np.load(join(folder, 'zmid_%s_generic.npy' % param_dict['cell_name']))
+                xstart = np.load(join(folder, 'xstart_%s_generic.npy' % param_dict['cell_name']))
+                zstart = np.load(join(folder, 'zstart_%s_generic.npy' % param_dict['cell_name']))
+                xend = np.load(join(folder, 'xend_%s_generic.npy' % param_dict['cell_name']))
+                zend = np.load(join(folder, 'zend_%s_generic.npy' % param_dict['cell_name']))
 
                 synidx = np.load(join(folder, 'synidx_%s.npy' % ns.sim_name))
 
@@ -564,8 +567,8 @@ def initialize_population(param_dict):
 
     print "Initializing input spike trains"
     plt.seed(123)
-    num_synapses = 1000
-    firing_rate = 5
+    num_synapses = param_dict['num_synapses']
+    firing_rate = param_dict['input_firing_rate']
     num_trains = int(num_synapses/0.01)
     all_spiketimes = {}
     input_method = LFPy.inputgenerators.stationary_poisson
@@ -689,7 +692,7 @@ def sum_population_mpi_generic(param_dict):
     rank = comm.rank        # rank of this process
     status = MPI.Status()   # get MPI status object
     num_workers = size - 1
-    num_cells = 2000
+    num_cells = 2000 if at_stallo else 5
     num_tsteps = int(round(param_dict['end_t']/param_dict['timeres_python'] + 1))
 
     if size == 1:
@@ -871,7 +874,7 @@ def PopulationMPIgeneric():
 
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
-        num_cells = 2000
+        num_cells = 2000 if at_stallo else 5
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['mus']) *
                      len(param_dict['distributions']) * len(param_dict['correlations']) * (num_cells))
 
@@ -1007,25 +1010,29 @@ def PopulationMPIclassic():
 
 
 if __name__ == '__main__':
-    conductance = 'generic'
+    # conductance = 'generic'
+    conductance = 'stick_generic'
+
     # conductance = 'classic'
     if conductance == 'generic':
         from param_dicts import generic_population_params as param_dict
+    elif conductance == 'stick_generic':
+        from param_dicts import stick_population_params as param_dict
     else:
         from param_dicts import classic_population_params as param_dict
 
+    # plot_coherence(param_dict)
     # plot_generic_population_LFP(param_dict)
     # plot_classic_population_LFP(param_dict)
-    # plot_simple_model_LFP(param_dict)
+    plot_simple_model_LFP(param_dict)
     # plot_LFP_time_trace(param_dict)
-    # plot_coherence(param_dict)
-    # sys.exit()
+    sys.exit()
 
     if len(sys.argv) >= 3:
         cell_number = int(sys.argv[3])
         input_region = sys.argv[1]
         correlation = float(sys.argv[2])
-        if conductance == 'generic':
+        if conductance == 'generic' or conductance == 'stick_generic':
             distribution = sys.argv[4]
             mu = float(sys.argv[5])
             param_dict.update({'input_region': input_region,
@@ -1049,12 +1056,12 @@ if __name__ == '__main__':
         initialize_population(param_dict)
         plot_population(param_dict)
     elif len(sys.argv) == 2 and sys.argv[1] == 'MPI':
-        if conductance == 'generic':
+        if conductance == 'generic' or conductance == 'stick_generic':
             PopulationMPIgeneric()
         else:
             PopulationMPIclassic()
     elif len(sys.argv) == 2 and sys.argv[1] == 'sum':
-        if conductance == 'generic':
+        if conductance == 'generic' or conductance == 'stick_generic':
             sum_population_mpi_generic(param_dict)
         else:
             sum_population_mpi_classic(param_dict)

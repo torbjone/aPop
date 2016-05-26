@@ -18,12 +18,19 @@ def active_declarations(**kwargs):
         sec.cm = 1.0
         baseline_g = 0.00005
 
+        if kwargs['distribution'] == 'increase':
+            g_w_top = baseline_g * kwargs['g_w_bar_scaling']
+        elif kwargs['distribution'] == 'uniform':
+            g_w_top = baseline_g
+        else:
+            raise ValueError('Distribution not recognized!')
+
         for seg in sec:
             if neuron.h.distance(seg.x) <= 500:
                 seg.g_pas_QA = baseline_g
                 seg.g_w_bar_QA = baseline_g
-                seg.mu_QA = seg.g_w_bar_QA / seg.g_pas_QA * kwargs['mu_factor_1']
+                seg.mu_QA = seg.g_w_bar_QA / seg.g_pas_QA * kwargs['mu_factor']
             else:
                 seg.g_pas_QA = baseline_g
-                seg.g_w_bar_QA = baseline_g * 5
-                seg.mu_QA= seg.g_w_bar_QA / seg.g_pas_QA * kwargs['mu_factor_2']
+                seg.g_w_bar_QA = g_w_top
+                seg.mu_QA = seg.g_w_bar_QA / seg.g_pas_QA * kwargs['mu_factor']

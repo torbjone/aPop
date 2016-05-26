@@ -134,15 +134,16 @@ class NeuralSimulation:
         elif self.cell_name is 'infinite_neurite':
             sys.path.append(join(self.neuron_models, 'infinite_neurite'))
             from infinite_neurite_active_declarations import active_declarations
-            mu_1, mu_2 = np.array(self.conductance_type.split('_'), float)
-            print mu_1, mu_2
-            args = [{'mu_factor_1': mu_1, 'mu_factor_2': mu_2}]
+
+            args = [{'mu_factor': self.param_dict['mu'],
+                     'g_w_bar_scaling': self.param_dict['g_w_bar_scaling'],
+                     'distribution': self.distribution,
+                     }]
             cell_params = {
                 'morphology': join(self.neuron_models, self.cell_name, 'infinite_neurite.hoc'),
                 'v_init': self.holding_potential,
                 'passive': False,
-                'nsegs_method': 'lambda_f',
-                'lambda_f': 500.,
+                'nsegs_method': None,
                 'timeres_NEURON': self.timeres_NEURON,   # dt of LFP and NEURON simulation.
                 'timeres_python': self.timeres_python,
                 'tstartms': -self.cut_off,          # start time, recorders start at t=0
@@ -246,6 +247,15 @@ class NeuralSimulation:
             input_pos = ['dend']
             maxpos = 10000
             minpos = -10000
+        elif self.input_region == 'top':
+            input_pos = ['dend']
+            maxpos = 10000
+            minpos = 500
+        elif self.input_region == 'bottom':
+            input_pos = ['dend']
+            maxpos = 500
+            minpos = -1000
+
         else:
             raise RuntimeError("Use other input section")
         num_synapses = self.param_dict['num_synapses']
@@ -562,20 +572,21 @@ class NeuralSimulation:
         scale = 'log'
         cell_ax = fig.add_subplot(1, 3, 1, aspect=1, frameon=False, xticks=[], yticks=[])
 
+        name = '%s_%s' % (self.cell_name, self.conductance_type)
         if self.conductance_type == 'generic':
-            xmid = np.load(join(self.sim_folder, 'xmid_hay_generic.npy'))
-            zmid = np.load(join(self.sim_folder, 'zmid_hay_generic.npy'))
-            xstart = np.load(join(self.sim_folder, 'xstart_hay_generic.npy'))
-            zstart = np.load(join(self.sim_folder, 'zstart_hay_generic.npy'))
-            xend = np.load(join(self.sim_folder, 'xend_hay_generic.npy'))
-            zend = np.load(join(self.sim_folder, 'zend_hay_generic.npy'))
+            xmid = np.load(join(self.sim_folder, 'xmid_%s.npy' % name))
+            zmid = np.load(join(self.sim_folder, 'zmid_%s.npy' % name))
+            xstart = np.load(join(self.sim_folder, 'xstart_%s.npy' % name))
+            zstart = np.load(join(self.sim_folder, 'zstart_%s.npy' % name))
+            xend = np.load(join(self.sim_folder, 'xend_%s.npy' % name))
+            zend = np.load(join(self.sim_folder, 'zend_%s.npy' % name))
         else:
-            xmid = np.load(join(self.sim_folder, 'xmid_hay_active.npy'))
-            zmid = np.load(join(self.sim_folder, 'zmid_hay_active.npy'))
-            xstart = np.load(join(self.sim_folder, 'xstart_hay_active.npy'))
-            zstart = np.load(join(self.sim_folder, 'zstart_hay_active.npy'))
-            xend = np.load(join(self.sim_folder, 'xend_hay_active.npy'))
-            zend = np.load(join(self.sim_folder, 'zend_hay_active.npy'))
+            xmid = np.load(join(self.sim_folder, 'xmid_%s.npy' % name))
+            zmid = np.load(join(self.sim_folder, 'zmid_%s.npy' % name))
+            xstart = np.load(join(self.sim_folder, 'xstart_%s.npy' % name))
+            zstart = np.load(join(self.sim_folder, 'zstart_%s.npy' % name))
+            xend = np.load(join(self.sim_folder, 'xend_%s.npy' % name))
+            zend = np.load(join(self.sim_folder, 'zend_%s.npy' % name))
 
         synidx = np.load(join(self.sim_folder, 'synidx_%s_00000.npy' % self.population_sim_name))
 
@@ -609,7 +620,7 @@ class NeuralSimulation:
         [ax.grid(True) for ax in all_elec_ax + all_elec_n_ax]
 
         for ax in all_elec_ax + all_elec_n_ax:
-            max_exponent = np.ceil(np.log10(np.max([np.max(l.get_ydata()) for l in ax.get_lines()])))
+            max_exponent = np.ceil(np.log10(np.max([np.max(l.get_ydata()[1:]) for l in ax.get_lines()])))
             ax.set_ylim([10**(max_exponent - 4), 10**max_exponent])
 
         fig.savefig(join(self.figure_folder, 'F_%s.png' % self.population_sim_name))
