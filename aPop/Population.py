@@ -372,7 +372,7 @@ def smooth_signal(new_x, old_x, y):
 def plot_simple_model_LFP(param_dict):
 
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
-    pop_size = 50
+    pop_size = 500
 
     for input_region in param_dict['input_regions']:
         for distribution in param_dict['distributions']:
@@ -1031,9 +1031,9 @@ if __name__ == '__main__':
     # plot_coherence(param_dict)
     # plot_generic_population_LFP(param_dict)
     # plot_classic_population_LFP(param_dict)
-    plot_simple_model_LFP(param_dict)
+    # plot_simple_model_LFP(param_dict)
     # plot_LFP_time_trace(param_dict)
-    sys.exit()
+    # sys.exit()
 
     if len(sys.argv) >= 3:
         cell_number = int(sys.argv[3])
