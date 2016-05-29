@@ -122,15 +122,22 @@ def return_simple_model(param_dict, pop_size, ns):
     # sim_folder = join(param_dict['root_folder'], 'shape_function', 'simulations')
     # F2_name = 'F2_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'], ns.conductance_type,
     #                                                         param_dict['distribution'], param_dict['mu'], 0.0)
+    # r_star_soma_name = 'r_star_soma_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
+    #                                     ns.conductance_type, param_dict['distribution'], param_dict['mu'], 0.0)
+    # r_star_middle_name = 'r_star_middle_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
+    #                                     ns.conductance_type, param_dict['distribution'], param_dict['mu'], 0.0)
+    # r_star_apic_name = 'r_star_apic_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
+    #                                     ns.conductance_type, param_dict['distribution'], param_dict['mu'], 0.0)
+
 
     sim_folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     F2_name = 'F2_stick_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'], ns.conductance_type,
                                                             param_dict['distribution'], param_dict['mu'], 0.0)
-    r_star_soma_name = 'r_star_soma_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
+    r_star_soma_name = 'r_star_soma_stick_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
                                         ns.conductance_type, param_dict['distribution'], param_dict['mu'], 0.0)
-    r_star_middle_name = 'r_star_middle_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
+    r_star_middle_name = 'r_star_middle_stick_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
                                         ns.conductance_type, param_dict['distribution'], param_dict['mu'], 0.0)
-    r_star_apic_name = 'r_star_apic_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
+    r_star_apic_name = 'r_star_apic_stick_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
                                         ns.conductance_type, param_dict['distribution'], param_dict['mu'], 0.0)
 
     F2 = np.load(join(sim_folder, '%s.npy' % F2_name))
@@ -365,7 +372,7 @@ def smooth_signal(new_x, old_x, y):
 def plot_simple_model_LFP(param_dict):
 
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
-    pop_size = 500
+    pop_size = 50
 
     for input_region in param_dict['input_regions']:
         for distribution in param_dict['distributions']:

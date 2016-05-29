@@ -38,8 +38,8 @@ g_w_bar_scaling = 5
 
 input_region = 'homogeneous'
 distribution = 'uniform'
-cell_input_idxs = np.array([74, 24])
-spike_trains = np.array([[5], [5]])
+cell_input_idxs = np.arange(00, 100)[::1] + 0
+# spike_trains = np.array([[5], [5]])
 
 args = [{'mu_factor': mu,
          'g_w_bar_scaling': g_w_bar_scaling,
@@ -64,12 +64,12 @@ cell = LFPy.Cell(**cell_params)
 cell.set_pos(zpos=-cell.zstart[0])
 
 
-def set_input_spiketrain(cell, cell_input_idxs, spike_trains, synapse_params):
+def set_input_spiketrain(cell, cell_input_idxs, synapse_params):
     synapse_list = []
     for number, comp_idx in enumerate(cell_input_idxs):
         synapse_params.update({'idx': int(comp_idx)})
         s = LFPy.Synapse(cell, **synapse_params)
-        s.set_spike_times(spike_trains[number])
+        s.set_spike_times(np.array([5]))
         synapse_list.append(s)
     return synapse_list
 
@@ -81,10 +81,7 @@ synapse_params = {
     'record_current': False,
 }
 
-
-
-
-synapses = set_input_spiketrain(cell, cell_input_idxs, spike_trains, synapse_params)
+synapses = set_input_spiketrain(cell, cell_input_idxs, synapse_params)
 
 cell.simulate(rec_imem=True, rec_vmem=True)
 
@@ -119,21 +116,29 @@ g_pas = np.array(g_pas)
 
 conductance_clr = lambda g: plt.cm.Greys(g / np.max(g_pas))
 
-fig = plt.figure(figsize=[19, 10])
+fig = plt.figure(figsize=[7, 5])
 fig.subplots_adjust(wspace=0.6)
-ax_lfp = fig.add_subplot(151, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.min(elec_x), np.max(elec_x)],
+ax_lfp = fig.add_subplot(121, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.min(elec_x), np.max(elec_x)],
                          aspect=1, frameon=False, xticks=[], yticks=[], title='LFP\nRMS: %1.3f nV' % lfp_rms)
 
 [ax_lfp.plot([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]], '-_',
              solid_capstyle='butt', ms=6, lw=cell.diam[idx], color=conductance_clr(g_pas[idx]), zorder=1)
  for idx in xrange(len(cell.xmid))]
 
-ax_rc = fig.add_subplot(152, ylim=[-100, 1100], title='Transmembrane currents\nt=%d ms' % cell.tvec[time_idx])
-ax_rc.plot([0, 0], [0, 1000], '--', c='gray')
-ax_rc.plot(cell.imem[:, time_idx], cell.zmid)
+ax_lfp.plot(cell.xmid[cell_input_idxs] - 40, cell.zmid[cell_input_idxs], '<', c='g', ms=6,  zorder=1)
 
-logthresh = 1
-color_lim = np.max(np.abs(sig_amp)) / 1
+
+
+
+ax_rc = fig.add_subplot(122, ylim=[np.min(elec_z), np.max(elec_z)], title='Transmembrane currents\nt=%d ms' % cell.tvec[time_idx], frameon=False, yticks=[], xticks=[]  )
+ax_rc.plot([0, 0], [0, 1000], '--', c='gray')
+ax_rc.plot(1000 * cell.imem[:, time_idx], cell.zmid)
+
+ax_rc.plot([0, np.max(np.abs(1000 * cell.imem[:, time_idx]))], [-50, -50], lw=3, color='k')
+ax_rc.text(np.max(np.abs(1000 * cell.imem[:, time_idx])) / 2, -200, '%1.3f pA' % np.max(np.abs(1000 * cell.imem[:, time_idx])))
+
+logthresh = 2
+color_lim = 10#np.max(np.abs(sig_amp)) / 1
 
 vmax = color_lim
 vmin = -color_lim
