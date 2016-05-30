@@ -36,9 +36,9 @@ from infinite_neurite_active_declarations import active_declarations
 mu = 0.0
 g_w_bar_scaling = 5
 
-input_region = 'homogeneous'
+input_region = 'bottom'
 distribution = 'uniform'
-cell_input_idxs = np.arange(00, 100)[::1] + 0
+cell_input_idxs = np.arange(00, 50)[::2] + 0
 # spike_trains = np.array([[5], [5]])
 
 args = [{'mu_factor': mu,

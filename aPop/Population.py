@@ -1031,9 +1031,9 @@ if __name__ == '__main__':
     # plot_coherence(param_dict)
     # plot_generic_population_LFP(param_dict)
     # plot_classic_population_LFP(param_dict)
-    # plot_simple_model_LFP(param_dict)
+    plot_simple_model_LFP(param_dict)
     # plot_LFP_time_trace(param_dict)
-    # sys.exit()
+    sys.exit()
 
     if len(sys.argv) >= 3:
         cell_number = int(sys.argv[3])
