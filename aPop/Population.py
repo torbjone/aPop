@@ -83,7 +83,6 @@ def plot_coherence(param_dict):
                 # name_res = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
                 c_phi_res = np.load(join(ns.sim_folder, 'c_phi_%s.npy' % ns.population_sim_name))
 
-
                 plt.close('all')
                 plt.figure(figsize=[19, 10])
                 plt.suptitle('Coherence\n%s' % name)
@@ -209,7 +208,6 @@ def plot_generic_population_LFP(param_dict):
                 name_res = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
                 # P_res = return_simple_model(param_dict, pop_size, ns)
                 # c_phi_res = np.load(join(ns.sim_folder, 'c_phi_%s.npy' % ns.population_sim_name))
-
 
                 xmid = np.load(join(folder, 'xmid_%s_generic.npy' % ns.cell_name))
                 zmid = np.load(join(folder, 'zmid_%s_generic.npy' % ns.cell_name))
@@ -377,6 +375,11 @@ def plot_simple_model_LFP(param_dict):
     for input_region in param_dict['input_regions']:
         for distribution in param_dict['distributions']:
             for correlation in param_dict['correlations']:
+
+                if (input_region != 'bottom') and (distribution != 'increase') and (correlation != 0.0):
+                    continue
+                print input_region, distribution, correlation
+
                 param_dict.update({'input_region': input_region,
                                'cell_number': 0,
                                'distribution': distribution,
@@ -493,8 +496,7 @@ def plot_simple_model_LFP(param_dict):
                     ax.loglog(freq, F2_reg[elec], 'r', zorder=1)
                     ax.loglog(freq, F2_res[elec], 'b', zorder=1)
 
-                    ax = fig.add_subplot(3, num_plot_cols, plot_number + 4, xlim=[1e0, 50],
-                                         title='Phase')
+                    ax = fig.add_subplot(3, num_plot_cols, plot_number + 4, xlim=[1e0, 50], title='Phase')
                     ax.semilogx(freq, phase[0], 'k', zorder=1)
                     ax.semilogx(freq, phase_reg[0], 'r', zorder=1)
                     ax.semilogx(freq, phase_res[0], 'b', zorder=1)

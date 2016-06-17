@@ -16,6 +16,8 @@ import LFPy
 import neuron
 import sys
 import matplotlib
+from Dipole import Dipole
+from CalcLFP import CalcLFP
 # from NeuralSimulation import NeuralSimulation
 # import tools
 
@@ -36,10 +38,18 @@ from infinite_neurite_active_declarations import active_declarations
 mu = 0.0
 g_w_bar_scaling = 5
 
-input_region = 'bottom'
-distribution = 'uniform'
-cell_input_idxs = np.arange(00, 50)[::2] + 0
-# spike_trains = np.array([[5], [5]])
+# TODO: Calculate dipole LFP! Add EEG/ECoG electrodes
+
+input_region = 'homogeneous'
+distribution = 'increase'
+if input_region == 'top':
+    cell_input_idxs = np.arange(0, 50)[::-2] + 50
+elif input_region == 'bottom':
+    cell_input_idxs = np.arange(00, 50)[::2] + 0
+elif input_region == 'homogeneous':
+    cell_input_idxs = np.arange(00, 100)[::1] + 0
+else:
+    raise RuntimeError("Unrecognized")
 
 args = [{'mu_factor': mu,
          'g_w_bar_scaling': g_w_bar_scaling,
@@ -85,7 +95,39 @@ synapses = set_input_spiketrain(cell, cell_input_idxs, synapse_params)
 
 cell.simulate(rec_imem=True, rec_vmem=True)
 
-time_idx = np.argmax(np.abs(cell.imem[cell_input_idxs[0], :]))
+dipole = Dipole(cell)
+dlist, itrans = dipole.transmembrane_currents()
+
+P3, P3_tot = dipole.current_dipole_moment(dlist, itrans)
+arrow = np.sum(P3, axis=0) * 4 # overall, 0.05 for apical and basal
+
+r_syns = np.array([[cell.xmid[i], cell.ymid[i], cell.zmid[i]] for i in cell_input_idxs])
+
+r_mid = np.average(r_syns, axis=0) + [0, 0, 500]
+r_mid = r_mid/2.
+print r_mid
+
+time_idx = np.argmax(np.abs(cell.imem[cell_input_idxs[len(cell_input_idxs)/2], :]))
+
+
+
+x = np.linspace(-400, 400, 14)
+z = np.ones(len(x)) * 20000#np.linspace(20000, 1400, 100)
+x, z = np.meshgrid(x, z)
+elec_x = x.flatten()
+elec_z = z.flatten()
+elec_y = np.ones(len(elec_x)) * 0
+
+eeg_electrode_parameters = {
+    'sigma': 0.3,              # extracellular conductivity
+    'x': elec_x,        # x,y,z-coordinates of contact points
+    'y': elec_y,
+    'z': elec_z,
+    'method': 'pointsource'
+}
+eeg_electrode = LFPy.RecExtElectrode(cell, **eeg_electrode_parameters)
+eeg_electrode.calc_lfp()
+
 x = np.linspace(-400, 400, 14)
 z = np.linspace(-400, 1400, 100)
 x, z = np.meshgrid(x, z)
@@ -102,7 +144,9 @@ electrode_parameters = {
 }
 electrode = LFPy.RecExtElectrode(cell, **electrode_parameters)
 electrode.calc_lfp()
+
 sig_amp = 1e6 * electrode.LFP[:, time_idx].reshape(x.shape)
+eeg_sig_amp = 1e6 * eeg_electrode.LFP[:, time_idx].reshape(x.shape)
 
 lfp_rms = np.sqrt(np.average((sig_amp)**2))
 
@@ -125,9 +169,10 @@ ax_lfp = fig.add_subplot(121, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.mi
              solid_capstyle='butt', ms=6, lw=cell.diam[idx], color=conductance_clr(g_pas[idx]), zorder=1)
  for idx in xrange(len(cell.xmid))]
 
+
 ax_lfp.plot(cell.xmid[cell_input_idxs] - 40, cell.zmid[cell_input_idxs], '<', c='g', ms=6,  zorder=1)
 
-
+ax_lfp.arrow(r_mid[0] - arrow[0], r_mid[2] - arrow[2], arrow[0]*2, arrow[2]*2, fc='c', ec='c', width=2.8, length_includes_head = True, zorder=10)#,
 
 
 ax_rc = fig.add_subplot(122, ylim=[np.min(elec_z), np.max(elec_z)], title='Transmembrane currents\nt=%d ms' % cell.tvec[time_idx], frameon=False, yticks=[], xticks=[]  )

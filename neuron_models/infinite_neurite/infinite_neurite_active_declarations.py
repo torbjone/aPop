@@ -21,6 +21,7 @@ def active_declarations(**kwargs):
         if kwargs['distribution'] == 'increase':
             g_w_top = baseline_g * kwargs['g_w_bar_scaling']
         elif kwargs['distribution'] == 'uniform':
+            print "Uniform"
             g_w_top = baseline_g
         else:
             raise ValueError('Distribution not recognized!')
