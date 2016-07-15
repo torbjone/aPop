@@ -103,6 +103,7 @@ layer_5_thickness = 200  # From Markram (2015): Thickness L1-L5: 1382 um. Hay ce
 generic_population_params = {'input_type': 'distributed_delta',
                              'name': 'generic_population',
                              'timeres_NEURON': dt,
+                             'cell_name': 'hay',
                              'timeres_python': dt,
                              'population_scale': scale,  # 10 means full population
                              'num_cells': num_cells,
@@ -129,6 +130,7 @@ generic_population_params = {'input_type': 'distributed_delta',
 
 classic_population_params = {'input_type': 'distributed_delta',
                              'name': 'classic_population',
+                             'cell_name': 'hay',
                              'timeres_NEURON': dt,
                              'timeres_python': dt,
                              'population_scale': scale,  # 10 means full population
@@ -183,11 +185,7 @@ stick_population_params = {'input_type': 'distributed_delta',
                              'distributions': ['uniform', 'increase'],
                              'correlations': [0.0, 0.1, 1.0],
                              'correlation': 0.0,
-
                              }
-
-
-
 
 
 asymmetry_params = {'input_type': 'distributed_asymmetry',

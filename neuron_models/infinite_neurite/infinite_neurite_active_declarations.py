@@ -1,5 +1,3 @@
-
-
 import neuron
 import numpy as np
 

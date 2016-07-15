@@ -35,14 +35,12 @@ neuron.load_mechanisms(join(neuron_models))
 sys.path.append(join(neuron_models, 'infinite_neurite'))
 from infinite_neurite_active_declarations import active_declarations
 
-mu = 0.0
+mu = 2.0
 g_w_bar_scaling = 5
 firing_rate = 5.
 
-# TODO: Calculate dipole LFP! Add EEG/ECoG electrodes
-
 input_region = 'homogeneous'
-distribution = 'uniform'
+distribution = 'increase'
 if input_region == 'top':
     cell_input_idxs = np.arange(0, 50)[::-1] + 50
 elif input_region == 'bottom':
@@ -130,6 +128,8 @@ eeg_electrode.calc_lfp()
 eeg_dp = CalcLFP(cell, eeg_elec_x, eeg_elec_y, eeg_elec_z)
 eeg_dp_sig, eeg_theta = eeg_dp.grid_lfp_theta(P3, 0.3)
 
+center_eeg_elec = np.argmin(eeg_elec_x**2 + eeg_elec_y**2)
+
 x = np.linspace(-4000, 4000, 15)
 z = np.linspace(-4000, 14000, 100)
 x, z = np.meshgrid(x, z)
@@ -184,8 +184,8 @@ for time_idx in np.arange(0, len(cell.tvec), 10):
     dp_sig, theta = dp.grid_lfp_theta(P3, 0.3)
     dp_sig_amp = dp_sig[:, time_idx].reshape(x.shape)
     plt.close('all')
-    fig = plt.figure(figsize=[10, 5])
-    fig.subplots_adjust(wspace=0.6)
+    fig = plt.figure(figsize=[10, 6])
+    fig.subplots_adjust(wspace=0.6, hspace=0.6)
 
     ax_lfp = fig.add_subplot(231, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.min(elec_x), np.max(elec_x)],
                              aspect=1, frameon=False, xticks=[], yticks=[], title='True LFP')
@@ -203,7 +203,6 @@ for time_idx in np.arange(0, len(cell.tvec), 10):
     # ax_lfp.plot(cell.xmid[cell_input_idxs] - 40, cell.zmid[cell_input_idxs], '<', c='g', ms=6,  zorder=1)
     ax_lfp.arrow(r_mid[0] - arrow[0], r_mid[2] - arrow[2], arrow[0]*2, arrow[2]*2, fc='c', ec='c',
                  width=30, length_includes_head=True, zorder=10)
-
 
     ax_eeg = fig.add_subplot(233, ylim=[np.min(eeg_elec_y), np.max(eeg_elec_y)], xlim=[np.min(eeg_elec_x), np.max(eeg_elec_x)],
                              aspect=1, frameon=False, xticks=[], yticks=[], title='True EEG')
@@ -254,16 +253,18 @@ for time_idx in np.arange(0, len(cell.tvec), 10):
     cb = plt.colorbar(img_db_eeg, ax=ax_dp_eeg, shrink=0.5, ticks=eeg_tick_locations)
     cb.set_label('nV', labelpad=-10)
 
-
-
-
-
-    ax_rc = fig.add_subplot(232, title='angle', ylim=[0, 2*np.pi])
-    ax_rc.plot(cell.tvec, theta)
+    ax_rc = fig.add_subplot(332, title='Dipole angle', ylim=[0, 2*np.pi])
+    ax_rc.plot(cell.tvec, theta[center_eeg_elec])
     ax_rc.axvline(cell.tvec[time_idx], c='g')
 
-    ax_rc = fig.add_subplot(235, title='Magnitude')
+    ax_rc = fig.add_subplot(335, title='Magnitude')
     ax_rc.plot(cell.tvec, P3_tot)
+    ax_rc.axvline(cell.tvec[time_idx], c='g')
+
+    ax_rc = fig.add_subplot(338, title='Center EEG signal', ylabel='nV')
+    ax_rc.plot(cell.tvec, 1e6*eeg_electrode.LFP[center_eeg_elec], 'gray')
+    ax_rc.plot(cell.tvec, eeg_dp_sig[center_eeg_elec], 'k--')
+
     ax_rc.axvline(cell.tvec[time_idx], c='g')
 
     # ax_v = fig.add_subplot(353, title='Membrane potential')

@@ -60,11 +60,13 @@ class CalcLFP:
         '''
         gridpoints = zip(self.X.flatten(), self.Y.flatten(), self.Z.flatten())
         grid_LFP = np.zeros((len(gridpoints), self.time))
+        grid_theta = np.zeros((len(gridpoints), self.time))
         for j in range(len(gridpoints)):
             dist = gridpoints[j] - self.r_mid
             cos_theta = np.dot(P, dist)/(np.linalg.norm(dist)*np.linalg.norm(P, axis=1))
             cos_theta = np.nan_to_num(cos_theta)
             theta = np.arccos(cos_theta)
+            grid_theta[j, :] = theta
             grid_LFP[j, :] = 1./(4*np.pi*sigma)*np.linalg.norm(P, axis=1)*cos_theta/np.sum(dist**2)*self.k1
 
-        return grid_LFP, theta
+        return grid_LFP, grid_theta

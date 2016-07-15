@@ -17,6 +17,16 @@ plt.rcParams.update({
     'figure.subplot.left': 0.1,
 })
 
+elec_color = '#00d2ff'
+res_color = '#0080ff'
+reg_color = '#ff0000'
+pas_color = 'k'
+syn_color = '#00cc00'
+cell_color = '#c4c4c4'
+qa_clr_dict = {-0.5: reg_color,
+               0.0: pas_color,
+               2.0: res_color}
+
 def mark_subplots(axes, letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ', xpos=-0.12, ypos=1.15):
 
     if not type(axes) is list:
