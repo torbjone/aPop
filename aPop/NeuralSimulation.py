@@ -16,6 +16,7 @@ import neuron
 import LFPy
 import tools
 
+
 class NeuralSimulation:
     def __init__(self, **kwargs):
         self.input_type = kwargs['input_type']
@@ -36,10 +37,16 @@ class NeuralSimulation:
         self._set_input_params()
         self.sim_name = self.get_simulation_name()
         self.population_sim_name = self.sim_name[:-6]  # Just remove the cell number
-        self.electrode_parameters = kwargs['electrode_parameters']
-        self.elec_x = self.electrode_parameters['x']
-        self.elec_y = self.electrode_parameters['y']
-        self.elec_z = self.electrode_parameters['z']
+
+        self.lateral_electrode_parameters = kwargs['lateral_electrode_parameters']
+        self.elec_x_lateral = self.lateral_electrode_parameters['x']
+        self.elec_y_lateral = self.lateral_electrode_parameters['y']
+        self.elec_z_lateral = self.lateral_electrode_parameters['z']
+
+        self.center_electrode_parameters = kwargs['center_electrode_parameters']
+        self.elec_x_center = self.center_electrode_parameters['x']
+        self.elec_y_center = self.center_electrode_parameters['y']
+        self.elec_z_center = self.center_electrode_parameters['z']
 
         self.root_folder = kwargs['root_folder']
         self.neuron_models = join(self.root_folder, 'neuron_models')
@@ -159,9 +166,15 @@ class NeuralSimulation:
             cell.set_pos(xpos=cell_x_y_z_rotation[0], ypos=cell_x_y_z_rotation[1], zpos=cell_x_y_z_rotation[2])
         return cell
 
-    def save_neural_sim_single_input_data(self, cell, electrode):
+    def save_neural_sim_single_input_data(self, cell):
+        lateral_electrode = LFPy.RecExtElectrode(cell, **self.lateral_electrode_parameters)
+        lateral_electrode.calc_lfp()
 
-        np.save(join(self.sim_folder, 'sig_%s.npy' % self.sim_name), np.dot(electrode.electrodecoeff, cell.imem))
+        center_electrode = LFPy.RecExtElectrode(cell, **self.center_electrode_parameters)
+        center_electrode.calc_lfp()
+
+        np.save(join(self.sim_folder, 'lateral_sig_%s.npy' % self.sim_name), lateral_electrode.LFP)
+        np.save(join(self.sim_folder, 'center_sig_%s.npy' % self.sim_name), center_electrode.LFP)
 
         if self.cell_number == 0:
             np.save(join(self.sim_folder, 'tvec_%s_%s.npy' % (self.cell_name, self.input_type)), cell.tvec)
@@ -169,9 +182,13 @@ class NeuralSimulation:
             np.save(join(self.sim_folder, 'imem_%s.npy' % self.sim_name), cell.imem)
             np.save(join(self.sim_folder, 'synidx_%s.npy' % self.sim_name), cell.synidx)
 
-            np.save(join(self.sim_folder, 'elec_x_%s.npy' % self.cell_name), electrode.x)
-            np.save(join(self.sim_folder, 'elec_y_%s.npy' % self.cell_name), electrode.y)
-            np.save(join(self.sim_folder, 'elec_z_%s.npy' % self.cell_name), electrode.z)
+            np.save(join(self.sim_folder, 'lateral_elec_x_%s.npy' % self.cell_name), lateral_electrode.x)
+            np.save(join(self.sim_folder, 'lateral_elec_y_%s.npy' % self.cell_name), lateral_electrode.y)
+            np.save(join(self.sim_folder, 'lateral_elec_z_%s.npy' % self.cell_name), lateral_electrode.z)
+
+            np.save(join(self.sim_folder, 'center_elec_x_%s.npy' % self.cell_name), center_electrode.x)
+            np.save(join(self.sim_folder, 'center_elec_y_%s.npy' % self.cell_name), center_electrode.y)
+            np.save(join(self.sim_folder, 'center_elec_z_%s.npy' % self.cell_name), center_electrode.z)
 
             np.save(join(self.sim_folder, 'xstart_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.xstart)
             np.save(join(self.sim_folder, 'ystart_%s_%s.npy' % (self.cell_name, self.param_dict['conductance_type'])), cell.ystart)
@@ -190,22 +207,22 @@ class NeuralSimulation:
         #     print "Skipping ", self.sim_name
         #     return
 
-        electrode = LFPy.RecExtElectrode(**self.electrode_parameters)
         plt.seed(123 * self.cell_number)
         if 'shape_function' in self.name:
             x_y_z_rot = np.array([0, 0, 0, 2*np.pi*np.random.random()])
         elif 'population' in self.name:
-            x_y_z_rot = np.load(os.path.join(self.param_dict['root_folder'], self.param_dict['save_folder'],
+            x_y_z_rot = np.load(os.path.join(self.param_dict['root_folder'],
+                                             self.param_dict['save_folder'],
                              'x_y_z_rot_%s.npy' % self.param_dict['name']))[self.cell_number]
         else:
             raise RuntimeError("Something wrong with simulation set-up!")
 
         cell = self._return_cell(x_y_z_rot)
         cell, syn = self._make_distributed_synaptic_stimuli(cell)
-        cell.simulate(rec_imem=True, rec_vmem=True, electrode=electrode)
-        self.save_neural_sim_single_input_data(cell, electrode)
+        cell.simulate(rec_imem=True, rec_vmem=True)
+        self.save_neural_sim_single_input_data(cell)
         if ('shape_function' in self.name) or (not self.cell_number % 100):
-            self._draw_all_elecs_with_distance(cell, electrode)
+            self._draw_all_elecs_with_distance(cell)
 
     def run_asymmetry_simulation(self, mu, fraction, distribution, cell_number):
         plt.seed(123 * cell_number)
@@ -213,7 +230,7 @@ class NeuralSimulation:
         #     print "Skipping ", mu, input_sec, distribution, tau_w, weight, 'sig_%s.npy' % sim_name
         #     return
 
-        electrode = LFPy.RecExtElectrode(**self.electrode_parameters)
+        electrode = LFPy.RecExtElectrode(**self.lateral_electrode_parameters)
         cell = self._return_cell(mu, distribution)
         cell, syn_apic, syn_basal = self._make_asymmetry_distributed_synaptic_stimuli(cell, fraction)
         cell.simulate(rec_imem=True, rec_vmem=True, electrode=electrode)
@@ -327,9 +344,9 @@ class NeuralSimulation:
     def _return_elec_subplot_number_with_distance(self, elec_number):
         """ Return the subplot number for the distance study
         """
-        num_elec_cols = len(set(self.elec_x))
-        num_elec_rows = len(set(self.elec_z))
-        elec_idxs = np.arange(len(self.elec_x)).reshape(num_elec_rows, num_elec_cols)
+        num_elec_cols = len(set(self.elec_x_lateral))
+        num_elec_rows = len(set(self.elec_z_lateral))
+        elec_idxs = np.arange(len(self.elec_x_lateral)).reshape(num_elec_rows, num_elec_cols)
         row, col = np.array(np.where(elec_idxs == elec_number))[:, 0]
         num_plot_cols = num_elec_cols + 3
         plot_number = row * num_plot_cols + col + 4
@@ -338,9 +355,9 @@ class NeuralSimulation:
     def _return_elec_row_col(self, elec_number):
         """ Return the subplot number for the distance study
         """
-        num_elec_cols = len(set(self.elec_x))
-        num_elec_rows = len(set(self.elec_z))
-        elec_idxs = np.arange(len(self.elec_x)).reshape(num_elec_rows, num_elec_cols)
+        num_elec_cols = len(set(self.elec_x_lateral))
+        num_elec_rows = len(set(self.elec_z_lateral))
+        elec_idxs = np.arange(len(self.elec_x_lateral)).reshape(num_elec_rows, num_elec_cols)
         row, col = np.array(np.where(elec_idxs == elec_number))[:, 0]
         return row, col
 
@@ -350,7 +367,10 @@ class NeuralSimulation:
             for idx in xrange(len(cell.xmid))]
         [ax.plot(cell.xmid[idx], cell.zmid[idx], 'g.', ms=4) for idx in cell.synidx]
 
-    def _draw_all_elecs_with_distance(self, cell, electrode):
+    def _draw_all_elecs_with_distance(self, cell):
+
+        electrode = LFPy.RecExtElectrode(cell, **self.lateral_electrode_parameters)
+        electrode.calc_lfp()
         plt.close('all')
         fig = plt.figure(figsize=[18, 9])
         fig.subplots_adjust(right=0.97, left=0.05)
@@ -445,11 +465,11 @@ class NeuralSimulation:
         cutoff_dist = 1000
         dist_clr = lambda dist: plt.cm.Greys(np.log(dist) / np.log(cutoff_dist))
 
-        for elec in xrange(len(self.elec_z)):
-            if self.elec_x[elec] > cutoff_dist:
+        for elec in xrange(len(self.elec_z_lateral)):
+            if self.elec_x_lateral[elec] > cutoff_dist:
                 continue
-            clr = dist_clr(self.elec_x[elec])
-            cell_ax.plot(self.elec_x[elec], self.elec_z[elec], 'o', c=clr)
+            clr = dist_clr(self.elec_x_lateral[elec])
+            cell_ax.plot(self.elec_x_lateral[elec], self.elec_z_lateral[elec], 'o', c=clr)
 
             row, col = self._return_elec_row_col(elec)
             all_elec_ax[row].loglog(freqs, sig_psd[elec, :], color=clr, lw=1)
@@ -543,11 +563,11 @@ class NeuralSimulation:
         cutoff_dist = 1000
         dist_clr = lambda dist: plt.cm.Greys(np.log(dist) / np.log(cutoff_dist))
 
-        for elec in xrange(len(self.elec_z)):
-            if self.elec_x[elec] > cutoff_dist:
+        for elec in xrange(len(self.elec_z_lateral)):
+            if self.elec_x_lateral[elec] > cutoff_dist:
                 continue
-            clr = dist_clr(self.elec_x[elec])
-            cell_ax.plot(self.elec_x[elec], self.elec_z[elec], 'o', c=clr)
+            clr = dist_clr(self.elec_x_lateral[elec])
+            cell_ax.plot(self.elec_x_lateral[elec], self.elec_z_lateral[elec], 'o', c=clr)
 
             row, col = self._return_elec_row_col(elec)
             all_elec_ax[row].loglog(freqs, sig_psd[elec, :], color=clr, lw=1)
@@ -607,11 +627,11 @@ class NeuralSimulation:
         cutoff_dist = 1000
         dist_clr = lambda dist: plt.cm.Greys(np.log(dist) / np.log(cutoff_dist))
 
-        for elec in xrange(len(self.elec_z)):
-            if self.elec_x[elec] > cutoff_dist:
+        for elec in xrange(len(self.elec_z_lateral)):
+            if self.elec_x_lateral[elec] > cutoff_dist:
                 continue
-            clr = dist_clr(self.elec_x[elec])
-            cell_ax.plot(self.elec_x[elec], self.elec_z[elec], 'o', c=clr)
+            clr = dist_clr(self.elec_x_lateral[elec])
+            cell_ax.plot(self.elec_x_lateral[elec], self.elec_z_lateral[elec], 'o', c=clr)
 
             row, col = self._return_elec_row_col(elec)
             all_elec_ax[row].loglog(freqs, sig_psd[elec, :], color=clr, lw=1)

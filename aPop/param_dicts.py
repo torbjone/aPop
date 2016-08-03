@@ -13,36 +13,54 @@ else:
 import numpy as np
 username = os.getenv('USER')
 
+# if at_stallo:
+#     root_folder = join('/global', 'work', username, 'aPop')
+# else:
+#     root_folder = join('/home', username, 'work', 'aPop')
+root_folder = '.'
 
-if at_stallo:
-    root_folder = join('/global', 'work', username, 'aPop')
-else:
-    root_folder = join('/home', username, 'work', 'aPop')
 
 elec_distances = 10 * np.exp(np.linspace(0, np.log(1000), 30))
-elec_x, elec_z = np.meshgrid(elec_distances, np.array([1000, 500, 0]))
-elec_x = elec_x.flatten()
-elec_z = elec_z.flatten()
-elec_y = np.zeros(len(elec_z))
-electrode_parameters = {
+lateral_elec_x, lateral_elec_z = np.meshgrid(elec_distances, np.array([1000, 500, 0]))
+lateral_elec_x = lateral_elec_x.flatten()
+lateral_elec_z = lateral_elec_z.flatten()
+lateral_elec_y = np.zeros(len(lateral_elec_z))
+lateral_electrode_parameters = {
         'sigma': 0.3,
-        'x': elec_x,
-        'y': elec_y,
-        'z': elec_z
+        'x': lateral_elec_x,
+        'y': lateral_elec_y,
+        'z': lateral_elec_z
 }
-stick_electrode_parameters = electrode_parameters.copy()
-stick_electrode_parameters['method'] = 'linesource'
+
+center_elec_z = np.arange(-400, 1501, 100)
+center_elec_x = np.zeros(len(center_elec_z))
+center_elec_y = np.zeros(len(center_elec_z))
+center_electrode_parameters = {
+        'sigma': 0.3,
+        'x': center_elec_x,
+        'y': center_elec_y,
+        'z': center_elec_z
+}
+
+
+stick_lateral_electrode_parameters = lateral_electrode_parameters.copy()
+stick_lateral_electrode_parameters['method'] = 'linesource'
+
+stick_center_electrode_parameters = center_electrode_parameters.copy()
+stick_center_electrode_parameters['method'] = 'linesource'
 
 # Time resolution of 2**-4 is almost identical to 2**-5
 # root_folder = os.path.join(os.getenv('HOME'), 'work', 'aPop')
 dt = 2**-3
+end_T = 2**10 - dt
+
 shape_function_params = {'name': 'shape_function',
                             'input_type': 'distributed_delta',
                             'timeres_NEURON': dt,
                             'cell_name': 'hay',
                             'timeres_python': dt,
                             'cut_off': 2000,
-                            'end_t': 2**10 - dt,
+                            'end_t': end_T,
                             'syn_tau': dt * 3,
                             'syn_weight': 1e-3,
                             'correlation': 0.0,
@@ -51,7 +69,8 @@ shape_function_params = {'name': 'shape_function',
                          'conductance_type': 'generic',
                          'save_folder': 'shape_function',
                          'root_folder': root_folder,
-                         'electrode_parameters': electrode_parameters,
+                         'lateral_electrode_parameters': lateral_electrode_parameters,
+                         'center_electrode_parameters': center_electrode_parameters,
                          'num_synapses': 1000,
                          'input_firing_rate': 5,
                          'input_regions': ['homogeneous', 'distal_tuft', 'basal'],
@@ -72,15 +91,15 @@ vsd_params = {'input_type': 'distributed_delta',
                             'conductance_type': 'generic',
                             'save_folder': 'shape_function',
                             'root_folder': root_folder,
-                            'electrode_parameters': electrode_parameters,
+                            'lateral_electrode_parameters': lateral_electrode_parameters,
                             }
 
 distributed_delta_classic_params = {'input_type': 'distributed_delta',
-                            'timeres_NEURON': 2**-4,
+                            'timeres_NEURON': dt,
                             'cell_name': 'hay',
-                            'timeres_python': 2**-4,
+                            'timeres_python': dt,
                             'cut_off': 2000,
-                            'end_t': 10000,
+                            'end_t': end_T,
                             'syn_tau': 0.1,
                             'syn_weight': 1e-3,
                             'max_freq': 500,
@@ -88,12 +107,12 @@ distributed_delta_classic_params = {'input_type': 'distributed_delta',
                             'holding_potential': None,
                             'save_folder': 'shape_function',
                             'root_folder': root_folder,
-                            'electrode_parameters': electrode_parameters,
+                            'lateral_electrode_parameters': lateral_electrode_parameters,
+                            'center_electrode_parameters': center_electrode_parameters,
                             'num_synapses': 1000,
                             }
 
 scale = 10
-dt = 2**-3
 num_cells = 100 * scale ** 2
 population_radius = 100. * scale
 # dr = 50.
@@ -111,14 +130,15 @@ generic_population_params = {'input_type': 'distributed_delta',
                              'population_radii': population_radii,
                              'layer_5_thickness': layer_5_thickness,
                              'cut_off': 2000,
-                             'end_t': 2**10 - dt,
+                             'end_t': end_T,
                              'syn_tau': dt * 3,
                              'syn_weight': 1e-3,
                              'max_freq': 500,
                              'holding_potential': -80,
                              'conductance_type': 'generic',
                              'save_folder': 'population',
-                             'electrode_parameters': electrode_parameters,
+                             'lateral_electrode_parameters': lateral_electrode_parameters,
+                             'center_electrode_parameters': center_electrode_parameters,
                              'root_folder': root_folder,
                              'num_synapses': 1000,
                              'input_firing_rate': 5,
@@ -139,14 +159,15 @@ classic_population_params = {'input_type': 'distributed_delta',
                              'population_radii': population_radii,
                              'layer_5_thickness': layer_5_thickness,
                              'cut_off': 2000,
-                             'end_t': 2**10 - dt,
+                             'end_t': end_T,
                              'syn_tau': dt * 3,
                              'syn_weight': 1e-3,
                              'max_freq': 500,
                              'holding_potential': -70,
                              'conductance_type': 'classic',
                              'save_folder': 'population',
-                             'electrode_parameters': electrode_parameters,
+                             'lateral_electrode_parameters': lateral_electrode_parameters,
+                             'center_electrode_parameters': center_electrode_parameters,
                              'root_folder': root_folder,
                              'num_synapses': 1000,
                              'input_firing_rate': 5,
@@ -168,7 +189,7 @@ stick_population_params = {'input_type': 'distributed_delta',
                              'population_radii': population_radii,
                              'layer_5_thickness': 0,
                              'cut_off': 2000,
-                             'end_t': 2**10 - dt,
+                             'end_t': end_T,
                              'syn_tau': dt * 3,
                              'syn_weight': 1e-3,
                              'max_freq': 500,
@@ -176,7 +197,8 @@ stick_population_params = {'input_type': 'distributed_delta',
                              'g_w_bar_scaling': 5.,
                              'conductance_type': 'generic',
                              'save_folder': 'stick_population',
-                             'electrode_parameters': stick_electrode_parameters,
+                             'lateral_electrode_parameters': stick_lateral_electrode_parameters,
+                             'center_electrode_parameters': stick_center_electrode_parameters,
                              'root_folder': root_folder,
                              'num_synapses': 1000,
                              'input_firing_rate': 5,
@@ -192,7 +214,7 @@ asymmetry_params = {'input_type': 'distributed_asymmetry',
                             'timeres_NEURON': dt,
                             'timeres_python': dt,
                             'cut_off': 2000,
-                            'end_t': 2**10 - dt,
+                            'end_t': end_T,
                             'syn_tau': 0.1,
                             'syn_weight': 1e-3,
                             'max_freq': 500,

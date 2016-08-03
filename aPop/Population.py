@@ -19,6 +19,122 @@ import tools
 import scipy.fftpack as sf
 
 
+def plot_leski_13(param_dict):
+
+    input_region_clr = {'distal_tuft': 'lightgreen',
+                        'homogeneous': 'darkgreen'}
+    correlations = [0.0, 0.1, 1.0]
+    folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
+    pop_size = 500
+    mu = 2.0
+
+    param_dict.update({'input_region': 'homogeneous',
+                       'cell_number': 0,
+                       'distribution': 'linear_increase',
+                       'correlation': 0.0,
+                       'mu': mu,
+                      })
+    ns = NeuralSimulation(**param_dict)
+    synidx_homo = np.load(join(folder, 'synidx_%s.npy' % ns.sim_name))
+
+
+    param_dict['input_region'] = 'distal_tuft'
+    ns = NeuralSimulation(**param_dict)
+    synidx_tuft = np.load(join(folder, 'synidx_%s.npy' % ns.sim_name))
+
+    xmid = np.load(join(folder, 'xmid_%s_generic.npy' % param_dict['cell_name']))
+    zmid = np.load(join(folder, 'zmid_%s_generic.npy' % param_dict['cell_name']))
+    xstart = np.load(join(folder, 'xstart_%s_generic.npy' % param_dict['cell_name']))
+    zstart = np.load(join(folder, 'zstart_%s_generic.npy' % param_dict['cell_name']))
+    xend = np.load(join(folder, 'xend_%s_generic.npy' % param_dict['cell_name']))
+    zend = np.load(join(folder, 'zend_%s_generic.npy' % param_dict['cell_name']))
+
+    elec_x = param_dict['electrode_parameters']['x']
+    elec_z = param_dict['electrode_parameters']['z']
+    z = np.linspace(elec_z[0], elec_z[60], 4)
+
+    input_regions = ['distal_tuft', 'homogeneous', 'basal']
+    distributions = ['uniform', 'linear_increase', 'linear_decrease']
+
+    plt.close('all')
+    fig = plt.figure(figsize=(18, 9))
+    # fig.suptitle(param_dict['distribution'] + ' conductance')
+    fig.subplots_adjust(right=0.95, wspace=0.2, hspace=0.5, left=0.05, top=0.85, bottom=0.2)
+
+    # ax_morph_homogeneous = fig.add_subplot(1, 8, 2, aspect=1, frameon=False, xticks=[], yticks=[])
+    # [ax_morph_homogeneous.plot([xstart[idx], xend[idx]], [zstart[idx], zend[idx]], lw=2,
+    #                  c=cell_color, zorder=0) for idx in xrange(len(xmid))]
+    # ax_morph_homogeneous.plot(xmid[synidx_homo], zmid[synidx_homo], '.', c=input_region_clr['homogeneous'], ms=4)
+
+    psd_ax_dict = {#'ylim': [-200, 1200],
+                    'xlim': [1e0, 5e2],
+                    'yticks': [],
+                   # 'xlabel': 'Frequency (Hz)',
+                   'xticks': [1e0, 10, 100],
+                   'xscale': 'log'}
+    lines = None
+    line_names = None
+    num_plot_cols = 12
+    num_plot_rows = 3
+    im_dict = {'cmap': 'hot', 'norm': LogNorm(), 'vmin': 1e-4, 'vmax': 10.,}
+    fig.text(0.17, 0.95, 'Uniform conductance')
+    fig.text(0.45, 0.95, 'Linear increasing conductance')
+    fig.text(0.75, 0.95, 'Linear decreasing conductance')
+
+    fig.text(0.05, 0.75, 'Distal tuft\ninput', ha='center')
+    fig.text(0.05, 0.5, 'Homogeneous\ninput', ha='center')
+    fig.text(0.05, 0.25, 'Basal\ninput', ha='center')
+
+    for i, input_region in enumerate(input_regions):
+        for d, distribution in enumerate(distributions):
+            for c, correlation in enumerate(correlations):
+                # print input_region, distribution, correlation
+                plot_number = i * (num_plot_cols) + d * (1 + len(distributions)) + c + 2
+                # print i, d, c, plot_number
+
+                ax = fig.add_subplot(num_plot_rows, num_plot_cols, plot_number, **psd_ax_dict)
+                ax.set_title('c=%1.1f' % correlation)
+
+                lines = []
+                line_names = []
+
+                param_dict['correlation'] = correlation
+                param_dict['input_region'] = input_region
+                param_dict['distribution'] = distribution
+                ns = NeuralSimulation(**param_dict)
+                name = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
+                lfp = np.load(join(folder, '%s.npy' % name))[[0, 30, 60], :]
+                freq, psd = tools.return_freq_and_psd(ns.timeres_python/1000., lfp)
+
+                # plt.close('all')
+                # plt.pcolormesh(freq[1:], z, psd[:, 1:])
+                # plt.show()
+
+                img = ax.pcolormesh(freq[1:500], z, psd[:, 1:500], **im_dict)
+                if i==2 and d == 0 and c == 0:
+                    ax.set_xlabel('frequency (Hz)', labelpad=-0)
+                    ax.set_ylabel('z')
+                    c_ax = fig.add_axes([0.37, 0.2, 0.005, 0.17])
+                    cbar = plt.colorbar(img, cax=c_ax, label='$\mu$V$^2$/Hz')
+                # plt.axis('auto')
+                # plt.colorbar(img)
+                # l, = ax.loglog(freq, psd[0], c=input_region_clr[input_region], lw=3)
+                # lines.append(l)
+                # line_names.append(input_region)
+
+        # ax_tuft.set_ylabel('LFP-PSD ($\mu$V$^2$/Hz)', labelpad=-5)
+        # ax_tuft.set_xticklabels(['', '1', '10', '100'])
+        # ax_tuft.set_yticks(ax_tuft.get_yticks()[1:-1][::2])
+
+    # fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
+    simplify_axes(fig.axes)
+    # mark_subplots([ax_morph_homogeneous], 'B', ypos=1.1, xpos=0.1)
+    plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], 'Figure_Leski_13.png'))
+    plt.close('all')
+
+
+
+
 def plot_figure_5(param_dict):
 
     input_region_clr = {'distal_tuft': 'lightgreen',
@@ -1531,10 +1647,11 @@ if __name__ == '__main__':
     # plot_classic_population_LFP(param_dict)
     # plot_simple_model_LFP(param_dict)
     # plot_linear_combination(param_dict)
-    plot_figure_1(param_dict)
-    plot_figure_2(param_dict)
-    plot_figure_3(param_dict)
-    plot_figure_5(param_dict)
+    # plot_figure_1(param_dict)
+    # plot_figure_2(param_dict)
+    # plot_figure_3(param_dict)
+    # plot_figure_5(param_dict)
+    plot_leski_13(param_dict)
     # plot_LFP_time_trace(param_dict)
     sys.exit()
 
