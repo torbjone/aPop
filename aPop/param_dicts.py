@@ -13,12 +13,7 @@ else:
 import numpy as np
 username = os.getenv('USER')
 
-# if at_stallo:
-#     root_folder = join('/global', 'work', username, 'aPop')
-# else:
-#     root_folder = join('/home', username, 'work', 'aPop')
-root_folder = '.'
-
+root_folder = '..'
 
 elec_distances = 10 * np.exp(np.linspace(0, np.log(1000), 30))
 lateral_elec_x, lateral_elec_z = np.meshgrid(elec_distances, np.array([1000, 500, 0]))
@@ -42,7 +37,6 @@ center_electrode_parameters = {
         'z': center_elec_z
 }
 
-
 stick_lateral_electrode_parameters = lateral_electrode_parameters.copy()
 stick_lateral_electrode_parameters['method'] = 'linesource'
 
@@ -50,20 +44,20 @@ stick_center_electrode_parameters = center_electrode_parameters.copy()
 stick_center_electrode_parameters['method'] = 'linesource'
 
 # Time resolution of 2**-4 is almost identical to 2**-5
-# root_folder = os.path.join(os.getenv('HOME'), 'work', 'aPop')
-dt = 2**-3
-end_T = 2**10 - dt
+dt = 2**-4
+end_T = 2**12 - dt
+cut_off = 2000
 
 shape_function_params = {'name': 'shape_function',
-                            'input_type': 'distributed_delta',
-                            'timeres_NEURON': dt,
-                            'cell_name': 'hay',
-                            'timeres_python': dt,
-                            'cut_off': 2000,
-                            'end_t': end_T,
-                            'syn_tau': dt * 3,
-                            'syn_weight': 1e-3,
-                            'correlation': 0.0,
+                         'input_type': 'distributed_delta',
+                         'timeres_NEURON': dt,
+                         'cell_name': 'hay',
+                         'timeres_python': dt,
+                         'cut_off': cut_off,
+                         'end_t': end_T,
+                         'syn_tau': dt * 3,
+                         'syn_weight': 1e-3,
+                         'correlation': 0.0,
                          'max_freq': 500,
                          'holding_potential': -80,
                          'conductance_type': 'generic',
@@ -82,7 +76,7 @@ vsd_params = {'input_type': 'distributed_delta',
                             'timeres_NEURON': 2**-4,
                             'cell_name': 'hay',
                             'timeres_python': 2**-4,
-                            'cut_off': 2000,
+                            'cut_off': cut_off,
                             'end_t': 100,
                             'syn_tau': 0.1,
                             'syn_weight': 1e-3,
@@ -98,7 +92,7 @@ distributed_delta_classic_params = {'input_type': 'distributed_delta',
                             'timeres_NEURON': dt,
                             'cell_name': 'hay',
                             'timeres_python': dt,
-                            'cut_off': 2000,
+                            'cut_off': cut_off,
                             'end_t': end_T,
                             'syn_tau': 0.1,
                             'syn_weight': 1e-3,
@@ -115,7 +109,6 @@ distributed_delta_classic_params = {'input_type': 'distributed_delta',
 scale = 10
 num_cells = 100 * scale ** 2
 population_radius = 100. * scale
-# dr = 50.
 dr = 50.
 population_radii = np.arange(dr, population_radius + dr, dr)
 layer_5_thickness = 200  # From Markram (2015): Thickness L1-L5: 1382 um. Hay cell height: 1169 um. 1382 - 1169 = 213 um
@@ -129,7 +122,7 @@ generic_population_params = {'input_type': 'distributed_delta',
                              'population_radius': population_radius,
                              'population_radii': population_radii,
                              'layer_5_thickness': layer_5_thickness,
-                             'cut_off': 2000,
+                             'cut_off': cut_off,
                              'end_t': end_T,
                              'syn_tau': dt * 3,
                              'syn_weight': 1e-3,
@@ -142,10 +135,10 @@ generic_population_params = {'input_type': 'distributed_delta',
                              'root_folder': root_folder,
                              'num_synapses': 1000,
                              'input_firing_rate': 5,
-                             'input_regions': ['homogeneous', 'distal_tuft', 'basal'],
+                             'input_regions': ['distal_tuft'],#['homogeneous', 'distal_tuft', 'basal'],
                              'mus': [-0.5, 0.0, 2.0],
-                             'distributions': ['uniform', 'linear_increase', 'linear_decrease'],
-                             'correlations': [0.0, 0.1, 1.0]
+                             'distributions': ['linear_increase'],#['uniform', 'linear_increase', 'linear_decrease'],
+                             'correlations': [0.0, 0.01, 1.0]
                              }
 
 classic_population_params = {'input_type': 'distributed_delta',
@@ -158,7 +151,7 @@ classic_population_params = {'input_type': 'distributed_delta',
                              'population_radius': population_radius,
                              'population_radii': population_radii,
                              'layer_5_thickness': layer_5_thickness,
-                             'cut_off': 2000,
+                             'cut_off': cut_off,
                              'end_t': end_T,
                              'syn_tau': dt * 3,
                              'syn_weight': 1e-3,
@@ -176,8 +169,9 @@ classic_population_params = {'input_type': 'distributed_delta',
                              'holding_potentials': [-70],
                              'distributions': None, #['uniform', 'linear_increase', 'linear_decrease'],
                              'conductance_types': ['active', 'passive', 'Ih', 'Ih_frozen'], #['uniform', 'linear_increase', 'linear_decrease'],
-                             'correlations': [0.0, 0.1, 1.0]
+                             'correlations': [0.0, 0.01, 1.0]
                              }
+
 stick_population_params = {'input_type': 'distributed_delta',
                              'name': 'stick_population',
                              'timeres_NEURON': dt,
@@ -188,7 +182,7 @@ stick_population_params = {'input_type': 'distributed_delta',
                              'population_radius': population_radius,
                              'population_radii': population_radii,
                              'layer_5_thickness': 0,
-                             'cut_off': 2000,
+                             'cut_off': cut_off,
                              'end_t': end_T,
                              'syn_tau': dt * 3,
                              'syn_weight': 1e-3,
@@ -205,15 +199,14 @@ stick_population_params = {'input_type': 'distributed_delta',
                              'input_regions': ['top', 'bottom', 'homogeneous'],
                              'mus': [-0.5, 0.0, 2.0],
                              'distributions': ['uniform', 'increase'],
-                             'correlations': [0.0, 0.1, 1.0],
+                             'correlations': [0.0, 0.01, 1.0],
                              'correlation': 0.0,
                              }
-
 
 asymmetry_params = {'input_type': 'distributed_asymmetry',
                             'timeres_NEURON': dt,
                             'timeres_python': dt,
-                            'cut_off': 2000,
+                            'cut_off': cut_off,
                             'end_t': end_T,
                             'syn_tau': 0.1,
                             'syn_weight': 1e-3,

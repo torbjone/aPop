@@ -1,5 +1,4 @@
 from __future__ import division
-import param_dicts
 import os
 if 'DISPLAY' not in os.environ:
     import matplotlib
@@ -11,12 +10,82 @@ from plotting_convention import *
 import pylab as plt
 import numpy as np
 import os
-from os.path import join
-import LFPy
 import sys
+from os.path import join
+from suppress_print import suppress_stdout_stderr
+with suppress_stdout_stderr():
+    import LFPy
 from NeuralSimulation import NeuralSimulation
 import tools
 import scipy.fftpack as sf
+
+
+def plot_leski_6(param_dict):
+
+    conductance_names = {-0.5: 'regenerative',
+                         0.0: 'passive-frozen',
+                         2.0: 'restorative'}
+
+    correlations = [0.0, 0.1, 1.0]
+    mus = [-0.5, 0.0, 2.0]
+    folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
+    pop_sizes = [50, 250, 500]
+    for input_region in param_dict['input_regions']:
+        for distribution in param_dict['distributions']:
+            param_dict.update({'input_region': input_region,
+                               'cell_number': 0,
+                               'distribution': distribution,
+                               'correlation': 0.0,
+                               'mu': 0.0,
+                              })
+
+            plt.close('all')
+            fig = plt.figure(figsize=(10, 10))
+            fig.suptitle('Soma region LFP\nconductance: %s\ninput region: %s'
+                         % (param_dict['distribution'], param_dict['input_region']))
+            fig.subplots_adjust(right=0.95, wspace=0.5, hspace=0.5, left=0.2, top=0.85, bottom=0.2)
+
+            psd_ax_dict = {'xlim': [1e0, 5e2],
+                           'xlabel': 'Frequency (Hz)',
+                           'xticks': [1e0, 10, 100],
+                           'ylim': [1e-6, 1e1]}
+            lines = None
+            line_names = None
+            num_plot_cols = 3
+
+            elec = 60
+            for idx, pop_size in enumerate(pop_sizes):
+                fig.text(0.01, 0.8 - idx / (len(pop_sizes) + 1), 'R = %d $\mu$m' % pop_size)
+                for c, correlation in enumerate(correlations):
+                    param_dict['correlation'] = correlation
+                    plot_number = idx * num_plot_cols + c
+                    ax_tuft = fig.add_subplot(3, num_plot_cols, plot_number + 1, **psd_ax_dict)
+                    ax_tuft.set_title('c = %1.1f' % correlation)
+                    ax_tuft.grid(True)
+                    lines = []
+                    line_names = []
+                    for mu in mus:
+                        param_dict['mu'] = mu
+
+                        ns = NeuralSimulation(**param_dict)
+
+                        name = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
+                        lfp = np.load(join(folder, '%s.npy' % name))
+                        freq, psd = tools.return_freq_and_psd(ns.timeres_python/1000., lfp[elec])
+                        l, = ax_tuft.loglog(freq, psd[0], c=qa_clr_dict[mu], lw=3)
+
+                        lines.append(l)
+                        line_names.append(conductance_names[mu])
+
+                        ax_tuft.set_ylabel('LFP-PSD ($\mu$V$^2$/Hz)', labelpad=-5)
+                        ax_tuft.set_xticklabels(['', '1', '10', '100'])
+                        ax_tuft.set_yticks(ax_tuft.get_yticks()[1:-1][::2])
+
+            fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
+            simplify_axes(fig.axes)
+            plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'],
+                             'Figure_population_size_%s_%s.png' % (param_dict['distribution'], param_dict['input_region'])))
+            plt.close('all')
 
 
 def plot_leski_13(param_dict):
@@ -37,7 +106,6 @@ def plot_leski_13(param_dict):
     ns = NeuralSimulation(**param_dict)
     synidx_homo = np.load(join(folder, 'synidx_%s.npy' % ns.sim_name))
 
-
     param_dict['input_region'] = 'distal_tuft'
     ns = NeuralSimulation(**param_dict)
     synidx_tuft = np.load(join(folder, 'synidx_%s.npy' % ns.sim_name))
@@ -49,8 +117,8 @@ def plot_leski_13(param_dict):
     xend = np.load(join(folder, 'xend_%s_generic.npy' % param_dict['cell_name']))
     zend = np.load(join(folder, 'zend_%s_generic.npy' % param_dict['cell_name']))
 
-    elec_x = param_dict['electrode_parameters']['x']
-    elec_z = param_dict['electrode_parameters']['z']
+    elec_x = param_dict['lateral_electrode_parameters']['x']
+    elec_z = param_dict['lateral_electrode_parameters']['z']
     z = np.linspace(elec_z[0], elec_z[60], 4)
 
     input_regions = ['distal_tuft', 'homogeneous', 'basal']
@@ -133,8 +201,6 @@ def plot_leski_13(param_dict):
     plt.close('all')
 
 
-
-
 def plot_figure_5(param_dict):
 
     input_region_clr = {'distal_tuft': 'lightgreen',
@@ -165,8 +231,8 @@ def plot_figure_5(param_dict):
     xend = np.load(join(folder, 'xend_%s_generic.npy' % param_dict['cell_name']))
     zend = np.load(join(folder, 'zend_%s_generic.npy' % param_dict['cell_name']))
 
-    elec_x = param_dict['electrode_parameters']['x']
-    elec_z = param_dict['electrode_parameters']['z']
+    elec_x = param_dict['lateral_electrode_parameters']['x']
+    elec_z = param_dict['lateral_electrode_parameters']['z']
 
     plt.close('all')
     fig = plt.figure(figsize=(10, 5))
@@ -237,7 +303,6 @@ def plot_figure_5(param_dict):
     plt.close('all')
 
 
-
 def plot_figure_3(param_dict):
 
     conductance_names = {-0.5: 'regenerative',
@@ -266,8 +331,8 @@ def plot_figure_3(param_dict):
 
     synidx = np.load(join(folder, 'synidx_%s.npy' % ns.sim_name))
 
-    elec_x = param_dict['electrode_parameters']['x']
-    elec_z = param_dict['electrode_parameters']['z']
+    elec_x = param_dict['lateral_electrode_parameters']['x']
+    elec_z = param_dict['lateral_electrode_parameters']['z']
 
     plt.close('all')
     fig = plt.figure(figsize=(10, 5))
@@ -327,7 +392,6 @@ def plot_figure_3(param_dict):
     plt.close('all')
 
 
-
 def plot_figure_2(param_dict):
 
     conductance_names = {-0.5: 'regenerative',
@@ -356,8 +420,8 @@ def plot_figure_2(param_dict):
 
     synidx = np.load(join(folder, 'synidx_%s.npy' % ns.sim_name))
 
-    elec_x = param_dict['electrode_parameters']['x']
-    elec_z = param_dict['electrode_parameters']['z']
+    elec_x = param_dict['lateral_electrode_parameters']['x']
+    elec_z = param_dict['lateral_electrode_parameters']['z']
 
     plt.close('all')
     fig = plt.figure(figsize=(10, 5))
@@ -467,8 +531,8 @@ def plot_figure_1(param_dict):
     synidx_1 = np.load(join(folder, 'synidx_%s.npy' % ns_1.sim_name))
     synidx_2 = np.load(join(folder, 'synidx_%s.npy' % ns_2.sim_name))
 
-    elec_x = param_dict_1['electrode_parameters']['x']
-    elec_z = param_dict_1['electrode_parameters']['z']
+    elec_x = param_dict_1['lateral_electrode_parameters']['x']
+    elec_z = param_dict_1['lateral_electrode_parameters']['z']
 
     plt.close('all')
     fig = plt.figure(figsize=(7, 5))
@@ -526,6 +590,7 @@ def plot_figure_1(param_dict):
     mark_subplots([ax_morph_1, ax_morph_2], ypos=0.95, xpos=0.1)
     plt.savefig(join(param_dict_1['root_folder'], param_dict_1['save_folder'], 'Figure_1.png'))
     plt.close('all')
+
 
 def plot_linear_combination(param_dict):
 
@@ -592,8 +657,8 @@ def plot_linear_combination(param_dict):
 
             synidx = np.load(join(folder, 'synidx_%s.npy' % ns.sim_name))
 
-            elec_x = param_dict['electrode_parameters']['x']
-            elec_z = param_dict['electrode_parameters']['z']
+            elec_x = param_dict['lateral_electrode_parameters']['x']
+            elec_z = param_dict['lateral_electrode_parameters']['z']
 
             plt.close('all')
             fig = plt.figure(figsize=(10, 10))
@@ -629,8 +694,6 @@ def plot_linear_combination(param_dict):
             plt.close('all')
 
 
-
-
 def return_elec_row_col(elec_number, elec_x, elec_z):
     """ Return the subplot number for the distance study
     """
@@ -639,6 +702,7 @@ def return_elec_row_col(elec_number, elec_x, elec_z):
     elec_idxs = np.arange(len(elec_x)).reshape(num_elec_rows, num_elec_cols)
     row, col = np.array(np.where(elec_idxs == elec_number))[:, 0]
     return row, col
+
 
 def plot_sig_to_elec_grid(x, y):
 
@@ -764,9 +828,9 @@ def return_simple_model(param_dict, pop_size, ns):
     G0 = np.zeros(F2.shape)
     G1 = np.zeros(F2.shape)
     rho = 3000. * 1e-6
-    r_e = param_dict['electrode_parameters']['x'][0]
+    r_e = param_dict['lateral_electrode_parameters']['x'][0]
     R = pop_size
-    for r_idx, dist in enumerate(param_dict['electrode_parameters']['x']):
+    for r_idx, dist in enumerate(param_dict['lateral_electrode_parameters']['x']):
         row_idx = r_idx // 30
 
         for f_idx, freq in enumerate(freqs[:cut_idx_freq]):
@@ -835,8 +899,8 @@ def plot_generic_population_LFP(param_dict):
                 lfp_reg = np.load(join(folder, '%s.npy' % name_reg))
                 lfp_res = np.load(join(folder, '%s.npy' % name_res))
 
-                elec_x = param_dict['electrode_parameters']['x']
-                elec_z = param_dict['electrode_parameters']['z']
+                elec_x = param_dict['lateral_electrode_parameters']['x']
+                elec_z = param_dict['lateral_electrode_parameters']['z']
 
                 plt.close('all')
                 fig = plt.figure(figsize=(18, 10))
@@ -927,8 +991,8 @@ def plot_classic_population_LFP(param_dict):
                 lfp_Ih_frozen = np.load(join(folder, '%s.npy' % name_Ih_frozen))
             except IOError:
                 continue
-            elec_x = param_dict['electrode_parameters']['x']
-            elec_z = param_dict['electrode_parameters']['z']
+            elec_x = param_dict['lateral_electrode_parameters']['x']
+            elec_z = param_dict['lateral_electrode_parameters']['z']
 
             plt.close('all')
             fig = plt.figure(figsize=(18, 10))
@@ -970,13 +1034,6 @@ def plot_classic_population_LFP(param_dict):
             plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], '%s.png' % name_active))
             plt.close('all')
             sys.exit()
-
-def smooth_signal(new_x, old_x, y):
-    new_y = np.zeros(len(new_x))
-    df = new_x[1] - new_x[0]
-    for m, mfreq in enumerate(new_x):
-        new_y[m] = np.average(y[(old_x >= mfreq - df/2) & (old_x < mfreq + df/2)])
-    return new_y
 
 
 def plot_simple_model_LFP(param_dict):
@@ -1026,8 +1083,8 @@ def plot_simple_model_LFP(param_dict):
                 lfp_reg = np.load(join(folder, '%s.npy' % name_reg))
                 lfp_res = np.load(join(folder, '%s.npy' % name_res))
 
-                elec_x = param_dict['electrode_parameters']['x']
-                elec_z = param_dict['electrode_parameters']['z']
+                elec_x = param_dict['lateral_electrode_parameters']['x']
+                elec_z = param_dict['lateral_electrode_parameters']['z']
 
                 plt.close('all')
                 fig = plt.figure(figsize=(18, 10))
@@ -1072,9 +1129,9 @@ def plot_simple_model_LFP(param_dict):
                     ax = fig.add_subplot(3, num_plot_cols, plot_number + 1, ylim=[1e-5, 1e1], xlim=[1e0, 5e2],
                                          title='Simple model')
 
-                    smooth_P = smooth_signal(freq[::average_over], freq, P[elec])
-                    smooth_P_reg = smooth_signal(freq[::average_over], freq, P_reg[elec])
-                    smooth_P_res = smooth_signal(freq[::average_over], freq, P_res[elec])
+                    smooth_P = tools.smooth_signal(freq[::average_over], freq, P[elec])
+                    smooth_P_reg = tools.smooth_signal(freq[::average_over], freq, P_reg[elec])
+                    smooth_P_res = tools.smooth_signal(freq[::average_over], freq, P_res[elec])
 
                     ax.loglog(freq, P[elec], 'k', zorder=1)
                     ax.loglog(freq, P_reg[elec], 'r', zorder=1)
@@ -1087,9 +1144,9 @@ def plot_simple_model_LFP(param_dict):
                     ax = fig.add_subplot(3, num_plot_cols, plot_number + 2, ylim=[1e-5, 1e1], xlim=[1e0, 5e2],
                                          title='Coherence')
 
-                    smooth_c = smooth_signal(freq[::average_over], freq, c_phi[elec])
-                    smooth_c_reg = smooth_signal(freq[::average_over], freq, c_phi_reg[elec])
-                    smooth_c_res = smooth_signal(freq[::average_over], freq, c_phi_res[elec])
+                    smooth_c = tools.smooth_signal(freq[::average_over], freq, c_phi[elec])
+                    smooth_c_reg = tools.smooth_signal(freq[::average_over], freq, c_phi_reg[elec])
+                    smooth_c_res = tools.smooth_signal(freq[::average_over], freq, c_phi_res[elec])
 
                     # ax.loglog(freq, c_phi[elec], 'k', zorder=1)
                     # ax.loglog(freq, c_phi_reg[elec], 'r', zorder=1)
@@ -1113,8 +1170,6 @@ def plot_simple_model_LFP(param_dict):
                 simplify_axes(fig.axes)
                 plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], 'simple_model_%s.png' % name))
                 plt.close('all')
-
-
 
 
 def plot_LFP_time_trace(param_dict):
@@ -1163,9 +1218,6 @@ def plot_LFP_time_trace(param_dict):
     plt.plot(tvec, lfp_res[60] - lfp_res[60, 0], 'b')
 
     plt.show()
-
-
-
 
 
 def initialize_population(param_dict):
@@ -1224,7 +1276,9 @@ def sum_one_population(param_dict, num_cells, num_tsteps):
 
     x_y_z_rot = np.load(os.path.join(param_dict['root_folder'], param_dict['save_folder'],
                              'x_y_z_rot_%s.npy' % param_dict['name']))
-    summed_sig = np.zeros((len(param_dict['electrode_parameters']['x']), num_tsteps))
+    summed_lateral_sig = np.zeros((len(param_dict['lateral_electrode_parameters']['x']), num_tsteps))
+    summed_center_sig = np.zeros((len(param_dict['center_electrode_parameters']['x']), num_tsteps))
+    summed_center_sig_half_density = np.zeros((len(param_dict['center_electrode_parameters']['x']), num_tsteps))
     # Cells are numbered with increasing distance from population center. We exploit this
     subpopulation_idx = 0
     ns = None
@@ -1233,7 +1287,10 @@ def sum_one_population(param_dict, num_cells, num_tsteps):
     sample_freq = sf.fftfreq(num_tsteps, d=param_dict['timeres_python'] / 1000.)
     pidxs = np.where(sample_freq >= 0)
     # freqs = sample_freq[pidxs]
-    xfft_norm_sum = np.zeros((len(param_dict['electrode_parameters']['x']), len(pidxs[0])), dtype=complex)
+    xfft_norm_sum_lateral = np.zeros((len(param_dict['lateral_electrode_parameters']['x']), 
+                                      len(pidxs[0])), dtype=complex)
+    xfft_norm_sum_center = np.zeros((len(param_dict['center_electrode_parameters']['x']), 
+                                     len(pidxs[0])), dtype=complex)
 
     for cell_number in xrange(num_cells):
         param_dict.update({'cell_number': cell_number})
@@ -1243,35 +1300,60 @@ def sum_one_population(param_dict, num_cells, num_tsteps):
 
         ns = NeuralSimulation(**param_dict)
         sim_name = ns.sim_name
-        lfp = 1000 * np.load(join(ns.sim_folder, 'sig_%s.npy' % sim_name))  # uV
-        s = sf.fft(lfp, axis=1)[:, pidxs[0]]
-        s_norm = s / np.abs(s)
+        lateral_lfp = 1000 * np.load(join(ns.sim_folder, 'lateral_sig_%s.npy' % sim_name))  # uV
+        center_lfp = 1000 * np.load(join(ns.sim_folder, 'center_sig_%s.npy' % sim_name))  # uV
+        s_lateral = sf.fft(lateral_lfp, axis=1)[:, pidxs[0]]
+        s_center = sf.fft(center_lfp, axis=1)[:, pidxs[0]]
+        s_norm_lateral = s_lateral / np.abs(s_lateral)
+        s_norm_center = s_center / np.abs(s_center)
 
         # freqs, lfp_psd = tools.return_freq_and_psd_welch(lfp[:, :], ns.welch_dict)
-        if not summed_sig.shape == lfp.shape:
-            print "Reshaping LFP time signal", lfp.shape
-            summed_sig = np.zeros(lfp.shape)
+        if not summed_lateral_sig.shape == lateral_lfp.shape:
+            print "Reshaping LFP time signal", lateral_lfp.shape
+            summed_lateral_sig = np.zeros(lateral_lfp.shape)
 
-        if not xfft_norm_sum.shape == s_norm.shape:
-            print "Reshaping coherence signal", xfft_norm_sum.shape, s_norm.shape
-            xfft_norm_sum = np.zeros(s_norm.shape)
+        if not xfft_norm_sum_lateral.shape == s_norm_lateral.shape:
+            print "Reshaping coherence signal", xfft_norm_sum_lateral.shape, s_norm_lateral.shape
+            xfft_norm_sum_lateral = np.zeros(s_norm_lateral.shape)
 
-        xfft_norm_sum[:] += s_norm[:]
+        if not summed_center_sig.shape == lateral_lfp.shape:
+            print "Reshaping LFP time signal", lateral_lfp.shape
+            summed_center_sig = np.zeros(lateral_lfp.shape)
+
+        if not xfft_norm_sum_center.shape == s_norm_center.shape:
+            print "Reshaping coherence signal", xfft_norm_sum_center.shape, s_norm_center.shape
+            xfft_norm_sum_center = np.zeros(s_norm_center.shape)
+
+        xfft_norm_sum_lateral[:] += s_norm_lateral[:]
+        xfft_norm_sum_center[:] += s_norm_center[:]
 
         if r > pop_radius:
             print "Saving population of radius ", pop_radius
             print "r(-1): ", np.sqrt(x_y_z_rot[cell_number - 1, 0]**2 + x_y_z_rot[cell_number - 1, 1]**2)
             print "r: ", r
-            np.save(join(ns.sim_folder, 'summed_signal_%s_%dum.npy' %
-                         (ns.population_sim_name, pop_radius)), summed_sig)
+            np.save(join(ns.sim_folder, 'summed_lateral_signal_%s_%dum.npy' %
+                         (ns.population_sim_name, pop_radius)), summed_lateral_sig)
+            np.save(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
+                         (ns.population_sim_name, pop_radius)), summed_center_sig)
+            np.save(join(ns.sim_folder, 'summed_center_signal_half_density_%s_%dum.npy' %
+                         (ns.population_sim_name, pop_radius)), summed_center_sig_half_density)
             subpopulation_idx += 1
-        summed_sig += lfp
-    print "Saving population of radius ", pop_radius
-    np.save(join(ns.sim_folder, 'summed_signal_%s_%dum.npy' %
-                 (ns.population_sim_name, pop_radius)), summed_sig)
+        summed_lateral_sig += lateral_lfp
+        summed_center_sig += center_lfp
+        if not cell_number % 2:
+            summed_center_sig_half_density += center_lfp
 
-    c_phi = (np.abs(xfft_norm_sum) ** 2 - num_cells) / (num_cells * (num_cells - 1))
-    np.save(join(ns.sim_folder, 'c_phi_%s.npy' % ns.population_sim_name), c_phi)
+    print "Saving population of radius ", pop_radius
+    np.save(join(ns.sim_folder, 'summed_lateral_signal_%s_%dum.npy' %
+                 (ns.population_sim_name, pop_radius)), summed_lateral_sig)
+    np.save(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
+                 (ns.population_sim_name, pop_radius)), summed_center_sig)
+    np.save(join(ns.sim_folder, 'summed_center_signal_half_density_%s_%dum.npy' %
+                 (ns.population_sim_name, pop_radius)), summed_center_sig_half_density)
+    c_phi_lateral = (np.abs(xfft_norm_sum_lateral) ** 2 - num_cells) / (num_cells * (num_cells - 1))
+    c_phi_center = (np.abs(xfft_norm_sum_center) ** 2 - num_cells) / (num_cells * (num_cells - 1))
+    np.save(join(ns.sim_folder, 'c_phi_lateral_%s.npy' % ns.population_sim_name), c_phi_lateral)
+    np.save(join(ns.sim_folder, 'c_phi_center_%s.npy' % ns.population_sim_name), c_phi_center)
 
 
 def sum_population_generic(param_dict):
@@ -1328,8 +1410,6 @@ def sum_population_mpi_generic(param_dict):
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['mus']) *
                      len(param_dict['distributions']) * len(param_dict['correlations']))
 
-        # print param_dict['population_radii']
-
         for input_region in param_dict['input_regions']:
             param_dict.update({'input_region': input_region})
             for distribution in param_dict['distributions']:
@@ -1378,6 +1458,7 @@ def sum_population_mpi_generic(param_dict):
                 print "\033[93m%d exiting\033[0m" % rank
                 break
         comm.send(None, dest=0, tag=tags.EXIT)
+
 
 def sum_population_mpi_classic(param_dict):
     """ Run with
@@ -1465,7 +1546,6 @@ def sum_population_mpi_classic(param_dict):
         comm.send(None, dest=0, tag=tags.EXIT)
 
 
-
 def PopulationMPIgeneric():
     """ Run with
         mpirun -np 4 python example_mpi.py
@@ -1495,7 +1575,7 @@ def PopulationMPIgeneric():
 
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
-        num_cells = 2000 if at_stallo else 5
+        num_cells = 2000 if at_stallo else 1
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['mus']) *
                      len(param_dict['distributions']) * len(param_dict['correlations']) * (num_cells))
 
@@ -1577,7 +1657,7 @@ def PopulationMPIclassic():
 
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
-        num_cells = 2000
+        num_cells = 2000 if at_stallo else 1
         num_tasks = (len(param_dict['input_regions']) *
                      len(param_dict['conductance_types']) * len(param_dict['correlations']) * (num_cells))
 
@@ -1633,8 +1713,8 @@ def PopulationMPIclassic():
 if __name__ == '__main__':
     conductance = 'generic'
     # conductance = 'stick_generic'
-
     # conductance = 'classic'
+
     if conductance == 'generic':
         from param_dicts import generic_population_params as param_dict
     elif conductance == 'stick_generic':
@@ -1651,9 +1731,10 @@ if __name__ == '__main__':
     # plot_figure_2(param_dict)
     # plot_figure_3(param_dict)
     # plot_figure_5(param_dict)
-    plot_leski_13(param_dict)
+    # plot_leski_13(param_dict)
+    # plot_leski_6(param_dict)
     # plot_LFP_time_trace(param_dict)
-    sys.exit()
+    # sys.exit()
 
     if len(sys.argv) >= 3:
         cell_number = int(sys.argv[3])

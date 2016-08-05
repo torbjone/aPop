@@ -53,3 +53,10 @@ def return_freq_and_psd_welch(sig, welch_dict):
         yvec_w, freqs = ml.psd(sig[idx, :], **welch_dict)
         psd.append(yvec_w)
     return freqs, np.array(psd)
+
+def smooth_signal(new_x, old_x, y):
+    new_y = np.zeros(len(new_x))
+    df = new_x[1] - new_x[0]
+    for m, mfreq in enumerate(new_x):
+        new_y[m] = np.average(y[(old_x >= mfreq - df/2.) & (old_x < mfreq + df/2.)])
+    return new_y
