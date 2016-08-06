@@ -1316,9 +1316,9 @@ def sum_one_population(param_dict, num_cells, num_tsteps):
             print "Reshaping coherence signal", xfft_norm_sum_lateral.shape, s_norm_lateral.shape
             xfft_norm_sum_lateral = np.zeros(s_norm_lateral.shape)
 
-        if not summed_center_sig.shape == lateral_lfp.shape:
-            print "Reshaping LFP time signal", lateral_lfp.shape
-            summed_center_sig = np.zeros(lateral_lfp.shape)
+        if not summed_center_sig.shape == center_lfp.shape:
+            print "Reshaping LFP time signal", center_lfp.shape
+            summed_center_sig = np.zeros(center_lfp.shape)
 
         if not xfft_norm_sum_center.shape == s_norm_center.shape:
             print "Reshaping coherence signal", xfft_norm_sum_center.shape, s_norm_center.shape
