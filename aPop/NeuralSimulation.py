@@ -171,10 +171,12 @@ class NeuralSimulation:
         lateral_electrode = LFPy.RecExtElectrode(cell, **self.lateral_electrode_parameters)
         lateral_electrode.calc_lfp()
         np.save(join(self.sim_folder, 'lateral_sig_%s.npy' % self.sim_name), lateral_electrode.LFP)
+        del lateral_electrode.LFP
 
         center_electrode = LFPy.RecExtElectrode(cell, **self.center_electrode_parameters)
         center_electrode.calc_lfp()
         np.save(join(self.sim_folder, 'center_sig_%s.npy' % self.sim_name), center_electrode.LFP)
+        del center_electrode.LFP
 
         if self.cell_number == 0:
             np.save(join(self.sim_folder, 'tvec_%s_%s.npy' % (self.cell_name, self.input_type)), cell.tvec)
@@ -384,12 +386,6 @@ class NeuralSimulation:
 
     def _draw_all_elecs_with_distance(self, cell):
 
-        electrode = LFPy.RecExtElectrode(cell, **self.lateral_electrode_parameters)
-        electrode.calc_lfp()
-
-        center_electrode = LFPy.RecExtElectrode(cell, **self.center_electrode_parameters)
-        center_electrode.calc_lfp()
-
         plt.close('all')
         fig = plt.figure(figsize=[18, 9])
         fig.subplots_adjust(right=0.97, left=0.05)
@@ -438,11 +434,15 @@ class NeuralSimulation:
 
         self.plot_cell_to_ax(cell, cell_ax)
         im_dict = {'cmap': 'hot', 'norm': LogNorm(), 'vmin': 1e-7, 'vmax': 1e-2}
+        center_electrode = LFPy.RecExtElectrode(cell, **self.center_electrode_parameters)
+        center_electrode.calc_lfp()
         center_LFP = 1000 * center_electrode.LFP
+
         freq, psd = tools.return_freq_and_psd(self.timeres_python/1000., center_LFP)
         img = ax_center.pcolormesh(freq, center_electrode.z, psd, **im_dict)
         cbar = plt.colorbar(img, ax=ax_center, label='$\mu$V$^2$/Hz')
-
+        del center_electrode
+        del center_LFP
         all_elec_ax = [ax_top, ax_mid, ax_bottom]
         all_elec_n_ax = [ax_top_n, ax_mid_n, ax_bottom_n]
 
@@ -508,7 +508,8 @@ class NeuralSimulation:
         # else:
         #      sim_name = '%s_%s_%s_%s_%+d_%1.5fuS_%05d' % (self.cell_name, self.input_type, input_region,
         #                                               self.conductance_type, self.holding_potential, self.param_dict['syn_weight'], cell_number)
-
+        electrode = LFPy.RecExtElectrode(cell, **self.lateral_electrode_parameters)
+        electrode.calc_lfp()
         fig.suptitle(self.sim_name)
         LFP = 1000 * electrode.LFP#np.load(join(self.sim_folder, 'sig_%s.npy' % sim_name))[:, :]
 
