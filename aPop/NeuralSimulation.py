@@ -180,8 +180,9 @@ class NeuralSimulation:
 
         if self.cell_number == 0:
             np.save(join(self.sim_folder, 'tvec_%s_%s.npy' % (self.cell_name, self.input_type)), cell.tvec)
-            np.save(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name), cell.vmem)
-            np.save(join(self.sim_folder, 'imem_%s.npy' % self.sim_name), cell.imem)
+            if hasattr(cell, 'vmem'):
+                np.save(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name), cell.vmem)
+                np.save(join(self.sim_folder, 'imem_%s.npy' % self.sim_name), cell.imem)
             np.save(join(self.sim_folder, 'synidx_%s.npy' % self.sim_name), cell.synidx)
 
             np.save(join(self.sim_folder, 'lateral_elec_x_%s.npy' % self.cell_name), lateral_electrode.x)
@@ -231,15 +232,15 @@ class NeuralSimulation:
 
         cell = self._return_cell(x_y_z_rot)
         cell, syn = self._make_distributed_synaptic_stimuli(cell)
-        cell.simulate(rec_imem=True, rec_vmem=True)
+        cell.simulate(rec_imem=False, rec_vmem=False)
 
         # plt.plot(cell.tvec, cell.vmem[0, :])
         # plt.plot(cell.tvec, cell.vmem[1, :])
         # plt.show()
         # sys.exit()
         self.save_neural_sim_single_input_data(cell)
-        if ('shape_function' in self.name) or (not self.cell_number % 100):
-            self._draw_all_elecs_with_distance(cell)
+        # if ('shape_function' in self.name) or (not self.cell_number % 100):
+        #     self._draw_all_elecs_with_distance(cell)
 
     def run_asymmetry_simulation(self, mu, fraction, distribution, cell_number):
         plt.seed(123 * cell_number)
