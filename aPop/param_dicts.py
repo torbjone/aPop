@@ -45,7 +45,7 @@ stick_center_electrode_parameters['method'] = 'linesource'
 
 # Time resolution of 2**-4 is almost identical to 2**-5
 dt = 2**-4
-end_T = 2**12 - dt
+end_T = 2**13 - dt
 cut_off = 2000
 
 shape_function_params = {'name': 'shape_function',
@@ -135,9 +135,9 @@ generic_population_params = {'input_type': 'distributed_delta',
                              'root_folder': root_folder,
                              'num_synapses': 1000,
                              'input_firing_rate': 5,
-                             'input_regions': ['distal_tuft'],#['homogeneous', 'distal_tuft', 'basal'],
+                             'input_regions': ['homogeneous', 'distal_tuft', 'basal'],
                              'mus': [-0.5, 0.0, 2.0],
-                             'distributions': ['linear_increase'],#['uniform', 'linear_increase', 'linear_decrease'],
+                             'distributions': ['uniform', 'linear_increase', 'linear_decrease'],
                              'correlations': [0.0, 0.01, 1.0]
                              }
 
