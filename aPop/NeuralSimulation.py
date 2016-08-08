@@ -182,7 +182,7 @@ class NeuralSimulation:
             np.save(join(self.sim_folder, 'tvec_%s_%s.npy' % (self.cell_name, self.input_type)), cell.tvec)
             if hasattr(cell, 'vmem'):
                 np.save(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name), cell.vmem)
-                np.save(join(self.sim_folder, 'imem_%s.npy' % self.sim_name), cell.imem)
+            np.save(join(self.sim_folder, 'imem_%s.npy' % self.sim_name), cell.imem)
             np.save(join(self.sim_folder, 'synidx_%s.npy' % self.sim_name), cell.synidx)
 
             np.save(join(self.sim_folder, 'lateral_elec_x_%s.npy' % self.cell_name), lateral_electrode.x)
@@ -232,7 +232,7 @@ class NeuralSimulation:
 
         cell = self._return_cell(x_y_z_rot)
         cell, syn = self._make_distributed_synaptic_stimuli(cell)
-        cell.simulate(rec_imem=False, rec_vmem=False)
+        cell.simulate(rec_imem=True, rec_vmem=False)
 
         # plt.plot(cell.tvec, cell.vmem[0, :])
         # plt.plot(cell.tvec, cell.vmem[1, :])
