@@ -707,7 +707,7 @@ class NeuralSimulation:
             max_exponent = np.ceil(np.log10(np.max([np.max(l.get_ydata()[1:]) for l in ax.get_lines()])))
             ax.set_ylim([10**(max_exponent - 4), 10**max_exponent])
 
-        fig.savefig(join(self.figure_folder, 'F_%s.png' % self.population_sim_name))
+        fig.savefig(join(self.figure_folder, 'lateral_F_%s.png' % self.population_sim_name))
 
 
 if __name__ == '__main__':

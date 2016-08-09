@@ -52,32 +52,39 @@ def sum_shape_functions_classic(param_dict):
 
 
 def sum_shape_function(param_dict, input_region, distribution, mu, num_cells):
-    average_psd = np.zeros((len(param_dict['electrode_parameters']['x']), 2**10))
+    average_center_psd = np.zeros((len(param_dict['center_electrode_parameters']['x']), 2**10))
+    average_lateral_psd = np.zeros((len(param_dict['lateral_electrode_parameters']['x']), 2**10))
     cell_count = 0
     freqs = []
+    param_dict.update({'input_region': input_region,
+                       'mu': mu,
+                       'distribution': distribution})
     for cell_number in xrange(num_cells):
-        param_dict.update({'input_region': input_region,
-                           'cell_number': cell_number,
-                           'mu': mu,
-                           'distribution': distribution})
+        param_dict.update({'cell_number': cell_number,})
         ns = NeuralSimulation(**param_dict)
-        lfp = 1000 * np.load(join(ns.sim_folder, 'sig_%s.npy' % ns.sim_name))
-        freqs, lfp_psd = tools.return_freq_and_psd(ns.timeres_python/1000., lfp[:, :])
-        if not average_psd.shape == lfp_psd.shape:
-            # print "Reshaping", lfp_psd.shape, freqs.shape, freqs
-            average_psd = np.zeros(lfp_psd.shape)
+        center_lfp = 1000 * np.load(join(ns.sim_folder, 'center_sig_%s.npy' % ns.sim_name))
+        lateral_lfp = 1000 * np.load(join(ns.sim_folder, 'lateral_sig_%s.npy' % ns.sim_name))
+        freqs, center_lfp_psd = tools.return_freq_and_psd(ns.timeres_python/1000., center_lfp[:, :])
+        freqs, lateral_lfp_psd = tools.return_freq_and_psd(ns.timeres_python/1000., lateral_lfp[:, :])
+        if not average_center_psd.shape == center_lfp_psd.shape:
+            average_center_psd = np.zeros(center_lfp_psd.shape)
+        if not average_lateral_psd.shape == lateral_lfp_psd.shape:
+            average_lateral_psd = np.zeros(lateral_lfp_psd.shape)
 
-        average_psd += lfp_psd
+        average_center_psd += center_lfp_psd
+        average_lateral_psd += lateral_lfp_psd
         cell_count += 1
-    F2 = average_psd / cell_count
+    center_F2 = average_center_psd / cell_count
+    lateral_F2 = average_lateral_psd / cell_count
     ns = NeuralSimulation(**param_dict)
-    np.save(join(ns.sim_folder, 'F2_%s.npy' % ns.population_sim_name), F2)
-    ns.plot_F(freqs, F2)
+    np.save(join(ns.sim_folder, 'center_F2_%s.npy' % ns.population_sim_name), center_F2)
+    np.save(join(ns.sim_folder, 'lateral_F2_%s.npy' % ns.population_sim_name), lateral_F2)
+    ns.plot_F(freqs, lateral_F2)
     np.save(join(ns.sim_folder, 'freqs.npy'), freqs)
 
 def sum_all_shape_functions_generic(param_dict):
 
-    num_cells = 200 if at_stallo else 10
+    num_cells = 100 if at_stallo else 10
     for input_region in param_dict['input_regions']:
         for distribution in param_dict['distributions']:
             for mu in param_dict['mus']:
