@@ -74,7 +74,7 @@ def return_r_star(F, r):
 def plot_F(params, sim_name):
     figure_folder = join(params['root_folder'], params['save_folder'])
     sim_folder = join(params['root_folder'], params['save_folder'], 'simulations')
-    F = np.load(join(sim_folder, 'F2_%s.npy' % sim_name))
+    F = np.load(join(sim_folder, 'lateral_F2_%s.npy' % sim_name))
     freqs = np.load(join(sim_folder, 'freqs.npy'))
     max_freq = params['max_freq']
     cut_idx_freq = np.argmin(np.abs(freqs - max_freq)) + 1
@@ -85,8 +85,8 @@ def plot_F(params, sim_name):
     F = F[:, :cut_idx_freq]
     freqs = freqs[:cut_idx_freq]
 
-    elec_x = params['electrode_parameters']['x']
-    elec_z = params['electrode_parameters']['z']
+    elec_x = params['lateral_electrode_parameters']['x']
+    elec_z = params['lateral_electrode_parameters']['z']
     im_dict = {'cmap': 'hot', 'norm': LogNorm(), 'vmin': 1e-10, 'vmax': 1.e-3}
     ax_dict = {'xscale': 'log', 'yscale': 'log', 'xlim': [10, 1000], 'ylim': [1, 500],
                }
@@ -210,8 +210,8 @@ def plot_F(params, sim_name):
     for elec in xrange(len(elec_z)):
         if elec_x[elec] > cutoff_dist:
             continue
-        clr = dist_clr(params['electrode_parameters']['x'][elec])
-        cell_ax.plot(params['electrode_parameters']['x'][elec], elec_z[elec], 'o', c=clr)
+        clr = dist_clr(params['lateral_electrode_parameters']['x'][elec])
+        cell_ax.plot(params['lateral_electrode_parameters']['x'][elec], elec_z[elec], 'o', c=clr)
     
         row, col = _return_elec_row_col(elec, elec_x, elec_z)
 
@@ -226,11 +226,11 @@ def plot_F(params, sim_name):
         max_exponent = np.ceil(np.log10(np.max([np.max(l.get_ydata()[1:]) for l in ax.get_lines()])))
         ax.set_ylim([10**(max_exponent - 4), 10**max_exponent])
     fig.suptitle(sim_name)
-    fig.savefig(join(figure_folder, 'F_%s.png' % sim_name))
+    fig.savefig(join(figure_folder, 'lateral_F2_%s.png' % sim_name))
 
 
 if __name__ == '__main__':
-    # from param_dicts import shape_function_params as param_dict
-    from param_dicts import stick_population_params as param_dict
-    param_dict['name'] = 'stick_shape_function'
+    from param_dicts import shape_function_params as param_dict
+    # from param_dicts import stick_population_params as param_dict
+    # param_dict['name'] = 'stick_shape_function'
     plot_all_shape_functions(param_dict)
