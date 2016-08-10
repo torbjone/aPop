@@ -1689,9 +1689,11 @@ def sum_population_mpi_generic(param_dict):
             tag = status.Get_tag()
             if tag == tags.START:
                 # Do the work here
-                # try:
-                sum_one_population(param_dict, num_cells, num_tsteps)
-                # except:
+                try:
+                    sum_one_population(param_dict, num_cells, num_tsteps)
+                except:
+                    print (param_dict['input_region'], param_dict['distribution'],
+                           param_dict['mu'], param_dict['correlation'])
                 #     print "\033[91mNode %d exiting with ERROR\033[0m" % rank
                 #     comm.send(None, dest=0, tag=tags.ERROR)
                 #     sys.exit()
