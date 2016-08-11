@@ -1033,27 +1033,29 @@ def plot_coherence(param_dict):
 
 def return_simple_model(param_dict, pop_size, ns):
 
-    c_phi = np.load(join(ns.sim_folder, 'c_phi_center_%s.npy' % ns.population_sim_name))
-    # sim_folder = join(param_dict['root_folder'], 'shape_function', 'simulations')
-    # F2_name = 'F2_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'], ns.conductance_type,
-    #                                                         param_dict['distribution'], param_dict['mu'], 0.0)
-    # r_star_soma_name = 'r_star_soma_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
-    #                                     ns.conductance_type, param_dict['distribution'], param_dict['mu'], 0.0)
-    # r_star_middle_name = 'r_star_middle_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
-    #                                     ns.conductance_type, param_dict['distribution'], param_dict['mu'], 0.0)
-    # r_star_apic_name = 'r_star_apic_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
-    #                                     ns.conductance_type, param_dict['distribution'], param_dict['mu'], 0.0)
+    c_phi = np.load(join(ns.sim_folder, 'c_phi_lateral_%s.npy' % ns.population_sim_name))
+    if 'stick' in param_dict['name']:
+        sim_folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
+        F2_name = 'lateral_F2_stick_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'], ns.conductance_type,
+                                                                param_dict['distribution'], param_dict['mu'], 0.0)
+        r_star_soma_name = 'r_star_soma_stick_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
+                                            ns.conductance_type, param_dict['distribution'], param_dict['mu'], 0.0)
+        r_star_middle_name = 'r_star_middle_stick_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
+                                            ns.conductance_type, param_dict['distribution'], param_dict['mu'], 0.0)
+        r_star_apic_name = 'r_star_apic_stick_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
+                                            ns.conductance_type, param_dict['distribution'], param_dict['mu'], 0.0)
+    else:
+        sim_folder = join(param_dict['root_folder'], 'shape_function', 'simulations')
+        F2_name = 'lateral_F2_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'], ns.conductance_type,
+                                                                param_dict['distribution'], param_dict['mu'], 0.0)
+        r_star_soma_name = 'r_star_soma_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
+                                            ns.conductance_type, param_dict['distribution'], param_dict['mu'], 0.0)
+        r_star_middle_name = 'r_star_middle_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
+                                            ns.conductance_type, param_dict['distribution'], param_dict['mu'], 0.0)
+        r_star_apic_name = 'r_star_apic_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
+                                            ns.conductance_type, param_dict['distribution'], param_dict['mu'], 0.0)
 
 
-    sim_folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
-    F2_name = 'F2_stick_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'], ns.conductance_type,
-                                                            param_dict['distribution'], param_dict['mu'], 0.0)
-    r_star_soma_name = 'r_star_soma_stick_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
-                                        ns.conductance_type, param_dict['distribution'], param_dict['mu'], 0.0)
-    r_star_middle_name = 'r_star_middle_stick_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
-                                        ns.conductance_type, param_dict['distribution'], param_dict['mu'], 0.0)
-    r_star_apic_name = 'r_star_apic_stick_shape_function_%s_%s_%s_%s_%1.1f_%1.2f' % (param_dict['cell_name'], param_dict['input_region'],
-                                        ns.conductance_type, param_dict['distribution'], param_dict['mu'], 0.0)
 
     F2 = np.load(join(sim_folder, '%s.npy' % F2_name))
     freqs = np.load(join(sim_folder, 'freqs.npy'))
@@ -1283,11 +1285,9 @@ def plot_simple_model_LFP(param_dict):
 
     for input_region in param_dict['input_regions']:
         for distribution in param_dict['distributions']:
-
-
             for correlation in param_dict['correlations']:
 
-                # if (input_region != 'top') or (distribution != 'increase'):# or (correlation != 0.0):
+                # if (input_region != 'homogeneous') or (distribution != 'linear_increase') or (correlation != 1.0):
                 #     continue
                 print input_region, distribution, correlation
 
@@ -1299,19 +1299,25 @@ def plot_simple_model_LFP(param_dict):
 
                 param_dict['mu'] = 0.0
                 ns = NeuralSimulation(**param_dict)
-                name = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
-                P, c_phi, F2 = return_simple_model(param_dict, pop_size, ns)
-
+                name = 'summed_lateral_signal_%s_%dum' % (ns.population_sim_name, pop_size)
+                try:
+                    P, c_phi, F2 = return_simple_model(param_dict, pop_size, ns)
+                except:
+                    continue
                 param_dict['mu'] = -0.5
                 ns = NeuralSimulation(**param_dict)
-                name_reg = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
-                P_reg, c_phi_reg, F2_reg = return_simple_model(param_dict, pop_size, ns)
-
+                name_reg = 'summed_lateral_signal_%s_%dum' % (ns.population_sim_name, pop_size)
+                try:
+                    P_reg, c_phi_reg, F2_reg = return_simple_model(param_dict, pop_size, ns)
+                except:
+                    continue
                 param_dict['mu'] = 2.0
                 ns = NeuralSimulation(**param_dict)
-                name_res = 'summed_signal_%s_%dum' % (ns.population_sim_name, pop_size)
-                P_res, c_phi_res, F2_res = return_simple_model(param_dict, pop_size, ns)
-
+                name_res = 'summed_lateral_signal_%s_%dum' % (ns.population_sim_name, pop_size)
+                try:
+                    P_res, c_phi_res, F2_res = return_simple_model(param_dict, pop_size, ns)
+                except:
+                    continue
                 xmid = np.load(join(folder, 'xmid_%s_generic.npy' % param_dict['cell_name']))
                 zmid = np.load(join(folder, 'zmid_%s_generic.npy' % param_dict['cell_name']))
                 xstart = np.load(join(folder, 'xstart_%s_generic.npy' % param_dict['cell_name']))
@@ -1332,7 +1338,7 @@ def plot_simple_model_LFP(param_dict):
                 fig = plt.figure(figsize=(18, 10))
                 fig.subplots_adjust(right=0.99, wspace=0.5, hspace=0.3)
 
-                fig.suptitle('Input: %s     Channel distribution: %s        Correlation: %1.1f' %
+                fig.suptitle('Input: %s     Channel distribution: %s        Correlation: %1.2f' %
                              (input_region, distribution, correlation))
                 ax_morph = fig.add_subplot(1, 5, 1, aspect=1, frameon=False, xticks=[])
 
@@ -1341,7 +1347,7 @@ def plot_simple_model_LFP(param_dict):
                     for idx in xrange(len(xmid))]
                 ax_morph.plot(xmid[synidx], zmid[synidx], '.', c='green', ms=4)
 
-                average_over = 3
+                average_over = 8
 
                 for row, elec in enumerate([0, 30, 60]):
                     ax_morph.plot(elec_x[elec], elec_z[elec], 'kD')
@@ -1356,16 +1362,16 @@ def plot_simple_model_LFP(param_dict):
                     freq, psd_reg, phase_reg = tools.return_freq_and_psd_and_phase(ns.timeres_python/1000.,  lfp_reg[elec])
                     freq, psd_res, phase_res = tools.return_freq_and_psd_and_phase(ns.timeres_python/1000., lfp_res[elec])
 
-                    # smooth_psd = smooth_signal(freq[::average_over], freq, psd[0])
-                    # smooth_psd_reg = smooth_signal(freq[::average_over], freq, psd_reg[0])
-                    # smooth_psd_res = smooth_signal(freq[::average_over], freq, psd_res[0])
+                    smooth_psd = tools.smooth_signal(freq[::average_over], freq, psd[0])
+                    smooth_psd_reg = tools.smooth_signal(freq[::average_over], freq, psd_reg[0])
+                    smooth_psd_res = tools.smooth_signal(freq[::average_over], freq, psd_res[0])
 
-                    ax.loglog(freq, psd[0], 'k', zorder=0)
-                    # ax.loglog(freq[::average_over], smooth_psd, 'k', zorder=0)
-                    ax.loglog(freq, psd_reg[0], 'r', zorder=0)
-                    # ax.loglog(freq[::average_over], smooth_psd_reg, 'r', zorder=0)
-                    ax.loglog(freq, psd_res[0], 'b', zorder=0)
-                    # ax.loglog(freq[::average_over], smooth_psd_res, 'b', zorder=0)
+                    # ax.loglog(freq, psd[0], 'k', zorder=0)
+                    ax.loglog(freq[::average_over], smooth_psd, 'k', zorder=0)
+                    # ax.loglog(freq, psd_reg[0], 'r', zorder=0)
+                    ax.loglog(freq[::average_over], smooth_psd_reg, 'r', zorder=0)
+                    # ax.loglog(freq, psd_res[0], 'b', zorder=0)
+                    ax.loglog(freq[::average_over], smooth_psd_res, 'b', zorder=0)
 
 
                     ax = fig.add_subplot(3, num_plot_cols, plot_number + 1, ylim=[1e-5, 1e1], xlim=[1e0, 5e2],
@@ -1375,13 +1381,13 @@ def plot_simple_model_LFP(param_dict):
                     smooth_P_reg = tools.smooth_signal(freq[::average_over], freq, P_reg[elec])
                     smooth_P_res = tools.smooth_signal(freq[::average_over], freq, P_res[elec])
 
-                    ax.loglog(freq, P[elec], 'k', zorder=1)
-                    ax.loglog(freq, P_reg[elec], 'r', zorder=1)
-                    ax.loglog(freq, P_res[elec], 'b', zorder=1)
+                    # ax.loglog(freq, P[elec], 'k', zorder=1)
+                    # ax.loglog(freq, P_reg[elec], 'r', zorder=1)
+                    # ax.loglog(freq, P_res[elec], 'b', zorder=1)
 
-                    # ax.loglog(freq[::average_over], smooth_P, 'k', zorder=1)
-                    # ax.loglog(freq[::average_over], smooth_P_reg, 'r', zorder=1)
-                    # ax.loglog(freq[::average_over], smooth_P_res, 'b', zorder=1)
+                    ax.loglog(freq[::average_over], smooth_P, 'k', zorder=1)
+                    ax.loglog(freq[::average_over], smooth_P_reg, 'r', zorder=1)
+                    ax.loglog(freq[::average_over], smooth_P_res, 'b', zorder=1)
 
                     ax = fig.add_subplot(3, num_plot_cols, plot_number + 2, ylim=[1e-5, 1e1], xlim=[1e0, 5e2],
                                          title='Coherence')
@@ -1823,11 +1829,11 @@ def PopulationMPIgeneric():
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['mus']) *
                      len(param_dict['distributions']) * len(param_dict['correlations']) * (num_cells))
 
-        for input_region in param_dict['input_regions']:
-            for distribution in param_dict['distributions']:
-                for mu in param_dict['mus']:
-                    for correlation in param_dict['correlations']:
-                        for cell_idx in xrange(0, num_cells):
+        for input_region in param_dict['input_regions'][::-1]:
+            for distribution in param_dict['distributions'][::-1]:
+                for mu in param_dict['mus'][::-1]:
+                    for correlation in param_dict['correlations'][::-1]:
+                        for cell_idx in range(0, num_cells)[::-1]:
                             task += 1
                             sent = False
                             while not sent:
