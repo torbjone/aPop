@@ -1829,11 +1829,11 @@ def PopulationMPIgeneric():
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['mus']) *
                      len(param_dict['distributions']) * len(param_dict['correlations']) * (num_cells))
 
-        for input_region in param_dict['input_regions'][::-1]:
-            for distribution in param_dict['distributions'][::-1]:
-                for mu in param_dict['mus'][::-1]:
-                    for correlation in param_dict['correlations'][::-1]:
-                        for cell_idx in range(0, num_cells)[::-1]:
+        for input_region in param_dict['input_regions']:
+            for distribution in param_dict['distributions']:
+                for mu in param_dict['mus']:
+                    for correlation in param_dict['correlations']:
+                        for cell_idx in range(0, num_cells):
                             task += 1
                             sent = False
                             while not sent:
@@ -1972,6 +1972,13 @@ if __name__ == '__main__':
     else:
         from param_dicts import classic_population_params as param_dict
 
+    param_dict.update({'input_region': 'homogeneous',
+                       'distribution': 'uniform',
+                       'mu': -0.5,
+                       'correlation': 0.0})
+    num_tsteps = int(round(param_dict['end_t']/param_dict['timeres_python'] + 1))
+    sum_one_population(param_dict, 2000, num_tsteps)
+    sys.exit()
     # plot_coherence(param_dict)
     # plot_generic_population_LFP(param_dict)
     # plot_classic_population_LFP(param_dict)
