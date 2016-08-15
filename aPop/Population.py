@@ -1833,7 +1833,7 @@ def PopulationMPIgeneric():
             for distribution in param_dict['distributions']:
                 for mu in param_dict['mus']:
                     for correlation in param_dict['correlations']:
-                        for cell_idx in range(0, num_cells):
+                        for cell_idx in range(num_cells):
                             task += 1
                             sent = False
                             while not sent:
