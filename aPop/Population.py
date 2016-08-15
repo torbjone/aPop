@@ -1287,8 +1287,8 @@ def plot_simple_model_LFP(param_dict):
         for distribution in param_dict['distributions']:
             for correlation in param_dict['correlations']:
 
-                # if (input_region != 'homogeneous') or (distribution != 'linear_increase') or (correlation != 1.0):
-                #     continue
+                if (input_region == 'homogeneous'):# or (distribution != 'linear_increase') or (correlation != 1.0):
+                    continue
                 print input_region, distribution, correlation
 
                 param_dict.update({'input_region': input_region,
@@ -1300,24 +1300,24 @@ def plot_simple_model_LFP(param_dict):
                 param_dict['mu'] = 0.0
                 ns = NeuralSimulation(**param_dict)
                 name = 'summed_lateral_signal_%s_%dum' % (ns.population_sim_name, pop_size)
-                try:
-                    P, c_phi, F2 = return_simple_model(param_dict, pop_size, ns)
-                except:
-                    continue
+                # try:
+                P, c_phi, F2 = return_simple_model(param_dict, pop_size, ns)
+                # except:
+                #     continue
                 param_dict['mu'] = -0.5
                 ns = NeuralSimulation(**param_dict)
                 name_reg = 'summed_lateral_signal_%s_%dum' % (ns.population_sim_name, pop_size)
-                try:
-                    P_reg, c_phi_reg, F2_reg = return_simple_model(param_dict, pop_size, ns)
-                except:
-                    continue
+                # try:
+                P_reg, c_phi_reg, F2_reg = return_simple_model(param_dict, pop_size, ns)
+                # except:
+                #     continue
                 param_dict['mu'] = 2.0
                 ns = NeuralSimulation(**param_dict)
                 name_res = 'summed_lateral_signal_%s_%dum' % (ns.population_sim_name, pop_size)
-                try:
-                    P_res, c_phi_res, F2_res = return_simple_model(param_dict, pop_size, ns)
-                except:
-                    continue
+                # try:
+                P_res, c_phi_res, F2_res = return_simple_model(param_dict, pop_size, ns)
+                # except:
+                #     continue
                 xmid = np.load(join(folder, 'xmid_%s_generic.npy' % param_dict['cell_name']))
                 zmid = np.load(join(folder, 'zmid_%s_generic.npy' % param_dict['cell_name']))
                 xstart = np.load(join(folder, 'xstart_%s_generic.npy' % param_dict['cell_name']))
@@ -1972,13 +1972,13 @@ if __name__ == '__main__':
     else:
         from param_dicts import classic_population_params as param_dict
 
-    param_dict.update({'input_region': 'homogeneous',
-                       'distribution': 'uniform',
-                       'mu': -0.5,
-                       'correlation': 0.0})
-    num_tsteps = int(round(param_dict['end_t']/param_dict['timeres_python'] + 1))
-    sum_one_population(param_dict, 2000, num_tsteps)
-    sys.exit()
+    # param_dict.update({'input_region': 'homogeneous',
+    #                    'distribution': 'uniform',
+    #                    'mu': -0.5,
+    #                    'correlation': 0.0})
+    # num_tsteps = int(round(param_dict['end_t']/param_dict['timeres_python'] + 1))
+    # sum_one_population(param_dict, 2000, num_tsteps)
+    # sys.exit()
     # plot_coherence(param_dict)
     # plot_generic_population_LFP(param_dict)
     # plot_classic_population_LFP(param_dict)
