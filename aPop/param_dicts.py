@@ -11,7 +11,8 @@ if 'DISPLAY' not in os.environ:
 else:
     at_stallo = False
 import numpy as np
-username = os.getenv('USER')
+
+# username = os.getenv('USER')
 
 root_folder = '..'
 
@@ -138,7 +139,7 @@ generic_population_params = {'input_type': 'distributed_delta',
                              'input_regions': ['homogeneous', 'distal_tuft', 'basal'],
                              'mus': [-0.5, 0.0, 2.0],
                              'distributions': ['uniform', 'linear_increase', 'linear_decrease'],
-                             'correlations': [0.1]
+                             'correlations': [0., 0.01, 1.0]
                              }
 
 classic_population_params = {'input_type': 'distributed_delta',
@@ -169,7 +170,7 @@ classic_population_params = {'input_type': 'distributed_delta',
                              'holding_potentials': [-70],
                              'distributions': None, #['uniform', 'linear_increase', 'linear_decrease'],
                              'conductance_types': ['active', 'passive', 'Ih', 'Ih_frozen'], #['uniform', 'linear_increase', 'linear_decrease'],
-                             'correlations': [0.0, 0.01, 1.0]
+                             'correlations': [0.0, 0.01, 0.1, 1.0]
                              }
 
 stick_population_params = {'input_type': 'distributed_delta',
@@ -199,7 +200,7 @@ stick_population_params = {'input_type': 'distributed_delta',
                              'input_regions': ['top', 'bottom', 'homogeneous'],
                              'mus': [-0.5, 0.0, 2.0],
                              'distributions': ['uniform', 'increase'],
-                             'correlations': [0.0, 0.01, 1.0],
+                             'correlations': [0.0, 0.01, 0.1, 1.0],
                              'correlation': 0.0,
                              }
 

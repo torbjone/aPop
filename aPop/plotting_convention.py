@@ -27,7 +27,9 @@ qa_clr_dict = {-0.5: reg_color,
                0.0: pas_color,
                2.0: res_color}
 
-
+conductance_names = {-0.5: 'regenerative',
+                     0.0: 'passive-frozen',
+                     2.0: 'restorative'}
 def mark_subplots(axes, letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ', xpos=-0.12, ypos=1.15):
 
     if not type(axes) is list:

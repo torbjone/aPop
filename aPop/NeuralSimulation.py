@@ -60,7 +60,7 @@ class NeuralSimulation:
         self.divide_into_welch = 8.
         self.welch_dict = {'Fs': 1000 / self.timeres_python,
                            'NFFT': int(self.num_tsteps/self.divide_into_welch),
-                           # 'noverlap': int(self.num_tsteps/self.divide_into_welch/2.),
+                           'noverlap': int(self.num_tsteps/self.divide_into_welch/2.),
                            'window': plt.window_hanning,
                            'detrend': plt.detrend_mean,
                            'scale_by_freq': True,
