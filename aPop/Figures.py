@@ -60,7 +60,13 @@ def plot_3d_rot_pop(param_dict):
     vmin = np.min(all_vmems)
     vmax = np.max(all_vmems)
     print vmin, vmax
-    vmem_clr = lambda vmem: plt.cm.viridis(1.0 * (vmem - vmin) / (vmax - vmin))
+    cmaps = [plt.cm.Greys_r, plt.cm.Blues_r, plt.cm.BuGn_r, plt.cm.BuPu_r, plt.cm.GnBu_r,
+             plt.cm.Greens_r, plt.cm.Oranges_r, plt.cm.OrRd_r,
+             plt.cm.PuBu_r, plt.cm.PuBuGn_r, plt.cm.PuRd_r, plt.cm.Purples_r, plt.cm.RdPu_r,
+             plt.cm.Reds_r, plt.cm.YlGn_r, plt.cm.YlGnBu_r, plt.cm.YlOrBr_r, plt.cm.YlOrRd_r]
+
+    # vmem_clr = lambda vmem: plt.cm.viridis(1.0 * (vmem - vmin) / (vmax - vmin))
+    vmem_clr = lambda vmem, cmap_func: cmap_func(0.1 + 1.5 * (vmem - vmin) / (vmax - vmin))
 
     # t_idx = 100
     # cell_number = 0
@@ -73,7 +79,7 @@ def plot_3d_rot_pop(param_dict):
     #
     # plt.colorbar(img)
     # plt.show()
-    img = plt.imshow([[]], vmin=vmin, vmax=vmax, origin='lower', cmap='viridis')
+    img = plt.imshow([[]], vmin=vmin, vmax=vmax, origin='lower', cmap=cmaps[0])
 
     import matplotlib as mpl
     from mpl_toolkits.mplot3d import Axes3D
@@ -90,19 +96,24 @@ def plot_3d_rot_pop(param_dict):
     lines = []
     t_idx = 0
     angle = t_idx / num_tsteps * 360
+
+    cell_cmaps = []
+
     for cell_number in range(num_cells):
+        cmap = np.random.choice(cmaps)
+        cell_cmaps.append(cmap)
         lines.append([])
         for idx in xrange(len(all_xend[cell_number])):
             l = None
             if idx == 0:
                 l, = ax.plot([x_y_z_rot[cell_number][0]], [x_y_z_rot[cell_number][1]],
                         [x_y_z_rot[cell_number][2]], 'o', ms=8, mec='none',
-                         c=vmem_clr(all_vmems[cell_number][idx, t_idx]))
+                         c=vmem_clr(all_vmems[cell_number][idx, t_idx], cmap))
             else:
                 x = [all_xstart[cell_number][idx], all_xend[cell_number][idx]]
                 z = [all_zstart[cell_number][idx], all_zend[cell_number][idx]]
                 y = [all_ystart[cell_number][idx], all_yend[cell_number][idx]]
-                l, = ax.plot(x, y, z, c=vmem_clr(all_vmems[cell_number][idx, t_idx]),
+                l, = ax.plot(x, y, z, c=vmem_clr(all_vmems[cell_number][idx, t_idx], cmap),
                         lw=2,#all_diams[cell_number][idx]/1.5,
                              clip_on=False)
             lines[cell_number].append(l)
@@ -116,9 +127,10 @@ def plot_3d_rot_pop(param_dict):
 
         angle = t_idx / num_tsteps * 360
         for cell_number in range(num_cells):
+            cmap = cell_cmaps[cell_number]
             c = np.random.randint(0, num_cells)
             for idx in xrange(len(all_xend[cell_number])):
-                lines[cell_number][idx].set_color(vmem_clr(all_vmems[cell_number][idx, t_idx]))
+                lines[cell_number][idx].set_color(vmem_clr(all_vmems[cell_number][idx, t_idx], cmap))
                 # print vmem_clr(all_vmems[cell_number][idx])
                 # if idx == 0:
                 #     ax.plot([x_y_z_rot[cell_number][0]], [x_y_z_rot[cell_number][1]],

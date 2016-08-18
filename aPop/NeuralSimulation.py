@@ -230,7 +230,8 @@ class NeuralSimulation:
 
     def run_distributed_synaptic_simulation(self):
 
-        if os.path.isfile(join(self.sim_folder, 'center_sig_%s.npy' % self.sim_name)):
+        if os.path.isfile(join(self.sim_folder, 'center_sig_%s.npy' % self.sim_name)) or \
+           os.path.isfile(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name)):
             print "Skipping ", self.sim_name
             return
 
