@@ -168,51 +168,65 @@ class NeuralSimulation:
         return cell
 
     def save_neural_sim_single_input_data(self, cell):
-        lateral_electrode = LFPy.RecExtElectrode(cell, **self.lateral_electrode_parameters)
-        lateral_electrode.calc_lfp()
-        np.save(join(self.sim_folder, 'lateral_sig_%s.npy' % self.sim_name), lateral_electrode.LFP)
-        del lateral_electrode.LFP
 
-        center_electrode = LFPy.RecExtElectrode(cell, **self.center_electrode_parameters)
-        center_electrode.calc_lfp()
-        np.save(join(self.sim_folder, 'center_sig_%s.npy' % self.sim_name), center_electrode.LFP)
-        del center_electrode.LFP
+        if self.name == 'vmem_3D_population':
+            np.save(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name), cell.vmem)
+            np.save(join(self.sim_folder, 'xstart_%s.npy' % (self.sim_name)), cell.xstart)
+            np.save(join(self.sim_folder, 'ystart_%s.npy' % (self.sim_name)), cell.ystart)
+            np.save(join(self.sim_folder, 'zstart_%s.npy' % (self.sim_name)), cell.zstart)
+            np.save(join(self.sim_folder, 'xend_%s.npy' % (self.sim_name)), cell.xend)
+            np.save(join(self.sim_folder, 'yend_%s.npy' % (self.sim_name)), cell.yend)
+            np.save(join(self.sim_folder, 'zend_%s.npy' % (self.sim_name)), cell.zend)
+            np.save(join(self.sim_folder, 'xmid_%s.npy' % (self.sim_name)), cell.xmid)
+            np.save(join(self.sim_folder, 'ymid_%s.npy' % (self.sim_name)), cell.ymid)
+            np.save(join(self.sim_folder, 'zmid_%s.npy' % (self.sim_name)), cell.zmid)
+            np.save(join(self.sim_folder, 'diam_%s.npy' % (self.sim_name)), cell.diam)
+        else:
+            lateral_electrode = LFPy.RecExtElectrode(cell, **self.lateral_electrode_parameters)
+            lateral_electrode.calc_lfp()
+            np.save(join(self.sim_folder, 'lateral_sig_%s.npy' % self.sim_name), lateral_electrode.LFP)
+            del lateral_electrode.LFP
 
-        if self.cell_number == 0:
-            np.save(join(self.sim_folder, 'tvec_%s_%s.npy' % (self.cell_name, self.input_type)), cell.tvec)
-            if hasattr(cell, 'vmem'):
-                np.save(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name), cell.vmem)
-            np.save(join(self.sim_folder, 'imem_%s.npy' % self.sim_name), cell.imem)
-            np.save(join(self.sim_folder, 'synidx_%s.npy' % self.sim_name), cell.synidx)
+            center_electrode = LFPy.RecExtElectrode(cell, **self.center_electrode_parameters)
+            center_electrode.calc_lfp()
+            np.save(join(self.sim_folder, 'center_sig_%s.npy' % self.sim_name), center_electrode.LFP)
+            del center_electrode.LFP
+            
+            if self.cell_number == 0:
+                np.save(join(self.sim_folder, 'tvec_%s_%s.npy' % (self.cell_name, self.input_type)), cell.tvec)
+                if hasattr(cell, 'vmem'):
+                    np.save(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name), cell.vmem)
+                np.save(join(self.sim_folder, 'imem_%s.npy' % self.sim_name), cell.imem)
+                np.save(join(self.sim_folder, 'synidx_%s.npy' % self.sim_name), cell.synidx)
 
-            np.save(join(self.sim_folder, 'lateral_elec_x_%s.npy' % self.cell_name), lateral_electrode.x)
-            np.save(join(self.sim_folder, 'lateral_elec_y_%s.npy' % self.cell_name), lateral_electrode.y)
-            np.save(join(self.sim_folder, 'lateral_elec_z_%s.npy' % self.cell_name), lateral_electrode.z)
+                np.save(join(self.sim_folder, 'lateral_elec_x_%s.npy' % self.cell_name), lateral_electrode.x)
+                np.save(join(self.sim_folder, 'lateral_elec_y_%s.npy' % self.cell_name), lateral_electrode.y)
+                np.save(join(self.sim_folder, 'lateral_elec_z_%s.npy' % self.cell_name), lateral_electrode.z)
 
-            np.save(join(self.sim_folder, 'center_elec_x_%s.npy' % self.cell_name), center_electrode.x)
-            np.save(join(self.sim_folder, 'center_elec_y_%s.npy' % self.cell_name), center_electrode.y)
-            np.save(join(self.sim_folder, 'center_elec_z_%s.npy' % self.cell_name), center_electrode.z)
+                np.save(join(self.sim_folder, 'center_elec_x_%s.npy' % self.cell_name), center_electrode.x)
+                np.save(join(self.sim_folder, 'center_elec_y_%s.npy' % self.cell_name), center_electrode.y)
+                np.save(join(self.sim_folder, 'center_elec_z_%s.npy' % self.cell_name), center_electrode.z)
 
-            np.save(join(self.sim_folder, 'xstart_%s_%s.npy' %
-                         (self.cell_name, self.param_dict['conductance_type'])), cell.xstart)
-            np.save(join(self.sim_folder, 'ystart_%s_%s.npy' %
-                         (self.cell_name, self.param_dict['conductance_type'])), cell.ystart)
-            np.save(join(self.sim_folder, 'zstart_%s_%s.npy' %
-                         (self.cell_name, self.param_dict['conductance_type'])), cell.zstart)
-            np.save(join(self.sim_folder, 'xend_%s_%s.npy' %
-                         (self.cell_name, self.param_dict['conductance_type'])), cell.xend)
-            np.save(join(self.sim_folder, 'yend_%s_%s.npy' %
-                         (self.cell_name, self.param_dict['conductance_type'])), cell.yend)
-            np.save(join(self.sim_folder, 'zend_%s_%s.npy' %
-                         (self.cell_name, self.param_dict['conductance_type'])), cell.zend)
-            np.save(join(self.sim_folder, 'xmid_%s_%s.npy' %
-                         (self.cell_name, self.param_dict['conductance_type'])), cell.xmid)
-            np.save(join(self.sim_folder, 'ymid_%s_%s.npy' %
-                         (self.cell_name, self.param_dict['conductance_type'])), cell.ymid)
-            np.save(join(self.sim_folder, 'zmid_%s_%s.npy' %
-                         (self.cell_name, self.param_dict['conductance_type'])), cell.zmid)
-            np.save(join(self.sim_folder, 'diam_%s_%s.npy' %
-                         (self.cell_name, self.param_dict['conductance_type'])), cell.diam)
+                np.save(join(self.sim_folder, 'xstart_%s_%s.npy' %
+                             (self.cell_name, self.param_dict['conductance_type'])), cell.xstart)
+                np.save(join(self.sim_folder, 'ystart_%s_%s.npy' %
+                             (self.cell_name, self.param_dict['conductance_type'])), cell.ystart)
+                np.save(join(self.sim_folder, 'zstart_%s_%s.npy' %
+                             (self.cell_name, self.param_dict['conductance_type'])), cell.zstart)
+                np.save(join(self.sim_folder, 'xend_%s_%s.npy' %
+                             (self.cell_name, self.param_dict['conductance_type'])), cell.xend)
+                np.save(join(self.sim_folder, 'yend_%s_%s.npy' %
+                             (self.cell_name, self.param_dict['conductance_type'])), cell.yend)
+                np.save(join(self.sim_folder, 'zend_%s_%s.npy' %
+                             (self.cell_name, self.param_dict['conductance_type'])), cell.zend)
+                np.save(join(self.sim_folder, 'xmid_%s_%s.npy' %
+                             (self.cell_name, self.param_dict['conductance_type'])), cell.xmid)
+                np.save(join(self.sim_folder, 'ymid_%s_%s.npy' %
+                             (self.cell_name, self.param_dict['conductance_type'])), cell.ymid)
+                np.save(join(self.sim_folder, 'zmid_%s_%s.npy' %
+                             (self.cell_name, self.param_dict['conductance_type'])), cell.zmid)
+                np.save(join(self.sim_folder, 'diam_%s_%s.npy' %
+                             (self.cell_name, self.param_dict['conductance_type'])), cell.diam)
 
     def run_distributed_synaptic_simulation(self):
 
@@ -232,7 +246,8 @@ class NeuralSimulation:
 
         cell = self._return_cell(x_y_z_rot)
         cell, syn = self._make_distributed_synaptic_stimuli(cell)
-        cell.simulate(rec_imem=True, rec_vmem=False)
+        rec_vmem = True if self.name is 'vmem_3D_population' else False
+        cell.simulate(rec_imem=True, rec_vmem=rec_vmem)
 
         # plt.plot(cell.tvec, cell.vmem[0, :])
         # plt.plot(cell.tvec, cell.vmem[1, :])
@@ -241,6 +256,8 @@ class NeuralSimulation:
         self.save_neural_sim_single_input_data(cell)
         # if ('shape_function' in self.name) or (not self.cell_number % 100):
         #     self._draw_all_elecs_with_distance(cell)
+
+
 
     def run_asymmetry_simulation(self, mu, fraction, distribution, cell_number):
         plt.seed(123 * cell_number)
