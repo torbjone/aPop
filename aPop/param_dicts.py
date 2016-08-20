@@ -170,7 +170,7 @@ classic_population_params = {'input_type': 'distributed_delta',
                              'input_firing_rate': 5,
                              'input_regions': ['homogeneous', 'distal_tuft'],
                              'mus': None,
-                             'holding_potentials': [-70],
+                             'holding_potentials': [-80, -70, -60],
                              'distributions': None, #['uniform', 'linear_increase', 'linear_decrease'],
                              'conductance_types': ['active', 'passive', 'Ih', 'Ih_frozen'], #['uniform', 'linear_increase', 'linear_decrease'],
                              'correlations': [0.0, 0.01, 0.1, 1.0]
@@ -247,8 +247,8 @@ vmem_3D_population_params = {'input_type': 'distributed_delta',
                              'input_firing_rate': 5,
                              'input_regions': ['homogeneous', 'distal_tuft', 'basal'],
                              'mus': [0.0],
-                             'distributions': ['uniform'],
-                             'correlations': [0.]
+                             'distributions': ['uniform', 'linear_increase'],
+                             'correlations': [0., 0.1, 1.0]
                              }
 
 

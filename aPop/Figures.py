@@ -20,20 +20,29 @@ import tools
 import scipy.fftpack as sf
 
 def plot_3d_rot_pop(param_dict):
-
-    num_cells = 50
+    plt.seed(1234)
+    num_cells = 100
     param_dict.update({
                        'mu': 0.0,
-                       'distribution': 'uniform',
-                        'input_region': 'homogeneous',
-                        'correlation': 0.0,
+                       'distribution': 'linear_increase',
+                        'input_region': 'distal_tuft',
+                        'correlation': 1.0,
                         'cell_number': 0,
                       })
 
     ns = NeuralSimulation(**param_dict)
+
+    fig_dir = join(param_dict['root_folder'], param_dict['save_folder'], ns.population_sim_name)
+    if not os.path.isdir(fig_dir):
+        os.mkdir(fig_dir)
+    else:
+        os.system('rm %s/*.png' % fig_dir)
     x_y_z_rot = np.load(os.path.join(ns.param_dict['root_folder'],
                                      ns.param_dict['save_folder'],
                      'x_y_z_rot_%s.npy' % ns.param_dict['name']))
+
+    # R = np.sqrt(np.sum(np.array(x_y_z_rot[num_cells - 1][:2])**2))
+    R = 1000.
 
     all_xstart = []
     all_xend = []
@@ -60,25 +69,15 @@ def plot_3d_rot_pop(param_dict):
     vmin = np.min(all_vmems)
     vmax = np.max(all_vmems)
     print vmin, vmax
-    cmaps = [plt.cm.Greys_r, plt.cm.Blues_r, plt.cm.BuGn_r, plt.cm.BuPu_r, plt.cm.GnBu_r,
-             plt.cm.Greens_r, plt.cm.Oranges_r, plt.cm.OrRd_r,
-             plt.cm.PuBu_r, plt.cm.PuBuGn_r, plt.cm.PuRd_r, plt.cm.Purples_r, plt.cm.RdPu_r,
-             plt.cm.Reds_r, plt.cm.YlGn_r, plt.cm.YlGnBu_r, plt.cm.YlOrBr_r, plt.cm.YlOrRd_r]
-
-    # vmem_clr = lambda vmem: plt.cm.viridis(1.0 * (vmem - vmin) / (vmax - vmin))
-    vmem_clr = lambda vmem, cmap_func: cmap_func(0.1 + 1.5 * (vmem - vmin) / (vmax - vmin))
-
-    # t_idx = 100
-    # cell_number = 0
-    # img = plt.imshow([[]], vmin=vmin, vmax=vmax, origin='lower')
-    # for idx in xrange(len(all_xend[cell_number])):
-    #     plt.plot([all_xstart[cell_number][idx], all_xend[cell_number][idx]],
-    #             [all_zstart[cell_number][idx], all_zend[cell_number][idx]],
-    #             lw=all_diams[cell_number][idx]/2,
-    #              c=vmem_clr(all_vmems[cell_number][idx, t_idx]), zorder=0)
+    # cmaps = [plt.cm.Greys_r, plt.cm.Blues_r, plt.cm.BuGn_r, plt.cm.BuPu_r, plt.cm.GnBu_r,
+    #          plt.cm.Greens_r, plt.cm.Oranges_r, plt.cm.OrRd_r,
+    #          plt.cm.PuBu_r, plt.cm.PuBuGn_r, plt.cm.PuRd_r, plt.cm.Purples_r, plt.cm.RdPu_r,
+    #          plt.cm.Reds_r, plt.cm.YlGn_r, plt.cm.YlGnBu_r, plt.cm.YlOrBr_r, plt.cm.YlOrRd_r]
     #
-    # plt.colorbar(img)
-    # plt.show()
+    cmaps = [plt.cm.Greys_r]
+
+    vmem_clr = lambda vmem, cmap_func: cmap_func(0.075 + 1.5 * (vmem - vmin) / (vmax - vmin))
+
     img = plt.imshow([[]], vmin=vmin, vmax=vmax, origin='lower', cmap=cmaps[0])
 
     import matplotlib as mpl
@@ -100,6 +99,9 @@ def plot_3d_rot_pop(param_dict):
     cell_cmaps = []
 
     for cell_number in range(num_cells):
+        x,y,z,phi = x_y_z_rot[cell_number]
+        dist = 1. / np.sqrt((x - R * np.cos(np.deg2rad(angle)))**2 +
+                       (y - R * np.sin(np.deg2rad(angle)))**2)
         cmap = np.random.choice(cmaps)
         cell_cmaps.append(cmap)
         lines.append([])
@@ -107,49 +109,42 @@ def plot_3d_rot_pop(param_dict):
             l = None
             if idx == 0:
                 l, = ax.plot([x_y_z_rot[cell_number][0]], [x_y_z_rot[cell_number][1]],
-                        [x_y_z_rot[cell_number][2]], 'o', ms=8, mec='none',
+                        [x_y_z_rot[cell_number][2]], 'o', ms=8, mec='none', zorder=1./dist,
                          c=vmem_clr(all_vmems[cell_number][idx, t_idx], cmap))
             else:
                 x = [all_xstart[cell_number][idx], all_xend[cell_number][idx]]
                 z = [all_zstart[cell_number][idx], all_zend[cell_number][idx]]
                 y = [all_ystart[cell_number][idx], all_yend[cell_number][idx]]
                 l, = ax.plot(x, y, z, c=vmem_clr(all_vmems[cell_number][idx, t_idx], cmap),
-                        lw=2,#all_diams[cell_number][idx]/1.5,
-                             clip_on=False)
+                        lw=2, zorder=dist, clip_on=False)
             lines[cell_number].append(l)
     ax.auto_scale_xyz([-450, 450], [-450, 450], [-100, 1000])
     ax.view_init(0, angle)
     plt.draw()
-    plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'],
-                         'anim', 'vmem_%05d.png' % t_idx))
+    plt.savefig(join(fig_dir, 'vmem_%05d.png' % t_idx))
 
-    for t_idx in range(1, num_tsteps)[::5]:
+    for t_idx in range(num_tsteps)[::5]:
 
         angle = t_idx / num_tsteps * 360
         for cell_number in range(num_cells):
+            x,y,z,phi = x_y_z_rot[cell_number]
+            dist = np.sqrt((x - R * np.cos(np.deg2rad(angle)))**2 +
+                           (y - R * np.sin(np.deg2rad(angle)))**2)
             cmap = cell_cmaps[cell_number]
-            c = np.random.randint(0, num_cells)
             for idx in xrange(len(all_xend[cell_number])):
                 lines[cell_number][idx].set_color(vmem_clr(all_vmems[cell_number][idx, t_idx], cmap))
-                # print vmem_clr(all_vmems[cell_number][idx])
-                # if idx == 0:
-                #     ax.plot([x_y_z_rot[cell_number][0]], [x_y_z_rot[cell_number][1]],
-                #             [x_y_z_rot[cell_number][2]], 'o', ms=8, mec='none',
-                #              c=vmem_clr(all_vmems[cell_number][idx, t_idx]))
-                # else:
-                #     x = [all_xstart[cell_number][idx], all_xend[cell_number][idx]]
-                #     z = [all_zstart[cell_number][idx], all_zend[cell_number][idx]]
-                #     y = [all_ystart[cell_number][idx], all_yend[cell_number][idx]]
-                #     ax.plot(x, y, z, c=vmem_clr(all_vmems[cell_number][idx, t_idx]),
-                #             lw=all_diams[cell_number][idx]/1.5, clip_on=False)
+                lines[cell_number][idx].set_zorder(1./dist)
+
         ax.auto_scale_xyz([-450, 450], [-450, 450], [-100, 1000])
 
         print angle
         ax.view_init(0, angle)
 
         plt.draw()
-        plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'],
-                         'anim', 'vmem_%05d.png' % t_idx), dpi=150)
+        plt.savefig(join(fig_dir, 'vmem_%05d.png' % t_idx), dpi=150)
+
+    os.system('mencoder "mf://%s/*.png" -o %s/../%s.avi -ovc x264 -fps 30' %
+              (fig_dir, fig_dir, ns.population_sim_name))
 
 
 
