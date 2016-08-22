@@ -896,8 +896,13 @@ def PopulationMPIgeneric():
             comm.send([None, None, None, None, None], dest=worker, tag=tags.EXIT)
         print("\033[95m Master finishing\033[0m")
     else:
+        import time
         while True:
-            comm.send(None, dest=0, tag=tags.READY)
+            if rank % 4 == 0:
+                print "Rank %d sleeping" % rank
+                time.sleep(60)
+            else:
+                comm.send(None, dest=0, tag=tags.READY)
             [input_region, distribution, mu, correlation, cell_idx] = comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
             tag = status.Get_tag()
             if tag == tags.START:
@@ -951,11 +956,11 @@ def PopulationMPIclassic():
         num_tasks = (len(param_dict['input_regions']) *
                      len(param_dict['conductance_types']) * len(param_dict['correlations']) * (num_cells))
 
-        for input_region in param_dict['input_regions']:
-            for conductance_type in param_dict['conductance_types']:
-                for correlation in param_dict['correlations']:
-                    for holding_potential in param_dict['holding_potentials']:
-                        for cell_idx in xrange(0, num_cells):
+        for input_region in param_dict['input_regions'][::-1]:
+            for conductance_type in param_dict['conductance_types'][::-1]:
+                for correlation in param_dict['correlations'][::-1]:
+                    for holding_potential in param_dict['holding_potentials'][::-1]:
+                        for cell_idx in range(0, num_cells)[::-1]:
                             task += 1
                             sent = False
                             while not sent:
@@ -978,8 +983,13 @@ def PopulationMPIclassic():
             comm.send([None, None, None, None, None], dest=worker, tag=tags.EXIT)
         print("\033[95m Master finishing\033[0m")
     else:
+        import time
         while True:
-            comm.send(None, dest=0, tag=tags.READY)
+            if rank % 4 == 0:
+                print "Rank %d sleeping" % rank
+                time.sleep(60)
+            else:
+                comm.send(None, dest=0, tag=tags.READY)
             [input_region, conductance_type, holding_potential, correlation, cell_idx] = comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
             tag = status.Get_tag()
             if tag == tags.START:
