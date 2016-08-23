@@ -423,7 +423,7 @@ def plot_population_density_effect(param_dict):
                            'ylim': [1e-10, 1e-4]}
             lines = None
             line_names = None
-            num_plot_cols = 3
+            num_plot_cols = 4
 
             elec = soma_layer_elec_idx
 
@@ -507,7 +507,7 @@ def plot_population_size_effect(param_dict):
                            'ylim': [1e-10, 1e-4]}
             lines = None
             line_names = None
-            num_plot_cols = 3
+            num_plot_cols = 4
 
             elec = 60
             for idx, pop_size in enumerate(pop_sizes):
@@ -550,7 +550,7 @@ def plot_depth_resolved(param_dict):
     correlations = param_dict['correlations']
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     pop_size = 500
-    mu = 2.0
+    mu = -0.5
 
     param_dict.update({'input_region': 'homogeneous',
                        'cell_number': 0,
@@ -573,12 +573,12 @@ def plot_depth_resolved(param_dict):
 
 
     psd_ax_dict = {#'ylim': [-200, 1200],
-                    'xlim': [1e0, 5e2],
+                    'xlim': [2e0, 5e2],
                     'yticks': [],
                    # 'xlabel': 'Frequency (Hz)',
                    'xticks': [1e0, 10, 100],
                    'xscale': 'log'}
-    num_plot_cols = 12
+    num_plot_cols = 15
     num_plot_rows = 3
     im_dict = {'cmap': 'hot', 'norm': LogNorm(), 'vmin': 1e-8, 'vmax': 1e-2,}
     fig.text(0.17, 0.95, 'Uniform conductance')
@@ -594,7 +594,7 @@ def plot_depth_resolved(param_dict):
         for d, distribution in enumerate(distributions):
             for c, correlation in enumerate(correlations):
                 # print input_region, distribution, correlation
-                plot_number = i * (num_plot_cols) + d * (1 + len(distributions)) + c + 2
+                plot_number = i * (num_plot_cols) + d * (2 + len(distributions)) + c + 2
                 # print i, d, c, plot_number
 
                 ax = fig.add_subplot(num_plot_rows, num_plot_cols, plot_number, **psd_ax_dict)
@@ -672,8 +672,8 @@ def plot_figure_5(param_dict):
     # fig.suptitle(param_dict['distribution'] + ' conductance')
     fig.subplots_adjust(right=0.95, wspace=0.6, hspace=0.5, left=0., top=0.85, bottom=0.2)
 
-    ax_morph_distal_tuft = fig.add_subplot(1, 4, 1, aspect=1, frameon=False, xticks=[], yticks=[])
-    ax_morph_homogeneous = fig.add_subplot(1, 8, 2, aspect=1, frameon=False, xticks=[], yticks=[])
+    ax_morph_distal_tuft = fig.add_subplot(1, 12, 1, aspect=1, frameon=False, xticks=[], yticks=[])
+    ax_morph_homogeneous = fig.add_subplot(1, 12, 2, aspect=1, frameon=False, xticks=[], yticks=[])
 
     [ax_morph_distal_tuft.plot([xstart[idx], xend[idx]], [zstart[idx], zend[idx]], lw=2,
                      c=cell_color, zorder=0) for idx in xrange(len(xmid))]
@@ -691,7 +691,7 @@ def plot_figure_5(param_dict):
                    'ylim': [1e-9, 1e-3]}
     lines = None
     line_names = None
-    num_plot_cols = 4
+    num_plot_cols = 5
 
     for idx, elec in enumerate([0, 60]):
         ax_morph_distal_tuft.plot(elec_x[elec], elec_z[elec], 'o', c=elec_color, ms=15, mec='none')
@@ -728,11 +728,15 @@ def plot_figure_5(param_dict):
                     sum = lfp[elec]
                 else:
                     sum += lfp[elec]
-                l, = ax_tuft.loglog(freq, psd[0], c=input_region_clr[input_region], lw=3)
+                f_idx_max = np.argmin(np.abs(freq - param_dict['max_freq']))
+                f_idx_min = np.argmin(np.abs(freq - 1.))
+                l, = ax_tuft.loglog(freq[f_idx_min:f_idx_max], psd[0][f_idx_min:f_idx_max],
+                                    c=input_region_clr[input_region], lw=3, solid_capstyle='round')
                 lines.append(l)
                 line_names.append(input_region)
             freq, sum_psd = tools.return_freq_and_psd_welch(sum, ns.welch_dict)
-            l, = ax_tuft.loglog(freq, sum_psd[0], '--', c='k', lw=2)
+            l, = ax_tuft.loglog(freq[f_idx_min:f_idx_max], sum_psd[0][f_idx_min:f_idx_max],
+                                '--', c='k', lw=2, solid_capstyle='round')
             lines.append(l)
             line_names.append("Sum")
 
@@ -756,14 +760,13 @@ def plot_figure_3(param_dict):
     mus = [-0.5, 0.0, 2.0]
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     pop_size = 500
-
+    num_plot_cols = 5
     param_dict.update({'input_region': 'homogeneous',
                        'cell_number': 0,
-                       'distribution': 'linear_increase',#'uniform',
+                       'distribution': ['uniform', 'linear_increase'][0],
                        'correlation': 0.0,
                        'mu': 0.0,
                       })
-
 
     ns = NeuralSimulation(**param_dict)
 
@@ -784,7 +787,7 @@ def plot_figure_3(param_dict):
     fig.suptitle(param_dict['distribution'] + ' conductance')
     fig.subplots_adjust(right=0.95, wspace=0.5, hspace=0.5, left=0., top=0.85, bottom=0.2)
 
-    ax_morph_1 = fig.add_subplot(1, 4, 1, aspect=1, frameon=False, xticks=[], yticks=[])
+    ax_morph_1 = fig.add_subplot(1, num_plot_cols, 1, aspect=1, frameon=False, xticks=[], yticks=[])
 
     [ax_morph_1.plot([xstart[idx], xend[idx]], [zstart[idx], zend[idx]], lw=2,
                      c=cell_color, zorder=0) for idx in xrange(len(xmid))]
@@ -796,7 +799,7 @@ def plot_figure_3(param_dict):
                    'ylim': [1e-9, 1e-5]}
     lines = None
     line_names = None
-    num_plot_cols = 4
+
 
     for idx, elec in enumerate([0, 60]):
         ax_morph_1.plot(elec_x[elec], elec_z[elec], 'o', c=elec_color, ms=15, mec='none')
@@ -823,7 +826,10 @@ def plot_figure_3(param_dict):
                 lfp = np.load(join(folder, '%s.npy' % name))
                 # freq, psd = tools.return_freq_and_psd(ns.timeres_python/1000., lfp[elec])
                 freq, psd = tools.return_freq_and_psd_welch(lfp[elec], ns.welch_dict)
-                l, = ax_tuft.loglog(freq, psd[0], c=qa_clr_dict[mu], lw=3)
+                f_idx_max = np.argmin(np.abs(freq - param_dict['max_freq']))
+                f_idx_min = np.argmin(np.abs(freq - 1.))
+                l, = ax_tuft.loglog(freq[f_idx_min:f_idx_max], psd[0][f_idx_min:f_idx_max],
+                                    c=qa_clr_dict[mu], lw=3, clip_on=False, solid_capstyle='round')
                 lines.append(l)
                 line_names.append(conductance_names[mu])
 
@@ -831,10 +837,10 @@ def plot_figure_3(param_dict):
                 ax_tuft.set_xticklabels(['', '1', '10', '100'])
                 ax_tuft.set_yticks(ax_tuft.get_yticks()[1:-1][::2])
 
-    # fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
+    fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
     simplify_axes(fig.axes)
-    mark_subplots([ax_morph_1], 'A', ypos=1.1, xpos=0.1)
-    plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], 'Figure_3A.png'))
+    mark_subplots([ax_morph_1], 'B', ypos=1.1, xpos=0.1)
+    plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], 'Figure_3B.png'))
     plt.close('all')
 
 
@@ -873,7 +879,7 @@ def plot_figure_2(param_dict):
     fig = plt.figure(figsize=(10, 5))
     fig.subplots_adjust(right=0.95, wspace=0.5, hspace=0.5, left=0., top=0.9, bottom=0.2)
 
-    ax_morph_1 = fig.add_subplot(1, 4, 1, aspect=1, frameon=False, xticks=[], yticks=[])
+    ax_morph_1 = fig.add_subplot(1, 5, 1, aspect=1, frameon=False, xticks=[], yticks=[])
 
     [ax_morph_1.plot([xstart[idx], xend[idx]], [zstart[idx], zend[idx]], lw=2,
                      c=cell_color, zorder=0) for idx in xrange(len(xmid))]
@@ -885,7 +891,7 @@ def plot_figure_2(param_dict):
                    'ylim': [1e-9, 1e-4]}
     lines = None
     line_names = None
-    num_plot_cols = 4
+    num_plot_cols = 5
 
     for idx, elec in enumerate([0, 60]):
         ax_morph_1.plot(elec_x[elec], elec_z[elec], 'o', c=elec_color, ms=15, mec='none')
@@ -899,8 +905,8 @@ def plot_figure_2(param_dict):
             ax_tuft = fig.add_subplot(2, num_plot_cols, plot_number + 2, **psd_ax_dict)
 
             if idx == 0:
-                ax_tuft.set_title('c = %1.1f' % correlation)
-                mark_subplots(ax_tuft, 'BCD'[c])
+                ax_tuft.set_title('c = %1.2f' % correlation)
+                mark_subplots(ax_tuft, 'BCDE'[c])
 
             lines = []
             line_names = []
@@ -912,7 +918,10 @@ def plot_figure_2(param_dict):
                 lfp = np.load(join(folder, '%s.npy' % name))
                 # freq, psd = tools.return_freq_and_psd(ns.timeres_python/1000., lfp[elec])
                 freq, psd = tools.return_freq_and_psd_welch(lfp[elec], ns.welch_dict)
-                l, = ax_tuft.loglog(freq, psd[0], c=qa_clr_dict[mu], lw=3)
+                f_idx_max = np.argmin(np.abs(freq - param_dict['max_freq']))
+                f_idx_min = np.argmin(np.abs(freq - 1.))
+                l, = ax_tuft.loglog(freq[f_idx_min:f_idx_max], psd[0][f_idx_min:f_idx_max],
+                                    c=qa_clr_dict[mu], lw=3, solid_capstyle='round')
                 lines.append(l)
                 line_names.append(conductance_names[mu])
 
@@ -1023,7 +1032,10 @@ def plot_figure_1(param_dict):
             # smooth_psd_tuft_res = tools.smooth_signal(freq[::average_over], freq, psd_tuft_res[0])
             # ax_tuft.loglog(freq[::average_over], smooth_psd_tuft_res, c=qa_clr_dict[mu], lw=3)
             freq, psd_tuft_res = tools.return_freq_and_psd_welch(lfp_1[mu][elec], ns_1.welch_dict)
-            ax_tuft.loglog(freq, psd_tuft_res[0], c=qa_clr_dict[mu], lw=3)
+            f_idx_max = np.argmin(np.abs(freq - param_dict['max_freq']))
+            f_idx_min = np.argmin(np.abs(freq - 1.))
+            ax_tuft.loglog(freq[f_idx_min:f_idx_max], psd_tuft_res[0][f_idx_min:f_idx_max],
+                           c=qa_clr_dict[mu], lw=3, solid_capstyle='round')
             ax_tuft.set_ylabel('LFP-PSD ($\mu$V$^2$/Hz)', labelpad=-5)
             ax_tuft.set_xticklabels(['', '1', '10', '100'])
             ax_tuft.set_yticks(ax_tuft.get_yticks()[1:-1][::2])
@@ -1145,7 +1157,11 @@ def plot_figure_1_single_cell(param_dict):
             # ax_tuft.loglog(freq[::average_over], 1000 * smooth_psd_tuft_res, c=qa_clr_dict[mu], lw=3)
 
             freq, psd_tuft_res = tools.return_freq_and_psd_welch(lfp_1[mu][elec], ns_1.welch_dict)
-            ax_tuft.loglog(freq, psd_tuft_res[0], c=qa_clr_dict[mu], lw=3)
+            f_idx_max = np.argmin(np.abs(freq - param_dict['max_freq']))
+            f_idx_min = np.argmin(np.abs(freq - 1.))
+            ax_tuft.loglog(freq[f_idx_min:f_idx_max],
+                           psd_tuft_res[0][f_idx_min:f_idx_max],
+                           c=qa_clr_dict[mu], lw=3, solid_capstyle='round')
 
 
             ax_tuft.set_ylabel('LFP-PSD ($\mu$V$^2$/Hz)', labelpad=-5)
@@ -1305,16 +1321,16 @@ if __name__ == '__main__':
     # conductance = 'stick_generic'
     # conductance = 'classic'
 
-    # if conductance == 'generic':
-    #     from param_dicts import generic_population_params as param_dict
-    # elif conductance == 'stick_generic':
-    #     from param_dicts import stick_population_params as param_dict
-    # else:
-    #     from param_dicts import classic_population_params as param_dict
+    if conductance == 'generic':
+        from param_dicts import generic_population_params as param_dict
+    elif conductance == 'stick_generic':
+        from param_dicts import stick_population_params as param_dict
+    else:
+        from param_dicts import classic_population_params as param_dict
 
-    from param_dicts import vmem_3D_population_params as param_dict
-    plot_3d_rot_pop(param_dict)
-    sys.exit()
+    # from param_dicts import vmem_3D_population_params as param_dict
+    # plot_3d_rot_pop(param_dict)
+    # sys.exit()
 
     # plot_coherence(param_dict)
     # plot_generic_population_LFP(param_dict)
@@ -1325,13 +1341,13 @@ if __name__ == '__main__':
     # plot_figure_1(param_dict)
     # plot_figure_1_single_cell(param_dict)
     # plot_figure_1_single_cell_difference(param_dict)
-
+    # plot_depth_resolved(param_dict)
     # plot_figure_2(param_dict)
     # plot_figure_3(param_dict)
     # plot_figure_5(param_dict)
     # plot_leski_13(param_dict)
     # plot_population_size_effect(param_dict)
-    # plot_population_density_effect(param_dict)
+    plot_population_density_effect(param_dict)
     # plot_all_size_dependencies(param_dict)
     # plot_all_soma_sigs(param_dict)
     # plot_LFP_time_trace(param_dict)
