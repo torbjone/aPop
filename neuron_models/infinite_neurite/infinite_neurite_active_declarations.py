@@ -3,7 +3,7 @@ import numpy as np
 
 def active_declarations(**kwargs):
     neuron.h.distance(0, 0)
-    print "Infinite neurite"
+    # print "Infinite "
     for sec in neuron.h.allsec():
         sec.nseg = 100
 
@@ -19,7 +19,7 @@ def active_declarations(**kwargs):
         if kwargs['distribution'] == 'increase':
             g_w_top = baseline_g * kwargs['g_w_bar_scaling']
         elif kwargs['distribution'] == 'uniform':
-            print "Uniform"
+            # print "Uniform"
             g_w_top = baseline_g
         else:
             raise ValueError('Distribution not recognized!')

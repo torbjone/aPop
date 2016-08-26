@@ -168,12 +168,12 @@ classic_population_params = {'input_type': 'distributed_delta',
                              'root_folder': root_folder,
                              'num_synapses': 1000,
                              'input_firing_rate': 5,
-                             'input_regions': ['homogeneous'],#, 'distal_tuft'],
+                             'input_regions': ['homogeneous', 'distal_tuft'],
                              'mus': None,
-                             'holding_potentials': [-80],#, -70, -60],
-                             'distributions': None, #['uniform', 'linear_increase', 'linear_decrease'],
-                             'conductance_types': ['active'],#, 'passive', 'Ih', 'Ih_frozen'], #['uniform', 'linear_increase', 'linear_decrease'],
-                             'correlations': [0.0],#, 0.01, 0.1, 1.0]
+                             'holding_potentials': [-80, -70, -60],
+                             'distributions': None,
+                             'conductance_types': ['active', 'passive', 'Ih', 'Ih_frozen'],
+                             'correlations': [0.0, 0.01, 0.1, 1.0]
                              }
 
 stick_population_params = {'input_type': 'distributed_delta',

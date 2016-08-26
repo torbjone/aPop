@@ -1,11 +1,8 @@
 from __future__ import division
 import os
-if 'DISPLAY' not in os.environ:
-    import matplotlib
-    matplotlib.use('Agg', warn=False)
-    at_stallo = True
-else:
-    at_stallo = False
+import matplotlib
+matplotlib.use('Agg', warn=False)
+
 from plotting_convention import *
 import pylab as plt
 import numpy as np
@@ -18,17 +15,13 @@ with suppress_stdout_stderr():
 from NeuralSimulation import NeuralSimulation
 import tools
 import scipy.fftpack as sf
+import matplotlib
+
 
 def plot_3d_rot_pop(param_dict):
-    plt.seed(1234)
+    # plt.seed(1234)
+    plt.seed(12345)
     num_cells = 100
-    param_dict.update({
-                       'mu': 0.0,
-                       'distribution': 'linear_increase',
-                        'input_region': 'distal_tuft',
-                        'correlation': 1.0,
-                        'cell_number': 0,
-                      })
 
     ns = NeuralSimulation(**param_dict)
 
@@ -43,6 +36,7 @@ def plot_3d_rot_pop(param_dict):
 
     # R = np.sqrt(np.sum(np.array(x_y_z_rot[num_cells - 1][:2])**2))
     R = 1000.
+    cell_idxs = np.arange(num_cells)
 
     all_xstart = []
     all_xend = []
@@ -52,7 +46,7 @@ def plot_3d_rot_pop(param_dict):
     all_zend = []
     all_diams = []
     all_vmems = []
-    for cell_number in range(num_cells):
+    for cell_number in cell_idxs:#range(num_cells):
         param_dict['cell_number'] = cell_number
         ns = NeuralSimulation(**param_dict)
         cell = ns._return_cell(x_y_z_rot[cell_number])
@@ -74,16 +68,18 @@ def plot_3d_rot_pop(param_dict):
     #          plt.cm.PuBu_r, plt.cm.PuBuGn_r, plt.cm.PuRd_r, plt.cm.Purples_r, plt.cm.RdPu_r,
     #          plt.cm.Reds_r, plt.cm.YlGn_r, plt.cm.YlGnBu_r, plt.cm.YlOrBr_r, plt.cm.YlOrRd_r]
     #
-    cmaps = [plt.cm.Greys_r]
+    cmaps = [plt.cm.viridis]#plt.cm.Greys_r]
 
-    vmem_clr = lambda vmem, cmap_func: cmap_func(0.075 + 1.5 * (vmem - vmin) / (vmax - vmin))
+    vmem_clr = lambda vmem, cmap_func: cmap_func(0.0 + 1.5 * (vmem - vmin) / (vmax - vmin))
+    # vmem_clr = lambda vmem, cmap_func: cmap_func(0+ 2 * (vmem - vmin) / (vmax - vmin))
 
+    plt.close('all')
     img = plt.imshow([[]], vmin=vmin, vmax=vmax, origin='lower', cmap=cmaps[0])
 
     import matplotlib as mpl
     from mpl_toolkits.mplot3d import Axes3D
     plt.style.use('dark_background')
-    fig = plt.figure(figsize=[19, 12])
+    fig = plt.figure(figsize=[12, 12])
     fig.subplots_adjust(top=1, bottom=0, left=0, right=1)
     ax = fig.gca(projection='3d', aspect=1)
     ax._axis3don = False
@@ -98,8 +94,8 @@ def plot_3d_rot_pop(param_dict):
 
     cell_cmaps = []
 
-    for cell_number in range(num_cells):
-        x,y,z,phi = x_y_z_rot[cell_number]
+    for cell_number, cell_idx in enumerate(cell_idxs):
+        x,y,z,phi = x_y_z_rot[cell_idx]
         dist = 1. / np.sqrt((x - R * np.cos(np.deg2rad(angle)))**2 +
                        (y - R * np.sin(np.deg2rad(angle)))**2)
         cmap = np.random.choice(cmaps)
@@ -108,8 +104,8 @@ def plot_3d_rot_pop(param_dict):
         for idx in xrange(len(all_xend[cell_number])):
             l = None
             if idx == 0:
-                l, = ax.plot([x_y_z_rot[cell_number][0]], [x_y_z_rot[cell_number][1]],
-                        [x_y_z_rot[cell_number][2]], 'o', ms=8, mec='none', zorder=1./dist,
+                l, = ax.plot([x_y_z_rot[cell_idx][0]], [x_y_z_rot[cell_idx][1]],
+                        [x_y_z_rot[cell_idx][2]], 'o', ms=8, mec='none', zorder=1./dist,
                          c=vmem_clr(all_vmems[cell_number][idx, t_idx], cmap))
             else:
                 x = [all_xstart[cell_number][idx], all_xend[cell_number][idx]]
@@ -118,13 +114,12 @@ def plot_3d_rot_pop(param_dict):
                 l, = ax.plot(x, y, z, c=vmem_clr(all_vmems[cell_number][idx, t_idx], cmap),
                         lw=2, zorder=dist, clip_on=False)
             lines[cell_number].append(l)
-    ax.auto_scale_xyz([-450, 450], [-450, 450], [-100, 1000])
+    ax.auto_scale_xyz([-450, 450], [-450, 450], [0, 900])
     ax.view_init(0, angle)
     plt.draw()
-    plt.savefig(join(fig_dir, 'vmem_%05d.png' % t_idx))
+    plt.savefig(join(fig_dir, 'vmem_%05d.png' % t_idx), dpi=150)
 
-    for t_idx in range(num_tsteps)[::5]:
-
+    for t_idx in range(num_tsteps)[::5][1:]:
         angle = t_idx / num_tsteps * 360
         for cell_number in range(num_cells):
             x,y,z,phi = x_y_z_rot[cell_number]
@@ -135,7 +130,7 @@ def plot_3d_rot_pop(param_dict):
                 lines[cell_number][idx].set_color(vmem_clr(all_vmems[cell_number][idx, t_idx], cmap))
                 lines[cell_number][idx].set_zorder(1./dist)
 
-        ax.auto_scale_xyz([-450, 450], [-450, 450], [-100, 1000])
+        ax.auto_scale_xyz([-450, 450], [-450, 450], [00, 900])
 
         print angle
         ax.view_init(0, angle)
@@ -143,10 +138,292 @@ def plot_3d_rot_pop(param_dict):
         plt.draw()
         plt.savefig(join(fig_dir, 'vmem_%05d.png' % t_idx), dpi=150)
 
-    os.system('mencoder "mf://%s/*.png" -o %s/../%s.avi -ovc x264 -fps 30' %
-              (fig_dir, fig_dir, ns.population_sim_name))
+    os.system('mencoder "mf://%s/*.png" -o %s/../%s_%dcells.avi -ovc x264 -fps 30' %
+              (fig_dir, fig_dir, ns.population_sim_name, num_cells))
+
+def return_lfp_amp(param_dict, electrode_parameters, x, x_y_z_rot):
+    plt.seed(1234 * param_dict['cell_number'])
+    ns_1 = NeuralSimulation(**param_dict)
+    cell = ns_1._return_cell(x_y_z_rot)
+    cell, syn = ns_1._make_distributed_synaptic_stimuli(cell)
+    cell.simulate(rec_imem=True)
+    electrode = LFPy.RecExtElectrode(cell, **electrode_parameters)
+    electrode.calc_lfp()
+    sig_amp = 1e6 * electrode.LFP[:, -1].reshape(x.shape)
+    return sig_amp, cell
+
+def plot_asymetric_conductance_space_average_movie(param_dict):
+
+    tot_num_cells = 100
+    num_cells = 1
+    x_y_z_rot = np.load(os.path.join(param_dict['root_folder'],
+                                     param_dict['save_folder'],
+                                     'x_y_z_rot_%s.npy' % param_dict['name']))
+    x = np.linspace(-1500, 1500, 150)
+    z = np.linspace(-1000, 2000, 150)
+    x, z = np.meshgrid(x, z)
+    elec_x = x.flatten()
+    elec_z = z.flatten()
+    elec_y = np.ones(len(elec_x)) * 0
+
+    electrode_parameters = {
+        'sigma': 0.3,              # extracellular conductivi   ty
+        'x': elec_x,        # x,y,z-coordinates of contact points
+        'y': elec_y,
+        'z': elec_z,
+        'method': 'linesource'
+    }
+    param_dict.update({
+                       'input_region': 'homogeneous',
+                       'mu': 0.0,
+                       'correlation': 0.0,
+                       'cell_number': 0,
+                       'cut_off': 10.0,
+                       'end_t': 1,
+                      })
+    param_dict_1 = param_dict.copy()
+    param_dict_2 = param_dict.copy()
+
+    param_dict_1['distribution'] = 'uniform'
+    param_dict_2['distribution'] = 'linear_increase'
+
+    tot_sig_1 = np.zeros(x.shape)
+    tot_sig_2 = np.zeros(x.shape)
+
+    sig_amp_1, cell = return_lfp_amp(param_dict_1, electrode_parameters, x, x_y_z_rot[0])
+    sig_amp_2, cell = return_lfp_amp(param_dict_2, electrode_parameters, x, x_y_z_rot[0])
+
+    tot_sig_1 += sig_amp_1
+    tot_sig_2 += sig_amp_2
+
+    logthresh = 1
+    color_lim = np.max(np.abs(tot_sig_2)) * 5
+
+    vmax = color_lim
+    vmin = -color_lim
+    maxlog = int(np.ceil(np.log10(vmax)))
+    minlog = int(np.ceil(np.log10(-vmin)))
+
+    tick_locations = ([-(10**d) for d in xrange(minlog, -logthresh-1, -1)]
+                    + [0.0]
+                    + [(10**d) for d in xrange(-logthresh, maxlog+1)])
+
+    plt.close('all')
+    morph_line_dict = {'solid_capstyle': 'butt',
+                       'lw': 0.5,
+                       'color': 'k',
+                       'zorder': 1}
+
+    fig = plt.figure(figsize=[12, 6])
+    name = fig.suptitle("Number of cells: %d" % num_cells)
+
+    fig.subplots_adjust(wspace=0.6, hspace=0.6)
+    ax_lfp_1 = fig.add_subplot(221, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.min(elec_x), np.max(elec_x)],
+                                 aspect=1, frameon=False, xticks=[], yticks=[], title='Symmetric conductance\nPopulation LFP')
+    ax_lfp_2 = fig.add_subplot(222, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.min(elec_x), np.max(elec_x)],
+                                 aspect=1, frameon=False, xticks=[], yticks=[], title='Asymmetric conductance\nPopulation LFP')
+
+    ax_lfp_1_single = fig.add_subplot(223, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.min(elec_x), np.max(elec_x)],
+                                 aspect=1, frameon=False, xticks=[], yticks=[], title='Singel cell LFP')
+    ax_lfp_2_single = fig.add_subplot(224, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.min(elec_x), np.max(elec_x)],
+                                 aspect=1, frameon=False, xticks=[], yticks=[], title='single cell LFP')
+
+    l_1 = []
+    l_2 = []
+    for idx in xrange(len(cell.xmid)):
+        l_1.append(ax_lfp_1_single.plot([cell.xstart[idx], cell.xend[idx]],
+                                        [cell.zstart[idx], cell.zend[idx]], **morph_line_dict)[0])
+        ax_lfp_1.plot([cell.xstart[idx], cell.xend[idx]],
+                      [cell.zstart[idx], cell.zend[idx]], **morph_line_dict)
+        ax_lfp_2.plot([cell.xstart[idx], cell.xend[idx]],
+                      [cell.zstart[idx], cell.zend[idx]], **morph_line_dict)
+        l_2.append(ax_lfp_2_single.plot([cell.xstart[idx], cell.xend[idx]],
+                                        [cell.zstart[idx], cell.zend[idx]], **morph_line_dict)[0])
+
+    img_dict = {'origin': 'lower',
+                'extent': [np.min(x), np.max(x), np.min(z), np.max(z)],
+                'cmap': plt.cm.bwr,
+                'norm': matplotlib.colors.SymLogNorm(10**-logthresh),
+                'vmin': vmin,
+                'vmax': vmax,
+                'interpolation': 'nearest',
+                'zorder': 0}
+
+    img_lfp_1 = ax_lfp_1.imshow(tot_sig_1[:, :], **img_dict)
+    img_lfp_2 = ax_lfp_2.imshow(tot_sig_2[:, :], **img_dict)
+    img_lfp_1_single = ax_lfp_1_single.imshow(sig_amp_1[:, :], **img_dict)
+    img_lfp_2_single = ax_lfp_2_single.imshow(sig_amp_2[:, :], **img_dict)
+
+    cb = plt.colorbar(img_lfp_1_single, ax=ax_lfp_1_single, shrink=0.5, ticks=tick_locations)
+    cb2 = plt.colorbar(img_lfp_2_single, ax=ax_lfp_2_single, shrink=0.5, ticks=tick_locations)
+    cb.set_label('nV', labelpad=0)
+    cb2.set_label('nV', labelpad=0)
+
+    cb = plt.colorbar(img_lfp_1, ax=ax_lfp_1, shrink=0.5, ticks=tick_locations)
+    cb2 = plt.colorbar(img_lfp_2, ax=ax_lfp_2, shrink=0.5, ticks=tick_locations)
+    cb.set_label('nV', labelpad=0)
+    cb2.set_label('nV', labelpad=0)
+    fig.savefig(join(param_dict['root_folder'], 'asym_conductance_spatial',
+                         'hay_%04d.png' % (num_cells)))
+
+    for num_cells in np.arange(2, tot_num_cells):
+        print num_cells
+        name.set_text("Number of cells: %d" % num_cells)
+        param_dict_1['cell_number'] = num_cells - 1
+        param_dict_2['cell_number'] = num_cells - 1
+        sig_amp_1, cell = return_lfp_amp(param_dict_1, electrode_parameters, x, x_y_z_rot[num_cells - 1])
+        sig_amp_2, cell = return_lfp_amp(param_dict_2, electrode_parameters, x, x_y_z_rot[num_cells - 1])
+
+        for idx in xrange(len(cell.xmid)):
+            ax_lfp_1.plot([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]], **morph_line_dict)
+            ax_lfp_2.plot([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]], **morph_line_dict)
+        for idx in xrange(len(cell.xmid)):
+            l_1[idx].set_data([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]])
+            l_2[idx].set_data([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]])
+
+        tot_sig_1 += sig_amp_1
+        tot_sig_2 += sig_amp_2
+
+        img_lfp_1.set_data(tot_sig_1[:, :])
+        img_lfp_2.set_data(tot_sig_2[:, :])
+
+        img_lfp_1_single.set_data(sig_amp_1[:, :])
+        img_lfp_2_single.set_data(sig_amp_2[:, :])
+
+        fig.savefig(join(param_dict['root_folder'], 'asym_conductance_spatial',
+                         'hay_%04d.png' % (num_cells)))
 
 
+
+def plot_asymetric_conductance_time_average_movie(param_dict):
+
+    x = np.linspace(-2000, 2000, 150)
+    z = np.linspace(-2000, 2000, 150)
+    x, z = np.meshgrid(x, z)
+    elec_x = x.flatten()
+    elec_z = z.flatten()
+    elec_y = np.ones(len(elec_x)) * 0
+
+    electrode_parameters = {
+        'sigma': 0.3,              # extracellular conductivi   ty
+        'x': elec_x,        # x,y,z-coordinates of contact points
+        'y': elec_y,
+        'z': elec_z,
+        'method': 'linesource'
+    }
+
+    param_dict.update({'distribution': 'uniform',
+                       'input_region': 'homogeneous',
+                       'mu': 0.0,
+                       'correlation': 0.0,
+                       'cell_number': 0,
+                       # 'start_T': 0.0,
+                       'end_t': 1000,
+                      })
+    plt.seed(1234)
+    ns_1 = NeuralSimulation(**param_dict)
+    cell = ns_1._return_cell([0, 0, 0, 0])
+    cell, syn = ns_1._make_distributed_synaptic_stimuli(cell)
+
+    cell.simulate(rec_imem=True)
+
+    electrode = LFPy.RecExtElectrode(cell, **electrode_parameters)
+    electrode.calc_lfp()
+    sig_amp_1 = 1e6 * electrode.LFP.reshape([x.shape[0], x.shape[1], len(cell.tvec)])
+
+    param_dict.update({'distribution': 'linear_increase',
+                      })
+    plt.seed(1234)
+    ns_2 = NeuralSimulation(**param_dict)
+    cell = ns_2._return_cell([0, 0, 0, 0])
+    cell, syn = ns_2._make_distributed_synaptic_stimuli(cell)
+
+    cell.simulate(rec_imem=True)
+
+    electrode = LFPy.RecExtElectrode(cell, **electrode_parameters)
+    electrode.calc_lfp()
+    sig_amp_2 = 1e6 * electrode.LFP.reshape([x.shape[0], x.shape[1], len(cell.tvec)])
+
+    logthresh = 1
+    color_lim = np.max(np.abs(1e6 * electrode.LFP)) / 10
+    print color_lim
+    vmax = color_lim
+    vmin = -color_lim
+    maxlog = int(np.ceil(np.log10(vmax)))
+    minlog = int(np.ceil(np.log10(-vmin)))
+
+    tick_locations = ([-(10**d) for d in xrange(minlog, -logthresh-1, -1)]
+                    + [0.0]
+                    + [(10**d) for d in xrange(-logthresh, maxlog+1)])
+
+    plt.close('all')
+    fig = plt.figure(figsize=[12, 6])
+    fig.subplots_adjust(wspace=0.6, hspace=0.6)
+    ax_lfp_1 = fig.add_subplot(221, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.min(elec_x), np.max(elec_x)],
+                                 aspect=1, frameon=False, xticks=[], yticks=[], title='Symmetric conductance\nLFP')
+
+    ax_lfp_1_mean = fig.add_subplot(222, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.min(elec_x), np.max(elec_x)],
+                                 aspect=1, frameon=False, xticks=[], yticks=[], title='Symmetric conductance\nLFP average')
+
+
+    [ax_lfp_1.plot([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]], '-',
+                 solid_capstyle='butt', ms=6, lw=cell.diam[idx], color='k', zorder=1)
+     for idx in xrange(len(cell.xmid))]
+
+    [ax_lfp_1_mean.plot([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]], '-',
+                 solid_capstyle='butt', ms=6, lw=cell.diam[idx], color='k', zorder=1)
+     for idx in xrange(len(cell.xmid))]
+
+
+    ax_lfp_2 = fig.add_subplot(223, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.min(elec_x), np.max(elec_x)],
+                                 aspect=1, frameon=False, xticks=[], yticks=[], title='Asymmetric conductance\nLFP')
+
+    ax_lfp_2_mean = fig.add_subplot(224, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.min(elec_x), np.max(elec_x)],
+                                 aspect=1, frameon=False, xticks=[], yticks=[], title='Asymmetric conductance\nLFP average')
+
+
+    [ax_lfp_2.plot([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]], '-',
+                 solid_capstyle='butt', ms=6, lw=cell.diam[idx], color='k', zorder=1)
+     for idx in xrange(len(cell.xmid))]
+
+    [ax_lfp_2_mean.plot([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]], '-',
+                 solid_capstyle='butt', ms=6, lw=cell.diam[idx], color='k', zorder=1)
+     for idx in xrange(len(cell.xmid))]
+
+    time_idx = 0
+
+    img_lfp_1 = ax_lfp_1.imshow(sig_amp_1[:, :, time_idx], origin='lower', extent=[np.min(x), np.max(x), np.min(z), np.max(z)],
+                            cmap=plt.cm.bwr, norm=matplotlib.colors.SymLogNorm(10**-logthresh),
+                  vmin=vmin, vmax=vmax, interpolation='nearest', zorder=0)
+
+    img_lfp_1_mean = ax_lfp_1_mean.imshow(sig_amp_1[:, :, time_idx], origin='lower', extent=[np.min(x), np.max(x), np.min(z), np.max(z)],
+                            cmap=plt.cm.bwr, norm=matplotlib.colors.SymLogNorm(10**-logthresh),
+                  vmin=vmin, vmax=vmax, interpolation='nearest', zorder=0)
+
+    img_lfp_2 = ax_lfp_2.imshow(sig_amp_2[:, :, time_idx], origin='lower', extent=[np.min(x), np.max(x), np.min(z), np.max(z)],
+                            cmap=plt.cm.bwr, norm=matplotlib.colors.SymLogNorm(10**-logthresh),
+                  vmin=vmin, vmax=vmax, interpolation='nearest', zorder=0)
+
+    img_lfp_2_mean = ax_lfp_2_mean.imshow(sig_amp_2[:, :, time_idx], origin='lower', extent=[np.min(x), np.max(x), np.min(z), np.max(z)],
+                            cmap=plt.cm.bwr, norm=matplotlib.colors.SymLogNorm(10**-logthresh),
+                  vmin=vmin, vmax=vmax, interpolation='nearest', zorder=0)
+
+    cb = plt.colorbar(img_lfp_1_mean, ax=ax_lfp_1_mean, shrink=0.5, ticks=tick_locations)
+    cb2 = plt.colorbar(img_lfp_2_mean, ax=ax_lfp_2_mean, shrink=0.5, ticks=tick_locations)
+    cb.set_label('nV', labelpad=0)
+    fig.savefig(join(param_dict['root_folder'], 'asym_conductance_anim',
+                         'hay_%04d.png' % (time_idx)))
+    for time_idx in np.arange(0, len(cell.tvec), 5)[1:]:
+        print time_idx
+        img_lfp_1.set_data(sig_amp_1[:, :, time_idx])
+        img_lfp_1_mean.set_data(np.average(sig_amp_1[:, :, :time_idx], axis=-1))
+
+        img_lfp_2.set_data(sig_amp_2[:, :, time_idx])
+        img_lfp_2_mean.set_data(np.average(sig_amp_2[:, :, :time_idx], axis=-1))
+
+
+        fig.savefig(join(param_dict['root_folder'], 'asym_conductance_anim',
+                         'hay_%04d.png' % (time_idx)))
 
 
 def plot_cell_population(param_dict):
@@ -1328,9 +1605,26 @@ if __name__ == '__main__':
     else:
         from param_dicts import classic_population_params as param_dict
 
+
+    # plot_asymetric_conductance_time_average_movie(param_dict)
+    plot_asymetric_conductance_space_average_movie(param_dict)
+
     # from param_dicts import vmem_3D_population_params as param_dict
-    # plot_3d_rot_pop(param_dict)
-    # sys.exit()
+    # input_regions = ['homogeneous']
+    # distributions = ['uniform']
+    # correlations = [0.0]
+    # for i, input_region in enumerate(input_regions):
+    #     for d, distribution in enumerate(distributions):
+    #         for c, correlation in enumerate(correlations):
+    #             param_dict.update({
+    #                                'mu': 0.0,
+    #                                'distribution': distribution,
+    #                                 'input_region': input_region,
+    #                                 'correlation': correlation,
+    #                                 'cell_number': 0,
+    #                               })
+    #
+    #             plot_3d_rot_pop(param_dict)
 
     # plot_coherence(param_dict)
     # plot_generic_population_LFP(param_dict)
@@ -1347,7 +1641,7 @@ if __name__ == '__main__':
     # plot_figure_5(param_dict)
     # plot_leski_13(param_dict)
     # plot_population_size_effect(param_dict)
-    plot_population_density_effect(param_dict)
+    # plot_population_density_effect(param_dict)
     # plot_all_size_dependencies(param_dict)
     # plot_all_soma_sigs(param_dict)
     # plot_LFP_time_trace(param_dict)
