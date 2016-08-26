@@ -20,7 +20,6 @@ import tools
 import scipy.fftpack as sf
 
 
-
 def return_elec_row_col(elec_number, elec_x, elec_z):
     """ Return the subplot number for the distance study
     """
@@ -507,7 +506,6 @@ def plot_simple_model_LFP(param_dict):
                 plt.close('all')
 
 
-
 def initialize_population(param_dict):
     print "Initializing cell positions and rotations ..."
     x_y_z_rot = np.zeros((param_dict['num_cells'], 4))
@@ -953,7 +951,7 @@ def PopulationMPIclassic():
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
         num_cells = 2000 if at_stallo else 1
-        num_tasks = (len(param_dict['input_regions']) *
+        num_tasks = (len(param_dict['input_regions']) * len(param_dict['holding_potentials']) *
                      len(param_dict['conductance_types']) * len(param_dict['correlations']) * (num_cells))
 
         for input_region in param_dict['input_regions']:
@@ -985,7 +983,7 @@ def PopulationMPIclassic():
     else:
         import time
         while True:
-            if rank % 4 == 0:
+            if rank % 2 == 0:
                 print "Rank %d sleeping" % rank
                 time.sleep(60)
             else:
