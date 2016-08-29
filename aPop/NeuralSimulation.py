@@ -247,12 +247,12 @@ class NeuralSimulation:
 
         cell = self._return_cell(x_y_z_rot)
         cell, syn = self._make_distributed_synaptic_stimuli(cell)
-        rec_vmem = True if self.name is 'vmem_3D_population' else False
+        rec_vmem = True #if self.name is 'vmem_3D_population' else False
         cell.simulate(rec_imem=True, rec_vmem=rec_vmem)
 
-        # plt.plot(cell.tvec, cell.vmem[0, :])
+        plt.plot(cell.tvec, cell.vmem[0, :])
         # plt.plot(cell.tvec, cell.vmem[1, :])
-        # plt.show()
+        plt.show()
         # sys.exit()
         self.save_neural_sim_single_input_data(cell)
         # if ('shape_function' in self.name) or (not self.cell_number % 100):

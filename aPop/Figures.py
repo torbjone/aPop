@@ -432,7 +432,7 @@ def plot_cell_population(param_dict):
     param_dict.update({
                        'mu': 0.0,
                        'distribution': 'uniform',
-                        'input_region': 'uniform',
+                        'input_region': 'homogeneous',
                         'correlation': 0.0,
                         'cell_number': 0,
                       })
@@ -448,11 +448,11 @@ def plot_cell_population(param_dict):
     fig.subplots_adjust(right=0.95, wspace=0.5, hspace=0.8, left=0.05, top=0.85, bottom=0.2)
     cell_clr = lambda cell_idx: plt.cm.rainbow(cell_idx / (num_cells - 1))
     ax.set_rasterization_zorder(0)
-    for cell_number in range(num_cells)[::2]:
+    for cell_number in range(num_cells):
         param_dict['cell_number'] = cell_number
         ns = NeuralSimulation(**param_dict)
         cell = ns._return_cell(x_y_z_rot[cell_number])
-        if cell_number % 10 == 0:
+        if cell_number % 100 == 0:
             print "Plotting ", cell_number
         c = np.random.randint(0, num_cells)
         for idx in xrange(len(cell.xend)):
@@ -464,7 +464,7 @@ def plot_cell_population(param_dict):
                         [cell.zstart[idx], cell.zend[idx]],
                         lw=cell.diam[idx]/2, rasterized=True,
                          c=cell_clr(c), zorder=0)
-        if cell_number % 10 == 0:
+        if cell_number % 100 == 0:
             plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_cell_population_%d_%d.png' % (cell_number, num_cells)), dpi=300)
     plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_cell_population_%d.png' % num_cells), dpi=300)
     plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_cell_population_%d.pdf' % num_cells), dpi=300)
@@ -493,7 +493,7 @@ def plot_all_soma_sigs(param_dict):
     fig = plt.figure(figsize=(18, 9))
     fig.subplots_adjust(right=0.95, wspace=0.5, hspace=0.8, left=0.05, top=0.85, bottom=0.2)
 
-    psd_ax_dict = {'ylim': [1e-10, 1e-3],
+    psd_ax_dict = {'ylim': [1e-9, 1e-4],
                     'yscale': 'log',
                     'xscale': 'log',
                     'xlim': [1, 500],
@@ -503,8 +503,9 @@ def plot_all_soma_sigs(param_dict):
     num_plot_cols = 10
     num_plot_rows = 3
     fig.text(0.17, 0.95, 'Uniform conductance')
-    fig.text(0.45, 0.95, 'Linear increasing conductance')
-    fig.text(0.75, 0.95, 'Linear decreasing conductance')
+    fig.text(0.6, 0.95, 'Increasing conductance')
+    # fig.text(0.45, 0.95, 'Linear increasing conductance')
+    # fig.text(0.75, 0.95, 'Linear decreasing conductance')
 
     fig.text(0.05, 0.75, 'Distal tuft\ninput', ha='center')
     fig.text(0.05, 0.5, 'Homogeneous\ninput', ha='center')
@@ -515,7 +516,7 @@ def plot_all_soma_sigs(param_dict):
         for d, distribution in enumerate(distributions):
             for c, correlation in enumerate(correlations):
                 print input_region, distribution, correlation
-                plot_number = i * num_plot_cols + d * (2 + len(distributions)) + c + 2
+                plot_number = i * num_plot_cols + d * (3 + len(distributions)) + c + 2
                 lines = []
                 line_names = []
 
@@ -532,9 +533,13 @@ def plot_all_soma_sigs(param_dict):
                     try:
                         lfp = np.load(join(folder, '%s.npy' % name))[elec, :]
                     except:
+                        print name
                         continue
                     freq, psd = tools.return_freq_and_psd_welch(lfp, ns.welch_dict)
-                    l, = ax.plot(freq, psd[0], c=qa_clr_dict[mu], lw=3)
+                    f_idx_max = np.argmin(np.abs(freq - param_dict['max_freq']))
+                    f_idx_min = np.argmin(np.abs(freq - 1.))
+                    l, = ax.plot(freq[f_idx_min:f_idx_max], psd[0][f_idx_min:f_idx_max],
+                                 c=qa_clr_dict[mu], lw=3, clip_on=False, solid_capstyle='butt')
                     lines.append(l)
                     line_names.append(conductance_names[mu])
                     # img = ax.pcolormesh(freq[1:freq_idx], z, psd[:, 1:freq_idx], **im_dict)
@@ -580,7 +585,7 @@ def plot_all_soma_sigs_classic(param_dict):
 
     plt.close('all')
     fig = plt.figure(figsize=(18, 9))
-    fig.subplots_adjust(right=0.95, wspace=0.5, hspace=0.8, left=0.05, top=0.85, bottom=0.2)
+    fig.subplots_adjust(right=0.95, wspace=0.5, hspace=0.8, left=0.06, top=0.85, bottom=0.2)
 
     psd_ax_dict = {'ylim': [1e-10, 1e-3],
                     'yscale': 'log',
@@ -595,9 +600,9 @@ def plot_all_soma_sigs_classic(param_dict):
     fig.text(0.45, 0.95, '- 70 mV')
     fig.text(0.75, 0.95, '- 60 mV')
 
-    fig.text(0.05, 0.75, 'Distal tuft\ninput', ha='center')
-    fig.text(0.05, 0.5, 'Homogeneous\ninput', ha='center')
-    fig.text(0.05, 0.25, 'Basal\ninput', ha='center')
+    fig.text(0.005, 0.75, 'Distal tuft\ninput', ha='left')
+    fig.text(0.005, 0.3, 'Homogeneous\ninput', ha='left')
+    # fig.text(0.05, 0.25, 'Basal\ninput', ha='center')
     lines = None
     line_names = None
     for i, input_region in enumerate(input_regions):
@@ -620,7 +625,10 @@ def plot_all_soma_sigs_classic(param_dict):
                     name = 'summed_center_signal_%s_%dum' % (ns.population_sim_name, pop_size)
                     lfp = np.load(join(folder, '%s.npy' % name))[elec, :]
                     freq, psd = tools.return_freq_and_psd_welch(lfp, ns.welch_dict)
-                    l, = ax.plot(freq, psd[0], c=conductance_clr_dict[conductance_type], lw=3)
+                    f_idx_max = np.argmin(np.abs(freq - param_dict['max_freq']))
+                    f_idx_min = np.argmin(np.abs(freq - 1.))
+                    l, = ax.plot(freq[f_idx_min:f_idx_max], psd[0][f_idx_min:f_idx_max],
+                                 c=conductance_clr_dict[conductance_type], lw=3, clip_on=True)
                     lines.append(l)
                     line_names.append(conductance_type)
                     # img = ax.pcolormesh(freq[1:freq_idx], z, psd[:, 1:freq_idx], **im_dict)
@@ -1813,8 +1821,8 @@ def plot_figure_1_single_cell_difference(param_dict):
 
 
 if __name__ == '__main__':
-    # conductance = 'generic'
-    conductance = 'stick_generic'
+    conductance = 'generic'
+    # conductance = 'stick_generic'
     # conductance = 'classic'
 
     if conductance == 'generic':
@@ -1863,8 +1871,8 @@ if __name__ == '__main__':
     # plot_population_density_effect(param_dict)
     # plot_all_size_dependencies(param_dict)
     # plot_all_soma_sigs_classic(param_dict)
-    plot_all_soma_sigs(param_dict)
+    # plot_all_soma_sigs(param_dict)
     # plot_LFP_time_trace(param_dict)
-    # plot_cell_population(param_dict)
+    plot_cell_population(param_dict)
 
     # sys.exit()
