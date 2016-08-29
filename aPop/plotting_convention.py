@@ -27,6 +27,11 @@ qa_clr_dict = {-0.5: reg_color,
                0.0: pas_color,
                2.0: res_color}
 
+conductance_clr_dict = {'active': 'r',
+               'passive': 'k',
+               'Ih': 'b',
+                'Ih_frozen': 'c'}
+
 conductance_names = {-0.5: 'regenerative',
                      0.0: 'passive-frozen',
                      2.0: 'restorative'}
