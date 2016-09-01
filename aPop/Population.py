@@ -1009,9 +1009,9 @@ def PopulationMPIclassic():
 
 
 if __name__ == '__main__':
-    # conductance = 'generic'
+    conductance = 'generic'
     # conductance = 'stick_generic'
-    conductance = 'classic'
+    # conductance = 'classic'
 
     if conductance == 'generic':
         from param_dicts import generic_population_params as param_dict

@@ -247,12 +247,12 @@ class NeuralSimulation:
 
         cell = self._return_cell(x_y_z_rot)
         cell, syn = self._make_distributed_synaptic_stimuli(cell)
-        rec_vmem = True #if self.name is 'vmem_3D_population' else False
+        rec_vmem = True if self.name is 'vmem_3D_population' else False
         cell.simulate(rec_imem=True, rec_vmem=rec_vmem)
 
-        plt.plot(cell.tvec, cell.vmem[0, :])
+        # plt.plot(cell.tvec, cell.vmem[0, :])
         # plt.plot(cell.tvec, cell.vmem[1, :])
-        plt.show()
+        # plt.show()
         # sys.exit()
         self.save_neural_sim_single_input_data(cell)
         # if ('shape_function' in self.name) or (not self.cell_number % 100):
@@ -314,19 +314,14 @@ class NeuralSimulation:
         num_synapses = self.param_dict['num_synapses']
         cell_input_idxs = cell.get_rand_idx_area_norm(section=input_pos, nidx=num_synapses, z_min=minpos, z_max=maxpos)
         firing_rate = self.param_dict['input_firing_rate']
+
         if self.correlation < 1e-6:
             spike_trains = LFPy.inputgenerators.stationary_poisson(num_synapses, firing_rate, cell.tstartms, cell.tstopms)
         else:
             all_spiketimes = np.load(join(self.param_dict['root_folder'], self.param_dict['save_folder'],
                              'all_spike_trains_%s.npy' % self.param_dict['name'])).item()
-
-            # spike_train_idxs = np.array(random.sample(np.arange(int(num_synapses/self.correlation)), num_synapses))
             spike_train_idxs = np.random.choice(np.arange(int(num_synapses/self.correlation)), num_synapses, replace=False)
-            # print np.sort(spike_train_idxs)
-
             spike_trains = [all_spiketimes[idx] for idx in spike_train_idxs]
-
-            # spike_trains = all_spiketimes[spike_train_idxs]
 
         synapses = self.set_input_spiketrain(cell, cell_input_idxs, spike_trains, synapse_params)
 

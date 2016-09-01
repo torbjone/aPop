@@ -187,7 +187,7 @@ stick_population_params = {'input_type': 'distributed_delta',
                              'population_radii': population_radii,
                              'layer_5_thickness': 0,
                              'cut_off': cut_off,
-                             'end_t': end_T,
+                             'end_t': end_T * 1, # Just testing log diff stabilize by * 16
                              'syn_tau': dt * 3,
                              'syn_weight': 1e-3,
                              'max_freq': 500,
