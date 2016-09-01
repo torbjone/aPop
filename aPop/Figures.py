@@ -459,7 +459,7 @@ def plot_cell_population(param_dict):
     ax.set_aspect('equal')
     cell_clr = lambda cell_idx: plt.cm.rainbow(cell_idx / (num_cells - 1))
     ax.set_rasterization_zorder(0)
-    for cell_number in range(num_cells)[::3]:
+    for cell_number in range(num_cells)[::4]:
         param_dict['cell_number'] = cell_number
         ns = NeuralSimulation(**param_dict)
         cell = ns._return_cell(x_y_z_rot[cell_number])
@@ -482,7 +482,7 @@ def plot_cell_population(param_dict):
                          c=cell_clr(c), zorder=dist,)
         #if cell_number % 100 == 0:
         #    plt.savefig(join(param_dict['root_folder'], 'figures', 'pop_sizes', 'Figure_cell_population_%d_%d.png' % (cell_number, num_cells)), dpi=300)
-    ax.plot([250, 350], [0, 0], [-300, -300], lw=5)
+    ax.plot([0, 0], [0, 100], [-300, -300], lw=5, c='k')
     ax.auto_scale_xyz([-450, 450], [-450, 450], [0, 900])
     ax.view_init(15, 0)
     plt.draw()

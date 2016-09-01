@@ -142,8 +142,34 @@ generic_population_params = {'input_type': 'distributed_delta',
                              'correlations': [0., 0.01, 0.1, 1.0]
                              }
 
-
-
+asymmetric_population_params = {'input_type': 'distributed_delta',
+                             'name': 'asymetric_generic_population',
+                             'timeres_NEURON': dt,
+                             'cell_name': 'hay',
+                             'timeres_python': dt,
+                             'population_scale': scale,  # 10 means full population
+                             'num_cells': num_cells,
+                             'population_radius': population_radius,
+                             'population_radii': population_radii,
+                             'layer_5_thickness': layer_5_thickness,
+                             'cut_off': cut_off,
+                             'end_t': end_T,
+                             'syn_tau': dt * 3,
+                             'syn_weight': 1e-3,
+                             'max_freq': 500,
+                             'holding_potential': -80,
+                             'conductance_type': 'generic',
+                             'save_folder': 'asymmetric_population',
+                             'lateral_electrode_parameters': lateral_electrode_parameters,
+                             'center_electrode_parameters': center_electrode_parameters,
+                             'root_folder': root_folder,
+                             'num_synapses': 1000,
+                             'input_firing_rate': 5,
+                             'input_regions': ['dual0.80', 'dual1.00'],
+                             'mus': [2.0],
+                             'distributions': ['linear_increase'],#['uniform', 'linear_increase', 'linear_decrease'],
+                             'correlations': [0., 0.1, 1.0]
+                             }
 
 classic_population_params = {'input_type': 'distributed_delta',
                              'name': 'classic_population',
