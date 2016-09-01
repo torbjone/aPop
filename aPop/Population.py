@@ -896,11 +896,11 @@ def PopulationMPIgeneric():
     else:
         import time
         while True:
-            # if rank % 4 == 0:
-            #     print "Rank %d sleeping" % rank
-            #     time.sleep(60)
-            # else:
-            comm.send(None, dest=0, tag=tags.READY)
+            if rank % 2 == 0:
+                print "Rank %d sleeping" % rank
+                time.sleep(60)
+            else:
+                comm.send(None, dest=0, tag=tags.READY)
             [input_region, distribution, mu, correlation, cell_idx] = comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
             tag = status.Get_tag()
             if tag == tags.START:
