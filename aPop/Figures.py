@@ -459,7 +459,7 @@ def plot_cell_population(param_dict):
     ax.set_aspect('equal')
     cell_clr = lambda cell_idx: plt.cm.rainbow(cell_idx / (num_cells - 1))
     ax.set_rasterization_zorder(0)
-    for cell_number in range(num_cells)[::4]:
+    for cell_number in range(num_cells)[::1]:
         param_dict['cell_number'] = cell_number
         ns = NeuralSimulation(**param_dict)
         cell = ns._return_cell(x_y_z_rot[cell_number])
@@ -482,13 +482,14 @@ def plot_cell_population(param_dict):
                          c=cell_clr(c), zorder=dist,)
         #if cell_number % 100 == 0:
         #    plt.savefig(join(param_dict['root_folder'], 'figures', 'pop_sizes', 'Figure_cell_population_%d_%d.png' % (cell_number, num_cells)), dpi=300)
-    ax.plot([0, 0], [0, 100], [-300, -300], lw=5, c='k')
+    ax.plot([0, 0], [0, 100], [-300, -300], lw=5, c='k', zorder=1000)
     ax.auto_scale_xyz([-450, 450], [-450, 450], [0, 900])
     ax.view_init(15, 0)
     plt.draw()
 
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_cell_population_%d.png' % num_cells), dpi=300, transparent=True)
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_cell_population_%d_transparent.png' % num_cells), dpi=300)
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_cell_population_%d_transparent.png' % num_cells), dpi=300, transparent=True)
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_cell_population_%d.png' % num_cells), dpi=300)
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_cell_population_%d_transparent.pdf' % num_cells), dpi=300, transparent=True)
     # ax.view_init(15, 90)
     # plt.draw()
     # plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_cell_population_%d_rot.png' % num_cells), dpi=300, transparent=True)
@@ -1054,8 +1055,8 @@ def plot_depth_resolved(param_dict):
 
 def plot_figure_5(param_dict):
 
-    input_region_clr = {'distal_tuft': 'lightgreen',
-                        'homogeneous': 'darkgreen'}
+    input_region_clr = {'distal_tuft': '#ff5555',
+                        'homogeneous': 'lightgreen'}
     correlations = param_dict['correlations']
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     pop_size = 500
@@ -1145,7 +1146,7 @@ def plot_figure_5(param_dict):
 
 def plot_figure_3(param_dict):
 
-    panel = 'A'
+    panel = 'B'
     correlations = param_dict['correlations']
     mus = [-0.5, 0.0, 2.0]
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
@@ -1227,7 +1228,7 @@ def plot_figure_2(param_dict):
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     pop_size = 500
 
-    param_dict.update({'input_region': 'basal',#'distal_tuft',
+    param_dict.update({'input_region': 'basal',#'distal_tuft',#
                        'cell_number': 0,
                        'distribution': 'linear_increase',
                        'correlation': 0.0,
@@ -1497,6 +1498,83 @@ def plot_figure_1_population_LFP(param_dict):
     plt.savefig(join(param_dict_1['root_folder'], 'figures', 'Figure_1_population.png'))
     plt.close('all')
 
+def plot_figure_asymmetric_population_LFP():
+    from param_dicts import asymmetric_population_params as param_dict
+
+    conductance_names = {-0.5: 'regenerative',
+                         0.0: 'passive-frozen',
+                         2.0: 'restorative'}
+
+    correlations = param_dict['correlations']
+    mus = [2.0]
+    folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
+    pop_size = 500
+
+    param_dict.update({'input_region': 'dual0.80',#'distal_tuft',#
+                       'cell_number': 0,
+                       'distribution': 'linear_increase',
+                       'correlation': 0.0,
+                       'mu': 2.0,
+                      })
+
+    plt.close('all')
+    fig = plt.figure(figsize=(10, 5))
+    fig.subplots_adjust(right=0.95, wspace=0.5, hspace=0.5, left=0., top=0.9, bottom=0.2)
+
+    fig_folder = join(param_dict['root_folder'], 'figures')
+    # dist_image = plt.imread(join(fig_folder, 'linear_increase_distal_tuft.png'))
+    dist_image = plt.imread(join(fig_folder, 'linear_increase_basal.png'))
+    ax_morph_1 = fig.add_subplot(1, 5, 1, aspect=1, frameon=False, xticks=[], yticks=[])
+    # ax_morph_1.imshow(dist_image)
+
+    psd_ax_dict = {'xlim': [1e0, 5e2],
+                   'xlabel': 'Frequency (Hz)',
+                   'xticks': [1e0, 10, 100],
+                   'ylim': [1e-9, 1e-4]}
+    lines = None
+    line_names = None
+    num_plot_cols = 5
+
+    for idx, elec in enumerate([0, 60]):
+
+        for c, correlation in enumerate(correlations):
+            param_dict['correlation'] = correlation
+            plot_number = idx * num_plot_cols + c
+            ax_tuft = fig.add_subplot(2, num_plot_cols, plot_number + 2, **psd_ax_dict)
+
+            if idx == 0:
+                ax_tuft.set_title('c = %1.2f' % correlation)
+                mark_subplots(ax_tuft, 'BCDE'[c])
+
+            lines = []
+            line_names = []
+            for mu in mus:
+                param_dict['mu'] = mu
+
+                ns = NeuralSimulation(**param_dict)
+                name = 'summed_lateral_signal_%s_%dum' % (ns.population_sim_name, pop_size)
+                lfp = np.load(join(folder, '%s.npy' % name))
+                # freq, psd = tools.return_freq_and_psd(ns.timeres_python/1000., lfp[elec])
+                freq, psd = tools.return_freq_and_psd_welch(lfp[elec], ns.welch_dict)
+                f_idx_max = np.argmin(np.abs(freq - param_dict['max_freq']))
+                f_idx_min = np.argmin(np.abs(freq - 1.))
+                l, = ax_tuft.loglog(freq[f_idx_min:f_idx_max], psd[0][f_idx_min:f_idx_max],
+                                    c=qa_clr_dict[mu], lw=3, solid_capstyle='round')
+                lines.append(l)
+                line_names.append(conductance_names[mu])
+
+                ax_tuft.set_ylabel('LFP-PSD ($\mu$V$^2$/Hz)', labelpad=-5)
+                ax_tuft.set_xticklabels(['', '1', '10', '100'])
+                ax_tuft.set_yticks(ax_tuft.get_yticks()[1:-1][::2])
+
+    fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
+    simplify_axes(fig.axes)
+    mark_subplots([ax_morph_1], ypos=0.95, xpos=0.1)
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_asym.png'))
+    plt.close('all')
+
+
+
 
 def plot_figure_1_classic(param_dict):
 
@@ -1733,14 +1811,14 @@ def plot_figure_1_single_cell_LFP(param_dict):
 
             lines.append(l)
             line_names.append(conductance_names[mu])
-            # ax_homo.set_xticklabels(['', '1', '10', '100'])
+            ax_homo.set_xticklabels(['', '1', '10', '100'])
             ax_homo.set_ylabel('LFP-PSD ($\mu$V$^2$/Hz)', labelpad=-5)
             ax_homo.set_yticks(ax_homo.get_yticks()[1:-1][::2])
 
     fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
     simplify_axes(fig.axes)
     mark_subplots([ax_morph_1, ax_morph_2], ypos=1., xpos=0.1)
-    plt.savefig(join(param_dict_1['root_folder'], param_dict_1['save_folder'], 'Figure_1_single_cell.png'))
+    plt.savefig(join(param_dict_1['root_folder'], 'figures', 'Figure_1_single_cell.png'))
     plt.close('all')
 
 
@@ -1909,6 +1987,7 @@ if __name__ == '__main__':
     # plot_linear_combination(param_dict)
     # plot_figure_1_classic(param_dict)
     # plot_figure_1_population_LFP(param_dict)
+    # plot_figure_asymmetric_population_LFP()
     # plot_figure_1_single_cell_LFP(param_dict)
     # plot_figure_1_single_cell_difference(param_dict)
     # plot_depth_resolved(param_dict)
