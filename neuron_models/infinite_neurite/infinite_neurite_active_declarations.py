@@ -14,7 +14,7 @@ def active_declarations(**kwargs):
         sec.w_inf_QA = 0.5
         sec.Ra = 100.
         sec.cm = 1.0
-        baseline_g = 0.00005
+        baseline_g = 0.00010
 
         if kwargs['distribution'] == 'increase':
             g_w_top = baseline_g * kwargs['g_w_bar_scaling']

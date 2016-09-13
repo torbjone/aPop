@@ -459,7 +459,7 @@ def plot_cell_population(param_dict):
     ax.set_aspect('equal')
     cell_clr = lambda cell_idx: plt.cm.rainbow(cell_idx / (num_cells - 1))
     ax.set_rasterization_zorder(0)
-    for cell_number in range(num_cells)[::1]:
+    for cell_number in range(3, num_cells)[::4]:
         param_dict['cell_number'] = cell_number
         ns = NeuralSimulation(**param_dict)
         cell = ns._return_cell(x_y_z_rot[cell_number])
@@ -487,9 +487,9 @@ def plot_cell_population(param_dict):
     ax.view_init(15, 0)
     plt.draw()
 
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_cell_population_%d_transparent.png' % num_cells), dpi=300, transparent=True)
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_cell_population_%d.png' % num_cells), dpi=300)
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_cell_population_%d_transparent.pdf' % num_cells), dpi=300, transparent=True)
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_cell_population_%d_transparent_3.png' % num_cells), dpi=300, transparent=True)
+    # plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_cell_population_%d.png' % num_cells), dpi=300)
+    # plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_cell_population_%d_transparent.pdf' % num_cells), dpi=300, transparent=True)
     # ax.view_init(15, 90)
     # plt.draw()
     # plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_cell_population_%d_rot.png' % num_cells), dpi=300, transparent=True)
@@ -1303,7 +1303,7 @@ def plot_figure_2_normalized(param_dict):
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     pop_size = 500
 
-    param_dict.update({'input_region': 'distal_tuft',
+    param_dict.update({'input_region': 'basal', #'distal_tuft',
                        'cell_number': 0,
                        'distribution': 'linear_increase',
                        'correlation': 0.0,
@@ -1366,7 +1366,7 @@ def plot_figure_2_normalized(param_dict):
     fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
     simplify_axes(fig.axes)
     mark_subplots([ax_morph_1], ypos=0.95, xpos=0.1)
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_2_tuft_c_normalized.png'))
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_2_basal_c_normalized.png'))
     plt.close('all')
 
 
@@ -1992,7 +1992,7 @@ if __name__ == '__main__':
     # plot_figure_1_single_cell_difference(param_dict)
     # plot_depth_resolved(param_dict)
     # plot_figure_2(param_dict)
-    # plot_figure_2_normalized(param_dict)
+    plot_figure_2_normalized(param_dict)
     # plot_figure_3(param_dict)
     # plot_figure_5(param_dict)
     # plot_leski_13(param_dict)
@@ -2002,4 +2002,4 @@ if __name__ == '__main__':
     # plot_all_soma_sigs_classic(param_dict)
     # plot_all_soma_sigs(param_dict)
     # plot_LFP_time_trace(param_dict)
-    plot_cell_population(param_dict)
+    # plot_cell_population(param_dict)   # cell tufts cut from figure!

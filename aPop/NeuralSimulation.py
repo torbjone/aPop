@@ -470,7 +470,8 @@ class NeuralSimulation:
         center_electrode.calc_lfp()
         center_LFP = 1000 * center_electrode.LFP
 
-        freq, psd = tools.return_freq_and_psd(self.timeres_python/1000., center_LFP)
+        # freq, psd = tools.return_freq_and_psd(self.timeres_python/1000., center_LFP)
+        freq, psd = tools.return_freq_and_psd_welch(center_LFP, self.welch_dict)
         img = ax_center.pcolormesh(freq, center_electrode.z, psd, **im_dict)
         cbar = plt.colorbar(img, ax=ax_center, label='$\mu$V$^2$/Hz')
         del center_electrode
@@ -545,10 +546,12 @@ class NeuralSimulation:
         LFP = 1000 * electrode.LFP#np.load(join(self.sim_folder, 'sig_%s.npy' % sim_name))[:, :]
 
         if self.input_type == 'distributed_delta':
-            # freqs, sig_psd = tools.return_freq_and_psd_welch(LFP, self.welch_dict)
-            freqs, sig_psd = tools.return_freq_and_psd(self.timeres_python/1000., LFP)
+            freqs, sig_psd = tools.return_freq_and_psd_welch(LFP, self.welch_dict)
+            # freqs, sig_psd = tools.return_freq_and_psd(self.timeres_python/1000., LFP)
         else:
-            freqs, sig_psd = tools.return_freq_and_psd(self.timeres_python/1000., LFP)
+            # freqs, sig_psd = tools.return_freq_and_psd(self.timeres_python/1000., LFP)
+            freqs, sig_psd = tools.return_freq_and_psd_welch(LFP, self.welch_dict)
+
 
         cutoff_dist = 1000
         dist_clr = lambda dist: plt.cm.Greys(np.log(dist) / np.log(cutoff_dist))
@@ -560,14 +563,15 @@ class NeuralSimulation:
             cell_ax.plot(self.elec_x_lateral[elec], self.elec_z_lateral[elec], 'o', c=clr)
 
             row, col = self._return_elec_row_col(elec)
-            smooth_freqs = freqs[::average_over]
-            smooth_sig = tools.smooth_signal(smooth_freqs, freqs, sig_psd[elec, :])
+            # smooth_freqs = freqs[::average_over]
+            # smooth_sig = tools.smooth_signal(smooth_freqs, freqs, sig_psd[elec, :])
+            # smooth_sig = tools.smooth_signal(smooth_freqs, freqs, sig_psd[elec, :])
 
-            all_elec_ax[row].loglog(freqs, sig_psd[elec, :], color=clr, lw=0.2, alpha=0.5)
-            all_elec_n_ax[row].loglog(freqs, sig_psd[elec, :] / np.max(sig_psd[elec, 1:]), color=clr, lw=0.2, alpha=0.5)
+            all_elec_ax[row].loglog(freqs, sig_psd[elec, :], color=clr)
+            all_elec_n_ax[row].loglog(freqs, sig_psd[elec, :] / np.max(sig_psd[elec, 1:]), color=clr)
 
-            all_elec_ax[row].loglog(smooth_freqs[1:max_freq_idx], smooth_sig[1:max_freq_idx], color=clr, lw=1)
-            all_elec_n_ax[row].loglog(smooth_freqs[1:max_freq_idx], smooth_sig[1:max_freq_idx] / np.max(smooth_sig[1:max_freq_idx]), color=clr, lw=1)
+            # all_elec_ax[row].loglog(smooth_freqs[1:max_freq_idx], smooth_sig[1:max_freq_idx], color=clr, lw=1)
+            # all_elec_n_ax[row].loglog(smooth_freqs[1:max_freq_idx], smooth_sig[1:max_freq_idx] / np.max(smooth_sig[1:max_freq_idx]), color=clr, lw=1)
 
         [ax.grid(True) for ax in all_elec_ax + all_elec_n_ax ]
          #[ax_i_apic, ax_i_middle, ax_i_soma, ax_v_apic, ax_v_middle, ax_v_soma]]

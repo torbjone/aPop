@@ -9,7 +9,7 @@ proc topol() { local i
   basic_shape()
 }
 proc basic_shape() {
-  dend {pt3dclear() pt3dadd(0, 0, 0, 5) pt3dadd(0, 0, 1000, 5)}
+  dend {pt3dclear() pt3dadd(0, 0, 0, 1) pt3dadd(0, 0, 1000, 1)}
 }
 
 objref all
