@@ -182,22 +182,25 @@ class NeuralSimulation:
             np.save(join(self.sim_folder, 'zmid_%s.npy' % (self.sim_name)), cell.zmid)
             np.save(join(self.sim_folder, 'diam_%s.npy' % (self.sim_name)), cell.diam)
         else:
+            name = self.sim_name
+            # if 'split_sim' in self.param_dict:
+            #     name += '_%s' % self.param_dict['split_sim']
             lateral_electrode = LFPy.RecExtElectrode(cell, **self.lateral_electrode_parameters)
             lateral_electrode.calc_lfp()
-            np.save(join(self.sim_folder, 'lateral_sig_%s.npy' % self.sim_name), lateral_electrode.LFP)
+            np.save(join(self.sim_folder, 'lateral_sig_%s.npy' % name), lateral_electrode.LFP)
             del lateral_electrode.LFP
 
             center_electrode = LFPy.RecExtElectrode(cell, **self.center_electrode_parameters)
             center_electrode.calc_lfp()
-            np.save(join(self.sim_folder, 'center_sig_%s.npy' % self.sim_name), center_electrode.LFP)
+            np.save(join(self.sim_folder, 'center_sig_%s.npy' % name), center_electrode.LFP)
             del center_electrode.LFP
             
             if self.cell_number == 0:
                 np.save(join(self.sim_folder, 'tvec_%s_%s.npy' % (self.cell_name, self.input_type)), cell.tvec)
                 if hasattr(cell, 'vmem'):
-                    np.save(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name), cell.vmem)
-                np.save(join(self.sim_folder, 'imem_%s.npy' % self.sim_name), cell.imem)
-                np.save(join(self.sim_folder, 'synidx_%s.npy' % self.sim_name), cell.synidx)
+                    np.save(join(self.sim_folder, 'vmem_%s.npy' % name), cell.vmem)
+                np.save(join(self.sim_folder, 'imem_%s.npy' % name), cell.imem)
+                np.save(join(self.sim_folder, 'synidx_%s.npy' % name), cell.synidx)
 
                 np.save(join(self.sim_folder, 'lateral_elec_x_%s.npy' % self.cell_name), lateral_electrode.x)
                 np.save(join(self.sim_folder, 'lateral_elec_y_%s.npy' % self.cell_name), lateral_electrode.y)
@@ -384,6 +387,12 @@ class NeuralSimulation:
         synapse_list = []
         for number, comp_idx in enumerate(cell_input_idxs):
             synapse_params.update({'idx': int(comp_idx)})
+            # if 'split_sim' in self.param_dict:
+            #     if self.param_dict['split_sim'] == 'top' and cell.zmid[comp_idx] < 500:
+            #         continue
+            #     if self.param_dict['split_sim'] == 'bottom' and cell.zmid[comp_idx] > 500:
+            #         continue
+
             s = LFPy.Synapse(cell, **synapse_params)
             s.set_spike_times(spike_trains[number])
             synapse_list.append(s)

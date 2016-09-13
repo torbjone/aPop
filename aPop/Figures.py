@@ -18,6 +18,37 @@ import scipy.fftpack as sf
 import matplotlib
 
 
+def plot_decomposed_dipole():
+    sim_folder = join('..', 'stick_population', 'simulations')
+
+    i_i_t = 1000*np.load(join(sim_folder, 'center_sig_stick_population_infinite_neurite_homogeneous_generic_increase_0.0_0.00_00000_top.npy'))
+    i_i_b = 1000*np.load(join(sim_folder, 'center_sig_stick_population_infinite_neurite_homogeneous_generic_increase_0.0_0.00_00000_bottom.npy'))
+    i_i = 1000*np.load(join(sim_folder, 'center_sig_stick_population_infinite_neurite_homogeneous_generic_increase_0.0_0.00_00000.npy'))
+
+    i_u_t = 1000*np.load(join(sim_folder, 'center_sig_stick_population_infinite_neurite_homogeneous_generic_uniform_0.0_0.00_00000_top.npy'))
+    i_u_b = 1000*np.load(join(sim_folder, 'center_sig_stick_population_infinite_neurite_homogeneous_generic_uniform_0.0_0.00_00000_bottom.npy'))
+    i_u = 1000*np.load(join(sim_folder, 'center_sig_stick_population_infinite_neurite_homogeneous_generic_uniform_0.0_0.00_00000.npy'))
+
+    fig = plt.figure()
+    fig.subplots_adjust(top=0.8)
+    fig.suptitle('Decomposed LFP\ngreen: top input, orange: bottom input, gray: sum, black: homogeneous')
+    ax_u = fig.add_subplot(121, xlim=[-1e-3, 1e-3], title='Uniform conductance')
+    ax_i = fig.add_subplot(122, xlim=[-1e-3, 1e-3], title='Asymmetric increasing conductance')
+    ax_u.plot([0, 0], [0, 20], '--', c='gray')
+    ax_u.plot(np.average(i_u_t, axis=1), np.arange(20), 'g')
+    ax_u.plot(np.average(i_u_b, axis=1), np.arange(20), 'orange')
+    ax_u.plot(np.average(i_u, axis=1), np.arange(20), 'k', lw=2)
+    ax_u.plot(np.average(i_u_t + i_u_b, axis=1), np.arange(20), '--', c='gray', lw=2)
+
+
+
+    ax_i.plot([0, 0], [0, 20], '--', c='gray')
+    ax_i.plot(np.average(i_i_t, axis=1), np.arange(20), 'g')
+    ax_i.plot(np.average(i_i_b, axis=1), np.arange(20), 'orange')
+    ax_i.plot(np.average(i_i, axis=1), np.arange(20), 'k', lw=2)
+    ax_i.plot(np.average(i_i_t + i_i_b, axis=1), np.arange(20), '--', c='gray', lw=2)
+    plt.savefig('dipole_decomposed.png')
+
 def plot_3d_rot_pop(param_dict):
     # plt.seed(1234)
     plt.seed(12345)
@@ -1948,6 +1979,11 @@ def plot_figure_1_single_cell_difference(param_dict):
 
 
 if __name__ == '__main__':
+
+
+    plot_decomposed_dipole()
+    sys.exit()
+
     conductance = 'generic'
     # conductance = 'stick_generic'
     # conductance = 'classic'

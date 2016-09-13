@@ -136,10 +136,10 @@ generic_population_params = {'input_type': 'distributed_delta',
                              'root_folder': root_folder,
                              'num_synapses': 1000,
                              'input_firing_rate': 5,
-                             'input_regions': ['homogeneous', 'distal_tuft', 'basal'],
-                             'mus': [-0.5, 0.0, 2.0],
-                             'distributions': ['uniform', 'linear_increase', 'linear_decrease'],
-                             'correlations': [0., 0.01, 0.1, 1.0]
+                             'input_regions': ['basal'],#['homogeneous', 'distal_tuft', 'basal'],
+                             'mus': [0.0],#[-0.5, 0.0, 2.0],
+                             'distributions': ['linear_decrease'],#['uniform', 'linear_increase', 'linear_decrease'],
+                             'correlations': [0.1],# [0.0, 0.01, 0.1, 1.0]
                              }
 
 asymmetric_population_params = {'input_type': 'distributed_delta',
@@ -213,7 +213,8 @@ stick_population_params = {'input_type': 'distributed_delta',
                              'population_radii': population_radii,
                              'layer_5_thickness': 0,
                              'cut_off': cut_off,
-                             'end_t': end_T * 1, # Just testing log diff stabilize by * 16
+                             'end_t': end_T * 1,
+                             # 'split_sim': 'top',
                              'syn_tau': dt * 3,
                              'syn_weight': 1e-3,
                              'max_freq': 500,
