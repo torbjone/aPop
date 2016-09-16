@@ -620,7 +620,7 @@ def plot_all_soma_sigs(param_dict):
     fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
     simplify_axes(fig.axes)
     # mark_subplots([ax_morph_homogeneous], 'B', ypos=1.1, xpos=0.1)
-    plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], 'Figure_all_sigs_stick_new_params_adjusted1.png'))
+    plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], 'Figure_all_sigs_stick_new_params_adjusted2.png'))
     plt.close('all')
 
 
@@ -1013,11 +1013,11 @@ def plot_depth_resolved(param_dict):
 
     plt.close('all')
     fig = plt.figure(figsize=(18, 18))
-    fig.subplots_adjust(right=0.95, wspace=0.1, hspace=0.1, left=0.05, top=0.95, bottom=0.05)
+    fig.subplots_adjust(right=0.95, wspace=0.1, hspace=0.1, left=0.06, top=0.95, bottom=0.05)
 
 
     psd_ax_dict = {#'ylim': [-200, 1200],
-                    'xlim': [2e0, 5e2],
+                    'xlim': [1e0, 5e2],
                     'yticks': [],
                    # 'xlabel': 'Frequency (Hz)',
                    'xticks': [1e0, 10, 100],
@@ -1035,17 +1035,17 @@ def plot_depth_resolved(param_dict):
     fig.text(0.05, 0.5, 'Homogeneous\ninput', ha='center')
     fig.text(0.05, 0.15, 'Basal\ninput', ha='center')
 
-    fig.text(0.08, 0.42, 'Regenerative', va='center', rotation=90, color='r', size=11)
-    fig.text(0.08, 0.5, 'Passive-frozen', va='center', rotation=90, color='k', size=11)
-    fig.text(0.08, 0.58, 'Restorative', va='center', rotation=90, color='b', size=11)
+    fig.text(0.095, 0.58, 'Regenerative', va='center', rotation=90, color='r', size=12)
+    fig.text(0.095, 0.5, 'Passive-frozen', va='center', rotation=90, color='k', size=12)
+    fig.text(0.095, 0.42, 'Restorative', va='center', rotation=90, color='b', size=12)
 
-    fig.text(0.08, 0.12, 'Regenerative', va='center', rotation=90, color='r', size=11)
-    fig.text(0.08, 0.2, 'Passive-frozen', va='center', rotation=90, color='k', size=11)
-    fig.text(0.08, 0.28, 'Restorative', va='center', rotation=90, color='b', size=11)
+    fig.text(0.095, 0.25, 'Regenerative', va='center', rotation=90, color='r', size=12)
+    fig.text(0.095, 0.17, 'Passive-frozen', va='center', rotation=90, color='k', size=12)
+    fig.text(0.095, 0.09, 'Restorative', va='center', rotation=90, color='b', size=12)
 
-    fig.text(0.08, 0.72, 'Regenerative', va='center', rotation=90, color='r', size=11)
-    fig.text(0.08, 0.8, 'Passive-frozen', va='center', rotation=90, color='k', size=11)
-    fig.text(0.08, 0.88, 'Restorative', va='center', rotation=90, color='b', size=11)
+    fig.text(0.095, 0.91, 'Regenerative', va='center', rotation=90, color='r', size=12)
+    fig.text(0.095, 0.83, 'Passive-frozen', va='center', rotation=90, color='k', size=12)
+    fig.text(0.095, 0.75, 'Restorative', va='center', rotation=90, color='b', size=12)
 
     for i, input_region in enumerate(input_regions):
         for m, mu in enumerate(param_dict['mus']):
@@ -1079,7 +1079,7 @@ def plot_depth_resolved(param_dict):
                     if i==2 and d == 0 and c == 0 and m == 2:
                         ax.set_xlabel('frequency (Hz)', labelpad=-0)
                         ax.set_ylabel('z')
-                        ax.set_xticklabels([1e0, 10, 100])
+                        ax.set_xticklabels(['1', '10', '100'])
                         c_ax = fig.add_axes([0.37, 0.05, 0.005, 0.07])
 
                         cbar = plt.colorbar(img, cax=c_ax, label='$\mu$V$^2$/Hz')
@@ -2056,6 +2056,8 @@ if __name__ == '__main__':
     # plot_population_density_effect(param_dict)
     # plot_all_size_dependencies(param_dict)
     # plot_all_soma_sigs_classic(param_dict)
+
     plot_all_soma_sigs(param_dict)
+
     # plot_LFP_time_trace(param_dict)
     # plot_cell_population(param_dict)   # cell tufts cut from figure!
