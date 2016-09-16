@@ -684,7 +684,7 @@ def sum_population_mpi_generic(param_dict):
     rank = comm.rank        # rank of this process
     status = MPI.Status()   # get MPI status object
     num_workers = size - 1
-    num_cells = 500 if at_stallo else 5
+    num_cells = 2000 if at_stallo else 5
     num_tsteps = int(round(param_dict['end_t']/param_dict['timeres_python'] + 1))
 
     if size == 1:
@@ -866,7 +866,7 @@ def PopulationMPIgeneric():
 
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
-        num_cells = 500 if at_stallo else 100
+        num_cells = 2000 if at_stallo else 100
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['mus']) *
                      len(param_dict['distributions']) * len(param_dict['correlations']) * (num_cells))
 
@@ -1015,9 +1015,6 @@ if __name__ == '__main__':
     # conductance = 'generic'
     conductance = 'stick_generic'
     # conductance = 'classic'
-
-
-    # TODO: ONLY SUMS AND SIMULATED 200 CELLS!!!
 
     # TODO: Run stick populations. What to conclude?
     # TODO: Run active population, no holding potential.

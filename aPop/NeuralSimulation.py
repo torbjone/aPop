@@ -215,8 +215,8 @@ class NeuralSimulation:
             np.save(join(self.sim_folder, 'diam_%s.npy' % (self.sim_name)), cell.diam)
         else:
             name = self.sim_name
-            # if 'split_sim' in self.param_dict:
-            #     name += '_%s' % self.param_dict['split_sim']
+            if 'split_sim' in self.param_dict:
+                name += '_%s' % self.param_dict['split_sim']
             lateral_electrode = LFPy.RecExtElectrode(cell, **self.lateral_electrode_parameters)
             lateral_electrode.calc_lfp()
             np.save(join(self.sim_folder, 'lateral_sig_%s.npy' % name), lateral_electrode.LFP)
@@ -265,10 +265,10 @@ class NeuralSimulation:
 
     def run_distributed_synaptic_simulation(self):
 
-        # if os.path.isfile(join(self.sim_folder, 'center_sig_%s.npy' % self.sim_name)) or \
-        #    os.path.isfile(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name)):
-        #     print "Skipping ", self.sim_name
-        #     return
+        if os.path.isfile(join(self.sim_folder, 'center_sig_%s.npy' % self.sim_name)) or \
+           os.path.isfile(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name)):
+            print "Skipping ", self.sim_name
+            return
 
         plt.seed(123 * self.cell_number)
         if 'shape_function' in self.name:
@@ -419,11 +419,11 @@ class NeuralSimulation:
         synapse_list = []
         for number, comp_idx in enumerate(cell_input_idxs):
             synapse_params.update({'idx': int(comp_idx)})
-            # if 'split_sim' in self.param_dict:
-            #     if self.param_dict['split_sim'] == 'top' and cell.zmid[comp_idx] < 500:
-            #         continue
-            #     if self.param_dict['split_sim'] == 'bottom' and cell.zmid[comp_idx] > 500:
-            #         continue
+            if 'split_sim' in self.param_dict:
+                if self.param_dict['split_sim'] == 'top' and cell.zmid[comp_idx] < 500:
+                    continue
+                if self.param_dict['split_sim'] == 'bottom' and cell.zmid[comp_idx] > 500:
+                    continue
 
             s = LFPy.Synapse(cell, **synapse_params)
             s.set_spike_times(spike_trains[number])
