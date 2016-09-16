@@ -533,7 +533,7 @@ def plot_cell_population(param_dict):
 def plot_all_soma_sigs(param_dict):
 
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
-    pop_size = 500
+    pop_size = 250
 
     param_dict.update({
                        'cell_number': 0,
@@ -620,7 +620,7 @@ def plot_all_soma_sigs(param_dict):
     fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
     simplify_axes(fig.axes)
     # mark_subplots([ax_morph_homogeneous], 'B', ypos=1.1, xpos=0.1)
-    plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], 'Figure_all_sigs_stick_new_params2.png'))
+    plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], 'Figure_all_sigs_stick_new_params_adjusted1.png'))
     plt.close('all')
 
 
@@ -995,13 +995,12 @@ def plot_depth_resolved(param_dict):
     correlations = param_dict['correlations']
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     pop_size = 500
-    mu = 0.0
+    # mu = 0.0
 
-    param_dict.update({'input_region': 'homogeneous',
+    param_dict.update({#'input_region': 'homogeneous',
                        'cell_number': 0,
-                       'distribution': 'linear_increase',
-                       'correlation': 0.0,
-                       'mu': mu,
+                       #'distribution': 'linear_increase',
+                       #'correlation': 0.0,
                       })
 
     param_dict['input_region'] = 'distal_tuft'
@@ -1013,8 +1012,8 @@ def plot_depth_resolved(param_dict):
     distributions = ['uniform', 'linear_increase', 'linear_decrease']
 
     plt.close('all')
-    fig = plt.figure(figsize=(18, 9))
-    fig.subplots_adjust(right=0.95, wspace=0.2, hspace=0.5, left=0.05, top=0.85, bottom=0.2)
+    fig = plt.figure(figsize=(18, 18))
+    fig.subplots_adjust(right=0.95, wspace=0.1, hspace=0.1, left=0.05, top=0.95, bottom=0.05)
 
 
     psd_ax_dict = {#'ylim': [-200, 1200],
@@ -1022,56 +1021,75 @@ def plot_depth_resolved(param_dict):
                     'yticks': [],
                    # 'xlabel': 'Frequency (Hz)',
                    'xticks': [1e0, 10, 100],
+                   'xticklabels': [],
                    'xscale': 'log'}
     num_plot_cols = 15
-    num_plot_rows = 3
+    num_plot_rows = 11
     im_dict = {'cmap': 'hot', 'norm': LogNorm(), 'vmin': 1e-8, 'vmax': 1e-2,}
-    fig.text(0.17, 0.95, 'Uniform conductance')
-    fig.text(0.45, 0.95, 'Linear increasing conductance')
-    fig.text(0.75, 0.95, 'Linear decreasing conductance')
+    fig.text(0.17, 0.98, 'Uniform conductance')
+    fig.text(0.45, 0.98, 'Linear increasing conductance')
+    fig.text(0.75, 0.98, 'Linear decreasing conductance')
 
-    fig.text(0.5, 0.92, '$\mu$*=%+1.1f' % mu)
-    fig.text(0.05, 0.75, 'Distal tuft\ninput', ha='center')
+    # fig.text(0.5, 0.92, '$\mu$*=%+1.1f' % mu)
+    fig.text(0.05, 0.85, 'Distal tuft\ninput', ha='center')
     fig.text(0.05, 0.5, 'Homogeneous\ninput', ha='center')
-    fig.text(0.05, 0.25, 'Basal\ninput', ha='center')
+    fig.text(0.05, 0.15, 'Basal\ninput', ha='center')
+
+    fig.text(0.08, 0.42, 'Regenerative', va='center', rotation=90, color='r', size=11)
+    fig.text(0.08, 0.5, 'Passive-frozen', va='center', rotation=90, color='k', size=11)
+    fig.text(0.08, 0.58, 'Restorative', va='center', rotation=90, color='b', size=11)
+
+    fig.text(0.08, 0.12, 'Regenerative', va='center', rotation=90, color='r', size=11)
+    fig.text(0.08, 0.2, 'Passive-frozen', va='center', rotation=90, color='k', size=11)
+    fig.text(0.08, 0.28, 'Restorative', va='center', rotation=90, color='b', size=11)
+
+    fig.text(0.08, 0.72, 'Regenerative', va='center', rotation=90, color='r', size=11)
+    fig.text(0.08, 0.8, 'Passive-frozen', va='center', rotation=90, color='k', size=11)
+    fig.text(0.08, 0.88, 'Restorative', va='center', rotation=90, color='b', size=11)
 
     for i, input_region in enumerate(input_regions):
-        for d, distribution in enumerate(distributions):
-            for c, correlation in enumerate(correlations):
-                # print input_region, distribution, correlation
-                plot_number = i * (num_plot_cols) + d * (2 + len(distributions)) + c + 2
-                # print i, d, c, plot_number
+        for m, mu in enumerate(param_dict['mus']):
+            for d, distribution in enumerate(distributions):
+                for c, correlation in enumerate(correlations):
 
-                ax = fig.add_subplot(num_plot_rows, num_plot_cols, plot_number, **psd_ax_dict)
-                ax.set_title('c=%1.2f' % correlation)
+                    # print input_region, distribution, correlation
+                    plot_number = 4 * i * (num_plot_cols) + m * (num_plot_cols) + d * (2 + len(distributions)) + c + 2
+                    # print i, d, c, plot_number
 
-                param_dict['correlation'] = correlation
-                param_dict['input_region'] = input_region
-                param_dict['distribution'] = distribution
-                ns = NeuralSimulation(**param_dict)
-                name = 'summed_center_signal_%s_%dum' % (ns.population_sim_name, pop_size)
-                try:
-                    lfp = np.load(join(folder, '%s.npy' % name))[:, :]
-                except:
-                    print name
-                    continue
-                # freq, psd = tools.return_freq_and_psd(ns.timeres_python/1000., lfp)
-                freq, psd = tools.return_freq_and_psd_welch(lfp, ns.welch_dict)
+                    ax = fig.add_subplot(num_plot_rows, num_plot_cols, plot_number, **psd_ax_dict)
+                    if m == 0:
+                        ax.set_title('c=%1.2f' % correlation)
+                    param_dict['correlation'] = correlation
+                    param_dict['mu'] = mu
+                    param_dict['input_region'] = input_region
+                    param_dict['distribution'] = distribution
+                    ns = NeuralSimulation(**param_dict)
+                    name = 'summed_center_signal_%s_%dum' % (ns.population_sim_name, pop_size)
+                    try:
+                        lfp = np.load(join(folder, '%s.npy' % name))[:, :]
+                    except:
+                        print name
+                        continue
+                    # freq, psd = tools.return_freq_and_psd(ns.timeres_python/1000., lfp)
+                    freq, psd = tools.return_freq_and_psd_welch(lfp, ns.welch_dict)
+
+                    freq_idx = np.argmin(np.abs(freq - param_dict['max_freq']))
+
+                    img = ax.pcolormesh(freq[1:freq_idx], z, psd[:, 1:freq_idx], **im_dict)
+                    if i==2 and d == 0 and c == 0 and m == 2:
+                        ax.set_xlabel('frequency (Hz)', labelpad=-0)
+                        ax.set_ylabel('z')
+                        ax.set_xticklabels([1e0, 10, 100])
+                        c_ax = fig.add_axes([0.37, 0.05, 0.005, 0.07])
+
+                        cbar = plt.colorbar(img, cax=c_ax, label='$\mu$V$^2$/Hz')
 
 
-                freq_idx = np.argmin(np.abs(freq - param_dict['max_freq']))
-
-                img = ax.pcolormesh(freq[1:freq_idx], z, psd[:, 1:freq_idx], **im_dict)
-                if i==2 and d == 0 and c == 0:
-                    ax.set_xlabel('frequency (Hz)', labelpad=-0)
-                    ax.set_ylabel('z')
-                    c_ax = fig.add_axes([0.37, 0.2, 0.005, 0.17])
-                    cbar = plt.colorbar(img, cax=c_ax, label='$\mu$V$^2$/Hz')
-                # plt.axis('auto')
-                # plt.colorbar(img)
-                # l, = ax.loglog(freq, psd[0], c=input_region_clr[input_region], lw=3)
-                # lines.append(l)
-                # line_names.append(input_region)
+                    # plt.axis('auto')
+                    # plt.colorbar(img)
+                    # l, = ax.loglog(freq, psd[0], c=input_region_clr[input_region], lw=3)
+                    # lines.append(l)
+                    # line_names.append(input_region)
 
         # ax_tuft.set_ylabel('LFP-PSD ($\mu$V$^2$/Hz)', labelpad=-5)
         # ax_tuft.set_xticklabels(['', '1', '10', '100'])
@@ -1080,7 +1098,7 @@ def plot_depth_resolved(param_dict):
     # fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
     simplify_axes(fig.axes)
     # mark_subplots([ax_morph_homogeneous], 'B', ypos=1.1, xpos=0.1)
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_6_%+1.2f.png' % mu))
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_6_2.png'))
     plt.close('all')
 
 
@@ -2026,7 +2044,9 @@ if __name__ == '__main__':
     # plot_figure_asymmetric_population_LFP()
     # plot_figure_1_single_cell_LFP(param_dict)
     # plot_figure_1_single_cell_difference(param_dict)
+
     # plot_depth_resolved(param_dict)
+
     # plot_figure_2(param_dict)
     # plot_figure_2_normalized(param_dict)
     # plot_figure_3(param_dict)

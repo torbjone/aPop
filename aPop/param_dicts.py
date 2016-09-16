@@ -136,10 +136,10 @@ generic_population_params = {'input_type': 'distributed_delta',
                              'root_folder': root_folder,
                              'num_synapses': 1000,
                              'input_firing_rate': 5,
-                             'input_regions': ['basal'],#['homogeneous', 'distal_tuft', 'basal'],
-                             'mus': [0.0],#[-0.5, 0.0, 2.0],
-                             'distributions': ['linear_decrease'],#['uniform', 'linear_increase', 'linear_decrease'],
-                             'correlations': [0.1],# [0.0, 0.01, 0.1, 1.0]
+                             'input_regions': ['homogeneous', 'distal_tuft', 'basal'],
+                             'mus': [-0.5, 0.0, 2.0],
+                             'distributions': ['uniform', 'linear_increase', 'linear_decrease'],
+                             'correlations': [0.0, 0.01, 0.1, 1.0]
                              }
 
 asymmetric_population_params = {'input_type': 'distributed_delta',
@@ -253,7 +253,7 @@ stick_population_params = {'input_type': 'distributed_delta',
                              'syn_weight': 1e-3,
                              'max_freq': 500,
                              'holding_potential': -80,
-                             'g_w_bar_scaling': 10.,
+                             'g_w_bar_scaling': 5.,
                              'conductance_type': 'generic',
                              'save_folder': 'stick_population',
                              'lateral_electrode_parameters': stick_lateral_electrode_parameters,
@@ -311,8 +311,6 @@ vmem_3D_population_params = {'input_type': 'distributed_delta',
                              'distributions': ['uniform', 'linear_increase'],
                              'correlations': [0., 0.1, 1.0]
                              }
-
-
 
 if __name__ == '__main__':
     from NeuralSimulation import NeuralSimulation
