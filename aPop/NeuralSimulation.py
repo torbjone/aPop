@@ -14,7 +14,7 @@ import pylab as plt
 import neuron
 import LFPy
 import tools
-
+h = neuron.h
 
 class NeuralSimulation:
     def __init__(self, **kwargs):
@@ -70,7 +70,10 @@ class NeuralSimulation:
         if self.conductance_type == 'generic':
             conductance = '%s_%s_%1.1f' % (self.conductance_type, self.distribution, self.mu)
         else:
-            conductance = '%s_%+d' % (self.conductance_type, self.holding_potential)
+            if self.holding_potential is None:
+                conductance = '%s_None' % (self.conductance_type)
+            else:
+                conductance = '%s_%+d' % (self.conductance_type, self.holding_potential)
         sim_name = '%s_%s_%s_%s_%1.2f_%05d' % (self.name, self.cell_name, self.input_region, conductance,
                                                self.correlation, self.cell_number)
         return sim_name
@@ -83,6 +86,14 @@ class NeuralSimulation:
         self.max_freq = self.param_dict['max_freqs'] if 'max_freqs' in self.param_dict else 500
         self.num_tsteps = round(self.end_t/self.timeres_python + 1)
 
+    def remove_active_mechanisms(self, remove_list):
+        mt = h.MechanismType(0)
+        for sec in h.allsec():
+            for seg in sec:
+                for mech in remove_list:
+                    mt.select(mech)
+                    mt.remove()
+
     def _return_cell(self, cell_x_y_z_rotation=None):
 
         if 'i_QA' not in neuron.h.__dict__.keys():
@@ -90,7 +101,7 @@ class NeuralSimulation:
             from suppress_print import suppress_stdout_stderr
             with suppress_stdout_stderr():
                 neuron.load_mechanisms(join(self.neuron_models))
-
+        cell = None
         if self.cell_name == 'hay':
             if self.conductance_type == 'generic':
                 # print "Loading Hay"
@@ -117,6 +128,7 @@ class NeuralSimulation:
                                          'avrg_w_bar': 0.00005, # Half of "original"!!!
                                          'hold_potential': self.holding_potential}]
                 }
+                cell = LFPy.Cell(**cell_params)
             else:
                 sys.path.append(join(self.neuron_models, 'hay'))
                 from suppress_print import suppress_stdout_stderr
@@ -126,7 +138,7 @@ class NeuralSimulation:
                 from hay_active_declarations import active_declarations
                 cell_params = {
                     'morphology': join(self.neuron_models, 'hay', 'cell1.hoc'),
-                    'v_init': self.holding_potential,
+                    'v_init': self.holding_potential if self.holding_potential is not None else -70,
                     'passive': False,           # switch on passive mechs
                     'nsegs_method': 'lambda_f',  # method for setting number of segments,
                     'lambda_f': 100,           # segments are isopotential at this frequency
@@ -139,7 +151,27 @@ class NeuralSimulation:
                     'custom_fun_args': [{'conductance_type': self.conductance_type,
                                          'hold_potential': self.holding_potential}]
                 }
-        elif self.cell_name is 'infinite_neurite':
+                cell = LFPy.Cell(**cell_params)
+        elif 'L5_' in self.cell_name or 'L4_' in self.cell_name:
+            remove_lists = {'active': [],
+                            'passive': ["Nap_Et2", "NaTa_t", "NaTs2_t", "SKv3_1",
+                                        "SK_E2", "K_Tst", "K_Pst", "Im", "Ih",
+                                        "CaDynamics_E2", "Ca_LVAst", "Ca"],
+                            'Ih': ["Nap_Et2", "NaTa_t", "NaTs2_t", "SKv3_1",
+                                   "SK_E2", "K_Tst", "K_Pst", "Im",
+                                   "CaDynamics_E2", "Ca_LVAst", "Ca"]}
+
+            sys.path.append(self.param_dict['model_folder'])
+            from suppress_print import suppress_stdout_stderr
+            with suppress_stdout_stderr():
+                # neuron.load_mechanisms(join(self.param_dict['model_folder'], 'mod'))
+                from hbp_cells import return_cell
+            cell_folder = join(self.param_dict['model_folder'], 'models', self.cell_name)
+            cell = return_cell(cell_folder, self.end_t, self.timeres_NEURON, -self.cut_off)
+            self.remove_active_mechanisms(remove_lists[self.conductance_type])
+
+
+        elif self.cell_name == 'infinite_neurite':
             sys.path.append(join(self.neuron_models, 'infinite_neurite'))
             from infinite_neurite_active_declarations import active_declarations
 
@@ -159,9 +191,9 @@ class NeuralSimulation:
                 'custom_fun': [active_declarations],
                 'custom_fun_args': args,
             }
+            cell = LFPy.Cell(**cell_params)
         else:
             raise NotImplementedError("Cell name is not recognized")
-        cell = LFPy.Cell(**cell_params)
         if cell_x_y_z_rotation is not None:
             cell.set_rotation(z=cell_x_y_z_rotation[3])
             cell.set_pos(xpos=cell_x_y_z_rotation[0], ypos=cell_x_y_z_rotation[1], zpos=cell_x_y_z_rotation[2])
@@ -233,10 +265,10 @@ class NeuralSimulation:
 
     def run_distributed_synaptic_simulation(self):
 
-        if os.path.isfile(join(self.sim_folder, 'center_sig_%s.npy' % self.sim_name)) or \
-           os.path.isfile(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name)):
-            print "Skipping ", self.sim_name
-            return
+        # if os.path.isfile(join(self.sim_folder, 'center_sig_%s.npy' % self.sim_name)) or \
+        #    os.path.isfile(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name)):
+        #     print "Skipping ", self.sim_name
+        #     return
 
         plt.seed(123 * self.cell_number)
         if 'shape_function' in self.name:
@@ -253,12 +285,12 @@ class NeuralSimulation:
         rec_vmem = True if self.name is 'vmem_3D_population' else False
         cell.simulate(rec_imem=True, rec_vmem=rec_vmem)
 
-        # plt.plot(cell.tvec, cell.vmem[0, :])
+        # [plt.plot(cell.tvec, cell.vmem[idx, :]) for idx in range(cell.totnsegs)]
         # plt.plot(cell.tvec, cell.vmem[1, :])
         # plt.show()
         # sys.exit()
         self.save_neural_sim_single_input_data(cell)
-        if ('shape_function' in self.name) or (self.cell_number == 0):
+        if ('shape_function' in self.name) or (self.cell_number < 5):
             self._draw_all_elecs_with_distance(cell)
 
 
@@ -463,24 +495,25 @@ class NeuralSimulation:
         #     i_x_soma, i_y_soma = cell.tvec, cell.imem[soma_idx]
 
         ax_top = fig.add_subplot(3, 6, 4, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
-        ax_top_n = fig.add_subplot(3, 6, 5, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
+        ax_top_n = fig.add_subplot(3, 6, 5, xlim=[1, self.max_freq], xscale=scale, yscale=scale, ylim=[1e-3, 1e0])
         ax_mid = fig.add_subplot(3, 6, 10, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
-        ax_mid_n = fig.add_subplot(3, 6, 11, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
+        ax_mid_n = fig.add_subplot(3, 6, 11, xlim=[1, self.max_freq], xscale=scale, yscale=scale, ylim=[1e-3, 1e0])
         ax_bottom = fig.add_subplot(3, 6, 16, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
-        ax_bottom_n = fig.add_subplot(3, 6, 17, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
+        ax_bottom_n = fig.add_subplot(3, 6, 17, xlim=[1, self.max_freq], xscale=scale, yscale=scale, ylim=[1e-3, 1e0])
         cell_ax = fig.add_subplot(1, 6, 3, aspect=1, frameon=False, xticks=[], yticks=[])
         ax_center = fig.add_subplot(2, 6, 6, xlim=[1, self.max_freq], xscale=scale, xlabel='Hz', ylabel='z')
         ax_somav = fig.add_subplot(2, 6, 12, xlabel='Time', ylabel='V$_m$')
         ax_somav.plot(cell.tvec, cell.somav)
 
         self.plot_cell_to_ax(cell, cell_ax)
-        im_dict = {'cmap': 'hot', 'norm': LogNorm(), 'vmin': 1e-7, 'vmax': 1e-2}
         center_electrode = LFPy.RecExtElectrode(cell, **self.center_electrode_parameters)
         center_electrode.calc_lfp()
         center_LFP = 1000 * center_electrode.LFP
 
         # freq, psd = tools.return_freq_and_psd(self.timeres_python/1000., center_LFP)
         freq, psd = tools.return_freq_and_psd_welch(center_LFP, self.welch_dict)
+        vmax = 10**np.ceil(np.log10(np.max(psd)))
+        im_dict = {'cmap': 'hot', 'norm': LogNorm(), 'vmin': vmax/1e4, 'vmax': vmax}
         img = ax_center.pcolormesh(freq, center_electrode.z, psd, **im_dict)
         cbar = plt.colorbar(img, ax=ax_center, label='$\mu$V$^2$/Hz')
         del center_electrode
@@ -503,7 +536,7 @@ class NeuralSimulation:
         # ax_i_middle = fig.add_subplot(3, 6, 8, xlim=[1, self.max_freq], ylabel='nA$^2$/Hz', xscale=scale, yscale=scale)
         # ax_i_soma = fig.add_subplot(3, 6, 14, xlim=[1, self.max_freq], ylabel='nA$^2$/Hz', xscale=scale, yscale=scale)
 
-        average_over = 4
+        # average_over = 4
         # smooth_v_x_apic = v_x_apic[::average_over]
         max_freq_idx = np.argmin(np.abs(freq - self.max_freq))
 
@@ -560,7 +593,6 @@ class NeuralSimulation:
         else:
             # freqs, sig_psd = tools.return_freq_and_psd(self.timeres_python/1000., LFP)
             freqs, sig_psd = tools.return_freq_and_psd_welch(LFP, self.welch_dict)
-
 
         cutoff_dist = 1000
         dist_clr = lambda dist: plt.cm.Greys(np.log(dist) / np.log(cutoff_dist))

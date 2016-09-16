@@ -6,7 +6,6 @@ def active_declarations(**kwargs):
     # print "Infinite "
     for sec in neuron.h.allsec():
         sec.nseg = 100
-
         sec.insert("QA")
         sec.V_r_QA = -80.
 
@@ -14,7 +13,7 @@ def active_declarations(**kwargs):
         sec.w_inf_QA = 0.5
         sec.Ra = 100.
         sec.cm = 1.0
-        baseline_g = 0.00010
+        baseline_g = 0.00005
 
         if kwargs['distribution'] == 'increase':
             g_w_top = baseline_g * kwargs['g_w_bar_scaling']

@@ -545,9 +545,9 @@ def plot_all_soma_sigs(param_dict):
     print elec, elec_x[elec], elec_z[elec]
     correlations = param_dict['correlations']
     # input_regions = ['distal_tuft', 'homogeneous', 'basal']
-    input_regions = ['top', 'homogeneous', 'bottom']
+    input_regions = param_dict['input_regions']#['top', 'homogeneous']#, 'bottom']
     # distributions = ['uniform', 'linear_increase', 'linear_decrease']
-    distributions = ['uniform', 'increase']
+    distributions = ['increase']#, 'increase']
 
     plt.close('all')
     fig = plt.figure(figsize=(18, 9))
@@ -620,7 +620,7 @@ def plot_all_soma_sigs(param_dict):
     fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
     simplify_axes(fig.axes)
     # mark_subplots([ax_morph_homogeneous], 'B', ypos=1.1, xpos=0.1)
-    plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], 'Figure_all_sigs_stick.png'))
+    plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], 'Figure_all_sigs_stick_new_params2.png'))
     plt.close('all')
 
 
@@ -1981,11 +1981,11 @@ def plot_figure_1_single_cell_difference(param_dict):
 if __name__ == '__main__':
 
 
-    plot_decomposed_dipole()
-    sys.exit()
+    # plot_decomposed_dipole()
+    # sys.exit()
 
-    conductance = 'generic'
-    # conductance = 'stick_generic'
+    # conductance = 'generic'
+    conductance = 'stick_generic'
     # conductance = 'classic'
 
     if conductance == 'generic':
@@ -2028,7 +2028,7 @@ if __name__ == '__main__':
     # plot_figure_1_single_cell_difference(param_dict)
     # plot_depth_resolved(param_dict)
     # plot_figure_2(param_dict)
-    plot_figure_2_normalized(param_dict)
+    # plot_figure_2_normalized(param_dict)
     # plot_figure_3(param_dict)
     # plot_figure_5(param_dict)
     # plot_leski_13(param_dict)
@@ -2036,6 +2036,6 @@ if __name__ == '__main__':
     # plot_population_density_effect(param_dict)
     # plot_all_size_dependencies(param_dict)
     # plot_all_soma_sigs_classic(param_dict)
-    # plot_all_soma_sigs(param_dict)
+    plot_all_soma_sigs(param_dict)
     # plot_LFP_time_trace(param_dict)
     # plot_cell_population(param_dict)   # cell tufts cut from figure!

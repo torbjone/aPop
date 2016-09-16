@@ -521,6 +521,9 @@ def initialize_population(param_dict):
     argsort = np.argsort(r)
     x_y_z_rot = x_y_z_rot[argsort]
 
+    if not os.path.isdir(join(param_dict['root_folder'], param_dict['save_folder'])):
+        os.mkdir(join(param_dict['root_folder'], param_dict['save_folder']))
+
     np.save(join(param_dict['root_folder'], param_dict['save_folder'],
                  'x_y_z_rot_%s.npy' % param_dict['name']), x_y_z_rot)
 
@@ -681,7 +684,7 @@ def sum_population_mpi_generic(param_dict):
     rank = comm.rank        # rank of this process
     status = MPI.Status()   # get MPI status object
     num_workers = size - 1
-    num_cells = 2000 if at_stallo else 5
+    num_cells = 500 if at_stallo else 5
     num_tsteps = int(round(param_dict['end_t']/param_dict['timeres_python'] + 1))
 
     if size == 1:
@@ -863,7 +866,7 @@ def PopulationMPIgeneric():
 
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
-        num_cells = 2000 if at_stallo else 100
+        num_cells = 500 if at_stallo else 100
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['mus']) *
                      len(param_dict['distributions']) * len(param_dict['correlations']) * (num_cells))
 
@@ -896,11 +899,11 @@ def PopulationMPIgeneric():
     else:
         import time
         while True:
-            if rank % 2 == 0:
-                print "Rank %d sleeping" % rank
-                time.sleep(60)
-            else:
-                comm.send(None, dest=0, tag=tags.READY)
+            # if rank % 2 == 0:
+            #     print "Rank %d sleeping" % rank
+            #     time.sleep(60)
+            # else:
+            comm.send(None, dest=0, tag=tags.READY)
             [input_region, distribution, mu, correlation, cell_idx] = comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
             tag = status.Get_tag()
             if tag == tags.START:
@@ -1009,17 +1012,28 @@ def PopulationMPIclassic():
 
 
 if __name__ == '__main__':
-    conductance = 'generic'
-    # conductance = 'stick_generic'
+    # conductance = 'generic'
+    conductance = 'stick_generic'
     # conductance = 'classic'
 
-    if conductance == 'generic':
-        from param_dicts import generic_population_params as param_dict
-    elif conductance == 'stick_generic':
-        from param_dicts import stick_population_params as param_dict
-    else:
-        from param_dicts import classic_population_params as param_dict
+
+    # TODO: ONLY SUMS AND SIMULATED 200 CELLS!!!
+
+    # TODO: Run stick populations. What to conclude?
+    # TODO: Run active population, no holding potential.
+    # TODO: Run HBP population TTPC1 (most common?)
+
+    # if conductance == 'generic':
+    #     from param_dicts import generic_population_params as param_dict
+    # elif conductance == 'stick_generic':
+    #     from param_dicts import stick_population_params as param_dict
+    # else:
+    #     from param_dicts import classic_population_params as param_dict
     # from param_dicts import asymmetric_population_params as param_dict
+
+    # from param_dicts import hbp_population_params as param_dict
+    # from param_dicts import classic_population_params as param_dict
+    from param_dicts import generic_population_params as param_dict
 
     if len(sys.argv) >= 3:
         cell_number = int(sys.argv[3])
@@ -1036,7 +1050,7 @@ if __name__ == '__main__':
                                })
         else:
             conductance_type = sys.argv[4]
-            holding_potential = int(sys.argv[5])
+            holding_potential = None if sys.argv[5] == 'None' else int(sys.argv[5])
             param_dict.update({'input_region': input_region,
                                'cell_number': cell_number,
                                'conductance_type': conductance_type,
