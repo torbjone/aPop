@@ -21,14 +21,13 @@ import matplotlib
 def plot_decomposed_dipole():
     sim_folder = join('..', 'stick_population', 'simulations')
 
-    mu = -0.6
-
-    # i_i_t = 1000*np.load(join(sim_folder, 'center_sig_stick_population_infinite_neurite_homogeneous_generic_increase_%1.1f_0.00_00000_top.npy' % mu))
-    # i_i_b = 1000*np.load(join(sim_folder, 'center_sig_stick_population_infinite_neurite_homogeneous_generic_increase_%1.1f_0.00_00000_bottom.npy' % mu))
+    mu = -0.5
+    i_i_t = 1000*np.load(join(sim_folder, 'center_sig_stick_population_infinite_neurite_homogeneous_generic_increase_%1.1f_0.00_00000_top.npy' % mu))
+    i_i_b = 1000*np.load(join(sim_folder, 'center_sig_stick_population_infinite_neurite_homogeneous_generic_increase_%1.1f_0.00_00000_bottom.npy' % mu))
     i_i = 1000*np.load(join(sim_folder, 'center_sig_stick_population_infinite_neurite_homogeneous_generic_increase_%1.1f_0.00_00000.npy' % mu))
 
-    # i_u_t = 1000*np.load(join(sim_folder, 'center_sig_stick_population_infinite_neurite_homogeneous_generic_uniform_%1.1f_0.00_00000_top.npy' % mu))
-    # i_u_b = 1000*np.load(join(sim_folder, 'center_sig_stick_population_infinite_neurite_homogeneous_generic_uniform_%1.1f_0.00_00000_bottom.npy' % mu))
+    i_u_t = 1000*np.load(join(sim_folder, 'center_sig_stick_population_infinite_neurite_homogeneous_generic_uniform_%1.1f_0.00_00000_top.npy' % mu))
+    i_u_b = 1000*np.load(join(sim_folder, 'center_sig_stick_population_infinite_neurite_homogeneous_generic_uniform_%1.1f_0.00_00000_bottom.npy' % mu))
     i_u = 1000*np.load(join(sim_folder, 'center_sig_stick_population_infinite_neurite_homogeneous_generic_uniform_%1.1f_0.00_00000.npy' % mu))
 
     fig = plt.figure()
@@ -37,17 +36,17 @@ def plot_decomposed_dipole():
     ax_u = fig.add_subplot(121, xlim=[-1e-3, 1e-3], title='Uniform conductance')
     ax_i = fig.add_subplot(122, xlim=[-1e-3, 1e-3], title='Asymmetric increasing conductance')
     ax_u.plot([0, 0], [0, 20], '--', c='gray')
-    # ax_u.plot(np.average(i_u_t, axis=1), np.arange(20), 'g')
-    # ax_u.plot(np.average(i_u_b, axis=1), np.arange(20), 'orange')
+    ax_u.plot(np.average(i_u_t, axis=1), np.arange(20), 'g')
+    ax_u.plot(np.average(i_u_b, axis=1), np.arange(20), 'orange')
     ax_u.plot(np.average(i_u, axis=1), np.arange(20), 'k', lw=2)
-    # ax_u.plot(np.average(i_u_t + i_u_b, axis=1), np.arange(20), '--', c='gray', lw=2)
+    ax_u.plot(np.average(i_u_t + i_u_b, axis=1), np.arange(20), '--', c='gray', lw=2)
 
     ax_i.plot([0, 0], [0, 20], '--', c='gray')
-    # ax_i.plot(np.average(i_i_t, axis=1), np.arange(20), 'g')
-    # ax_i.plot(np.average(i_i_b, axis=1), np.arange(20), 'orange')
+    ax_i.plot(np.average(i_i_t, axis=1), np.arange(20), 'g')
+    ax_i.plot(np.average(i_i_b, axis=1), np.arange(20), 'orange')
     ax_i.plot(np.average(i_i, axis=1), np.arange(20), 'k', lw=2)
-    # ax_i.plot(np.average(i_i_t + i_i_b, axis=1), np.arange(20), '--', c='gray', lw=2)
-    plt.savefig('dipole_decomposed_%1.1f_large_dipole??.png' % mu)
+    ax_i.plot(np.average(i_i_t + i_i_b, axis=1), np.arange(20), '--', c='gray', lw=2)
+    plt.savefig('dipole_decomposed_%1.1f.png' % mu)
 
 def plot_3d_rot_pop(param_dict):
     # plt.seed(1234)
@@ -533,7 +532,7 @@ def plot_cell_population(param_dict):
 def plot_all_soma_sigs(param_dict):
 
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
-    pop_size = 250
+    pop_size = 500
 
     param_dict.update({
                        'cell_number': 0,
@@ -547,7 +546,7 @@ def plot_all_soma_sigs(param_dict):
     # input_regions = ['distal_tuft', 'homogeneous', 'basal']
     input_regions = param_dict['input_regions']#['top', 'homogeneous']#, 'bottom']
     # distributions = ['uniform', 'linear_increase', 'linear_decrease']
-    distributions = ['increase']#, 'increase']
+    distributions = ['uniform', 'increase']#, 'increase']
 
     plt.close('all')
     fig = plt.figure(figsize=(18, 9))
@@ -620,7 +619,7 @@ def plot_all_soma_sigs(param_dict):
     fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
     simplify_axes(fig.axes)
     # mark_subplots([ax_morph_homogeneous], 'B', ypos=1.1, xpos=0.1)
-    plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], 'Figure_all_sigs_stick_new_params_adjusted3.png'))
+    plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], 'Figure_all_sigs_stick_new_params_adjusted4.png'))
     plt.close('all')
 
 
@@ -1999,8 +1998,8 @@ def plot_figure_1_single_cell_difference(param_dict):
 if __name__ == '__main__':
 
 
-    plot_decomposed_dipole()
-    sys.exit()
+    # plot_decomposed_dipole()
+    # sys.exit()
 
     # conductance = 'generic'
     conductance = 'stick_generic'

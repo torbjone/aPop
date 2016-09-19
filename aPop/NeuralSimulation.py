@@ -170,7 +170,6 @@ class NeuralSimulation:
             cell = return_cell(cell_folder, self.end_t, self.timeres_NEURON, -self.cut_off)
             self.remove_active_mechanisms(remove_lists[self.conductance_type])
 
-
         elif self.cell_name == 'infinite_neurite':
             sys.path.append(join(self.neuron_models, 'infinite_neurite'))
             from infinite_neurite_active_declarations import active_declarations
@@ -310,10 +309,12 @@ class NeuralSimulation:
 
     def _make_distributed_synaptic_stimuli(self, cell):
 
+        syntype = 'ExpSynI' if not 'syntype' in self.param_dict else self.param_dict['syntype']
+
         # Define synapse parameters
         synapse_params = {
             'e': 0.,                   # reversal potential
-            'syntype': 'ExpSynI',       # synapse type
+            'syntype': syntype,       # synapse type
             'tau': self.param_dict['syn_tau'],                # syn. time constant
             'weight': self.param_dict['syn_weight'],            # syn. weight
             'record_current': False,
@@ -538,7 +539,7 @@ class NeuralSimulation:
 
         # average_over = 4
         # smooth_v_x_apic = v_x_apic[::average_over]
-        max_freq_idx = np.argmin(np.abs(freq - self.max_freq))
+        # max_freq_idx = np.argmin(np.abs(freq - self.max_freq))
 
         # smooth_v_y_apic = tools.smooth_signal(smooth_v_x_apic, v_x_apic, v_y_apic)
         # smooth_v_x_middle = v_x_middle[::average_over]
