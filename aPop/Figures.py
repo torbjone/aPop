@@ -642,8 +642,8 @@ def plot_all_soma_sigs_classic(param_dict):
     holding_potentials = [-80, -70, -60]
 
     plt.close('all')
-    fig = plt.figure(figsize=(18, 9))
-    fig.subplots_adjust(right=0.95, wspace=0.5, hspace=0.8, left=0.06, top=0.85, bottom=0.2)
+    fig = plt.figure(figsize=(18, 5))
+    fig.subplots_adjust(right=0.95, wspace=0.6, hspace=0.8, left=0.06, top=0.85, bottom=0.2)
 
     psd_ax_dict = {'ylim': [1e-10, 1e-3],
                     'yscale': 'log',
@@ -705,7 +705,7 @@ def plot_all_soma_sigs_classic(param_dict):
         # ax_tuft.set_ylabel('LFP-PSD ($\mu$V$^2$/Hz)', labelpad=-5)
         # ax_tuft.set_xticklabels(['', '1', '10', '100'])
 
-    fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
+    fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=4)
     simplify_axes(fig.axes)
     # mark_subplots([ax_morph_homogeneous], 'B', ypos=1.1, xpos=0.1)
     plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], 'Figure_classic_all_sigs.png'))
@@ -831,16 +831,19 @@ def plot_population_density_effect(param_dict):
                               })
 
             plt.close('all')
-            fig = plt.figure(figsize=(10, 6))
-            fig.suptitle('Soma region LFP\nconductance: %s\ninput region: %s'
-                         % (param_dict['distribution'], param_dict['input_region']))
-            fig.subplots_adjust(right=0.95, wspace=0.5, hspace=0.5, left=0.2, top=0.80, bottom=0.2)
+            fig = plt.figure(figsize=(10, 8))
+            # fig.suptitle('Soma region LFP\nconductance: %s\ninput region: %s'
+            #              % (param_dict['distribution'], param_dict['input_region']))
+            # fig.subplots_adjust(right=0.95, wspace=0.5, hspace=0.5, left=0.2, top=0.90, bottom=0.2)
+            fig.subplots_adjust(right=0.95, wspace=0.4, hspace=0.2, left=0.23, top=0.95, bottom=0.12)
 
             psd_ax_dict = {'xlim': [1e0, 5e2],
-                           'xlabel': 'Frequency (Hz)',
+                           # 'xlabel': 'Frequency (Hz)',
                            'xticks': [1e0, 10, 100],
-                           'ylim': [0, 1.2e0]
-                           #'ylim': [1e-10, 1e-4]
+                           # 'ylim': [0, 1.2e0]
+                           'ylim': [1e-9, 1e-4],
+                           'yticks': [1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4],
+                           'yticklabels': ['', '', '', '', '', '', ''],
                            }
             lines = None
             line_names = None
@@ -848,15 +851,17 @@ def plot_population_density_effect(param_dict):
 
             elec = soma_layer_elec_idx
 
-            fig.text(0.005, 0.75, 'Full density')
-            fig.text(0.005, 0.35, 'Half density')
+            fig.text(0.005, 0.85, 'R = 500 $\mu$m\n(Full density)')
+            fig.text(0.005, 0.55, 'Half density\nR = 500 $\mu$m\n(1000 cells)')
             for c, correlation in enumerate(correlations):
                 param_dict['correlation'] = correlation
 
                 plot_number_full = 0 * num_plot_cols + c
                 plot_number_half = 1 * num_plot_cols + c
-                ax_full = fig.add_subplot(2, num_plot_cols, plot_number_full + 1, **psd_ax_dict)
-                ax_half = fig.add_subplot(2, num_plot_cols, plot_number_half + 1, **psd_ax_dict)
+                ax_full = fig.add_subplot(3, num_plot_cols, plot_number_full + 1, **psd_ax_dict)
+                ax_half = fig.add_subplot(3, num_plot_cols, plot_number_half + 1, **psd_ax_dict)
+                simplify_axes([ax_full, ax_half])
+
                 ax_full.set_title('c = %1.2f' % correlation)
                 ax_full.grid(True)
                 ax_half.grid(True)
@@ -875,24 +880,32 @@ def plot_population_density_effect(param_dict):
                     freq, psd_full = tools.return_freq_and_psd_welch(lfp_full[elec], ns.welch_dict)
                     freq, psd_half = tools.return_freq_and_psd_welch(lfp_half[elec], ns.welch_dict)
 
-                    l, = ax_full.semilogx(freq, psd_full[0] / psd_full[0], c=qa_clr_dict[mu], lw=3)
-                    l, = ax_half.semilogx(freq, psd_half[0] / psd_full[0], c=qa_clr_dict[mu], lw=3)
+                    l, = ax_full.loglog(freq, psd_full[0] , c=qa_clr_dict[mu], lw=3)
+                    l, = ax_half.loglog(freq, psd_half[0] , c=qa_clr_dict[mu], lw=3)
 
                     lines.append(l)
                     line_names.append(conductance_names[mu])
+                    # if c != 0.0:
+                    # ax_full.set_yticks(10.**np.arange(-9, -3))
+                    #     ax_full.set_yticklabels([''] * 6)
+                    #     ax_half.set_yticklabels([''] * 6)
+                    if c == 0.0 and mu == 0.0:
+                        ax_full.set_ylabel('LFP-PSD ($\mu$V$^2$/Hz)', labelpad=-5)
+                        ax_half.set_ylabel('LFP-PSD ($\mu$V$^2$/Hz)', labelpad=-5)
+                        ax_half.set_xlabel('Frequency (Hz)')
 
-                    ax_full.set_ylabel('LFP-PSD ($\mu$V$^2$/Hz)', labelpad=-5)
-                    ax_full.set_xticklabels(['', '1', '10', '100'])
+                        # ax_full.set_yticklabels(['10$^%d$' % d for d in np.arange(-9, -3)])
+
+                    ax_full.set_xticklabels(['', '', '', ''])
                     # ax_full.set_yticks(ax_full.get_yticks()[1:-1][::2])
 
-                    ax_half.set_ylabel('LFP-PSD ($\mu$V$^2$/Hz)', labelpad=-5)
+                    # ax_half.set_ylabel('LFP-PSD ($\mu$V$^2$/Hz)', labelpad=-5)
                     ax_half.set_xticklabels(['', '1', '10', '100'])
                     # ax_half.set_yticks(ax_half.get_yticks()[1:-1][::2])
 
             fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
-            simplify_axes(fig.axes)
             plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'],
-                             'Figure_population_density_%s_%s_normalized.png' % (param_dict['distribution'], param_dict['input_region'])))
+                             'Figure_population_density_%s_%s_diff_size.png' % (param_dict['distribution'], param_dict['input_region'])))
             plt.close('all')
 
 
@@ -905,7 +918,8 @@ def plot_population_size_effect(param_dict):
     correlations = param_dict['correlations']
     mus = [-0.5, 0.0, 2.0]
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
-    pop_sizes = [50, 250, 500]
+    pop_sizes = [50, 100, 500]
+    pop_numbers = [17, 89, 2000]
     for input_region in param_dict['input_regions']:
         for distribution in param_dict['distributions']:
             print input_region, distribution
@@ -917,16 +931,17 @@ def plot_population_size_effect(param_dict):
                               })
 
             plt.close('all')
-            fig = plt.figure(figsize=(10, 10))
-            fig.suptitle('Soma region LFP\nconductance: %s\ninput region: %s'
-                         % (param_dict['distribution'], param_dict['input_region']))
-            fig.subplots_adjust(right=0.95, wspace=0.5, hspace=0.5, left=0.2, top=0.85, bottom=0.2)
+            fig = plt.figure(figsize=(10, 8))
+            # fig.suptitle('Soma region LFP\nconductance: %s\ninput region: %s'
+            #              % (param_dict['distribution'], param_dict['input_region']))
+            fig.subplots_adjust(right=0.95, wspace=0.4, hspace=0.2, left=0.23, top=0.95, bottom=0.12)
 
             psd_ax_dict = {'xlim': [1e0, 5e2],
-                           'xlabel': 'Frequency (Hz)',
+                           # 'xlabel': 'Frequency (Hz)',
                            'xticks': [1e0, 10, 100],
-                           'ylim': [1e-4, 1.2],
-                           #'ylim': [1e-10, 1e-4]
+                           'xticklabels': ['', '1', '10', '100'],
+                           # 'ylim': [1e-4, 1.2],
+                           'ylim': [1e-9, 1e-4]
                            }
             lines = None
             line_names = None
@@ -950,13 +965,15 @@ def plot_population_size_effect(param_dict):
 
             for idx, pop_size in enumerate(pop_sizes):
 
-                fig.text(0.01, 0.8 - idx / (len(pop_sizes) + 1), 'R = %d $\mu$m' % pop_size)
+                fig.text(0.01, 0.8 - 1.1*idx / (len(pop_sizes) + 1), 'R = %d $\mu$m\n(%d cells)' % (pop_size, pop_numbers[idx]))
                 for c, correlation in enumerate(correlations):
                     param_dict['correlation'] = correlation
                     plot_number = idx * num_plot_cols + c
-                    ax_tuft = fig.add_subplot(3, num_plot_cols, plot_number + 1, **psd_ax_dict)
-                    ax_tuft.set_title('c = %1.2f' % correlation)
-                    ax_tuft.grid(True)
+                    ax = fig.add_subplot(3, num_plot_cols, plot_number + 1, **psd_ax_dict)
+                    simplify_axes(ax)
+                    if idx == 0:
+                        ax.set_title('c = %1.2f' % correlation)
+                    ax.grid(True)
                     lines = []
                     line_names = []
                     for mu in mus:
@@ -971,21 +988,29 @@ def plot_population_size_effect(param_dict):
 
                         # freq, psd = tools.return_freq_and_psd(ns.timeres_python/1000., lfp[elec])
                         # freq, psd = tools.return_freq_and_psd_welch(lfp[elec], ns.welch_dict)
-                        psd = psd_dict[name] / psd_dict[name_500]
+                        psd = psd_dict[name]#/ psd_dict[name_500]
 
-                        l, = ax_tuft.loglog(freq, psd[0], c=qa_clr_dict[mu], lw=3)
+                        l, = ax.loglog(freq, psd[0], c=qa_clr_dict[mu], lw=3)
 
                         lines.append(l)
                         line_names.append(conductance_names[mu])
+                        if mu == 0.0 and c == 0.00 and pop_size == 500:
+                            ax.set_ylabel('LFP-PSD ($\mu$V$^2$/Hz)', labelpad=-5)
+                            # ax.set_xticks([1., 10., 100.])
+                            # ax.set_xticklabels(['1', '10', '100'])
+                            ax.set_xlabel('Frequency (Hz)')
+                    ax.set_xticklabels(['', '1', '10', '100'])
 
-                        # ax_tuft.set_ylabel('LFP-PSD ($\mu$V$^2$/Hz)', labelpad=-5)
-                        # ax_tuft.set_xticklabels(['', '1', '10', '100'])
+                        # else:
+                        #     ax.set_xticks([1, 10, 100])
+                        #     ax.set_xticklabels(['', '', ''])
+                        # ax_tuft.set_xticklabels(['1', '10', '100'])
                         # ax_tuft.set_yticks(ax_tuft.get_yticks()[1:-1][::2])
 
             fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
-            simplify_axes(fig.axes)
+            # simplify_axes(fig.axes)
             plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'],
-                             'Figure_population_size_%s_%s_normalized.png' % (param_dict['distribution'], param_dict['input_region'])))
+                             'Figure_population_size_%s_%s_other_sizes.png' % (param_dict['distribution'], param_dict['input_region'])))
             plt.close('all')
 
 
@@ -2001,8 +2026,8 @@ if __name__ == '__main__':
     # plot_decomposed_dipole()
     # sys.exit()
 
-    # conductance = 'generic'
-    conductance = 'stick_generic'
+    conductance = 'generic'
+    # conductance = 'stick_generic'
     # conductance = 'classic'
 
     if conductance == 'generic':
@@ -2051,12 +2076,12 @@ if __name__ == '__main__':
     # plot_figure_3(param_dict)
     # plot_figure_5(param_dict)
     # plot_leski_13(param_dict)
-    # plot_population_size_effect(param_dict)
+    plot_population_size_effect(param_dict)
     # plot_population_density_effect(param_dict)
     # plot_all_size_dependencies(param_dict)
     # plot_all_soma_sigs_classic(param_dict)
 
-    plot_all_soma_sigs(param_dict)
+    # plot_all_soma_sigs(param_dict)
 
     # plot_LFP_time_trace(param_dict)
     # plot_cell_population(param_dict)   # cell tufts cut from figure!

@@ -644,6 +644,20 @@ def sum_one_population(param_dict, num_cells, num_tsteps):
     np.save(join(ns.sim_folder, 'c_phi_lateral_%s.npy' % ns.population_sim_name), c_phi_lateral)
     np.save(join(ns.sim_folder, 'c_phi_center_%s.npy' % ns.population_sim_name), c_phi_center)
 
+def count_cell_number_for_size(param_dict, num_cells):
+
+    x_y_z_rot = np.load(os.path.join(param_dict['root_folder'], param_dict['save_folder'],
+                             'x_y_z_rot_%s.npy' % param_dict['name']))
+
+    num_used = 0
+    num_used_half_density = 0
+    for cell_number in xrange(num_cells):
+        param_dict.update({'cell_number': cell_number})
+        r = np.sqrt(x_y_z_rot[cell_number, 0]**2 + x_y_z_rot[cell_number, 1]**2)
+        num_used += 1
+        if not cell_number % 2:
+            num_used_half_density += 1
+        print num_used, num_used_half_density, r
 
 def sum_population_generic(param_dict):
 
@@ -995,11 +1009,11 @@ def PopulationMPIclassic():
             tag = status.Get_tag()
             if tag == tags.START:
                 # Do the work here
-                print "\033[93m%d put to work on %s %s %+d %1.2f cell %d\033[0m" % (rank, input_region,
-                                                                                conductance_type, holding_potential, correlation, cell_idx)
+                print "\033[93m%d put to work on %s %s %s %1.2f cell %d\033[0m" % (rank, input_region,
+                                                                                conductance_type, str(holding_potential), correlation, cell_idx)
                 try:
-                    os.system("python %s %s %1.2f %d %s %d" % (sys.argv[0], input_region, correlation, cell_idx,
-                                                                  conductance_type, holding_potential))
+                    os.system("python %s %s %1.2f %d %s %s" % (sys.argv[0], input_region, correlation, cell_idx,
+                                                                  conductance_type, str(holding_potential)))
                 except:
                     print "\033[91mNode %d exiting with ERROR\033[0m" % rank
                     comm.send(None, dest=0, tag=tags.ERROR)
@@ -1027,6 +1041,11 @@ if __name__ == '__main__':
     from param_dicts import hbp_population_params as param_dict
     # from param_dicts import classic_population_params as param_dict
     # from param_dicts import generic_population_params as param_dict
+
+
+    # count_cell_number_for_size(param_dict, 2500)
+    # sys.exit()
+
 
     if len(sys.argv) >= 3:
         cell_number = int(sys.argv[3])
