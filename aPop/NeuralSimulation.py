@@ -516,7 +516,7 @@ class NeuralSimulation:
         vmax = 10**np.ceil(np.log10(np.max(psd)))
         im_dict = {'cmap': 'hot', 'norm': LogNorm(), 'vmin': vmax/1e4, 'vmax': vmax}
         img = ax_center.pcolormesh(freq, center_electrode.z, psd, **im_dict)
-        cbar = plt.colorbar(img, ax=ax_center, label='$\mu$V$^2$/Hz')
+        cbar = plt.colorbar(img, ax=ax_center)
         del center_electrode
         del center_LFP
         all_elec_ax = [ax_top, ax_mid, ax_bottom]
