@@ -281,17 +281,16 @@ class NeuralSimulation:
 
         cell = self._return_cell(x_y_z_rot)
         cell, syn = self._make_distributed_synaptic_stimuli(cell)
+
         rec_vmem = True if self.name is 'vmem_3D_population' else False
         cell.simulate(rec_imem=True, rec_vmem=rec_vmem)
 
         # [plt.plot(cell.tvec, cell.vmem[idx, :]) for idx in range(cell.totnsegs)]
         # plt.plot(cell.tvec, cell.vmem[1, :])
         # plt.show()
-        # sys.exit()
         self.save_neural_sim_single_input_data(cell)
         if ('shape_function' in self.name) or (self.cell_number < 5):
             self._draw_all_elecs_with_distance(cell)
-
 
 
     def run_asymmetry_simulation(self, mu, fraction, distribution, cell_number):

@@ -17,7 +17,10 @@ def return_freq_and_psd(tvec, sig):
     sample_freq = ff.fftfreq(sig.shape[1], d=timestep)
     pidxs = np.where(sample_freq >= 0)
     freqs = sample_freq[pidxs]
+
     Y = ff.fft(sig, axis=1)[:, pidxs[0]]
+
+
     power = np.abs(Y)**2/Y.shape[1]
     return freqs, power
 

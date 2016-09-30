@@ -888,7 +888,7 @@ def PopulationMPIgeneric():
             for distribution in param_dict['distributions']:
                 for mu in param_dict['mus']:
                     for correlation in param_dict['correlations']:
-                        for cell_idx in range(num_cells):
+                        for cell_idx in range(2000, 4000):
                             task += 1
                             sent = False
                             while not sent:
@@ -1026,22 +1026,21 @@ def PopulationMPIclassic():
 
 
 if __name__ == '__main__':
-    # conductance = 'generic'
+    conductance = 'generic'
     # conductance = 'stick_generic'
-    conductance = 'classic'
+    # conductance = 'classic'
 
-    # if conductance == 'generic':
-    #     from param_dicts import generic_population_params as param_dict
-    # elif conductance == 'stick_generic':
-    #     from param_dicts import stick_population_params as param_dict
-    # else:
-    #     from param_dicts import classic_population_params as param_dict
+    if conductance == 'generic':
+        from param_dicts import generic_population_params as param_dict
+    elif conductance == 'stick_generic':
+        from param_dicts import stick_population_params as param_dict
+    else:
+        from param_dicts import classic_population_params as param_dict
     # from param_dicts import asymmetric_population_params as param_dict
 
-    from param_dicts import hbp_population_params as param_dict
+    # from param_dicts import hbp_population_params as param_dict
     # from param_dicts import classic_population_params as param_dict
     # from param_dicts import generic_population_params as param_dict
-
 
     # count_cell_number_for_size(param_dict, 2500)
     # sys.exit()
