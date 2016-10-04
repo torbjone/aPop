@@ -54,7 +54,7 @@ def probe_power_laws():
     # sig_dict['shift'][t > t[len(t)/2]] = 0.2
     # sig_dict['linear'] = 0.7 * (t - np.mean(t))
 
-    noise = np.random.normal(0, .25, size=len(t))
+    noise = 0#np.random.normal(0, .25, size=len(t))
 
     for key, sig in sig_dict.items():
         sig += noise
@@ -79,9 +79,60 @@ def probe_power_laws():
 
     simplify_axes(fig.axes)
     fig.legend(lines, line_names, frameon=False, loc='lower center', ncol=5)
-    fig.savefig('prope_powerlaws_no_welch_with_noise.png')
+    fig.savefig('prope_powerlaws_changing_pathways.png')
     plt.show()
+
+
+def probe_power_laws_changing_pathways():
+
+    f = 16.
+
+    t = np.arange(2**14) * 2**-14
+
+    f_array = np.arange(1, 100)
+    sig_dict = {}
+    psd_dict = {}
+    amp = 0.01 / np.arange(1, 101)
+    amp[10:20] += np.arange(10)
+    amp[20:30] += np.arange(10)[::-1]
+
+    sig_dict['resonance'] = np.sum([amp[idx] * np.sin(2 * np.pi * f_array[idx] * t + 2*np.pi * np.random.random()) for idx in range(len(f_array))], axis=0)
+    sig_dict['white'] = np.sum([1. * np.sin(2 * np.pi * f_array[idx] * t + 2*np.pi * np.random.random()) for idx in range(len(f_array))], axis=0)
+
+    sig_dict['composite'] = np.zeros(len(t))
+    sig_dict['composite'][:] = sig_dict['resonance'][:]
+    sig_dict['composite'][len(t)/2:] = sig_dict['white'][len(t)/2:]
+
+
+    noise = 0#np.random.normal(0, .25, size=len(t))
+
+    for key, sig in sig_dict.items():
+        sig += noise
+
+    for key, sig in sig_dict.items():
+        freqs, psd_dict[key] = return_freq_and_psd(t, sig)
+        # psd_dict[key], freqs = ml.psd(sig, Fs=len(t) / t[-1], NFFT=len(t)/4)
+
+    fig = plt.figure(figsize=[18, 9])
+
+    ax1 = fig.add_subplot(211)
+    ax2 = fig.add_subplot(212)#, ylim=[1e-3, 1e1])
+
+    lines = []
+    line_names = []
+    for key, sig in sig_dict.items():
+        l, = ax1.plot(t, sig, lw=2)
+        l, = ax2.loglog(freqs, psd_dict[key], '-x', lw=2)
+        lines.append(l)
+        line_names.append(key)
+        # print np.sum(psd_dict[key])
+
+    simplify_axes(fig.axes)
+    fig.legend(lines, line_names, frameon=False, loc='lower center', ncol=5)
+    fig.savefig('prope_powerlaws_changing_pathways.png')
+    plt.show()
+
 
 if __name__ == '__main__':
 
-    probe_power_laws()
+    probe_power_laws_changing_pathways()

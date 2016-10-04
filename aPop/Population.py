@@ -884,11 +884,11 @@ def PopulationMPIgeneric():
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['mus']) *
                      len(param_dict['distributions']) * len(param_dict['correlations']) * (num_cells))
 
-        for input_region in param_dict['input_regions']:
-            for distribution in param_dict['distributions']:
-                for mu in param_dict['mus']:
-                    for correlation in param_dict['correlations']:
-                        for cell_idx in range(2000, 4000):
+        for input_region in param_dict['input_regions'][::-1]:
+            for distribution in param_dict['distributions'][::-1]:
+                for mu in param_dict['mus'][::-1]:
+                    for correlation in param_dict['correlations'][::-1]:
+                        for cell_idx in range(2000, 4000)[::-1]:
                             task += 1
                             sent = False
                             while not sent:
