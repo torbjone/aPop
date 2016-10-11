@@ -589,7 +589,7 @@ def sum_one_population_expand(param_dict, num_cells, num_tsteps):
 
         if not summed_center_sig.shape == center_lfp.shape:
             print "Reshaping LFP time signal", center_lfp.shape
-            summed_center_sig = np.zeros(center_lf  p.shape)
+            summed_center_sig = np.zeros(center_lfp.shape)
 
         summed_lateral_sig += lateral_lfp
         summed_center_sig += center_lfp

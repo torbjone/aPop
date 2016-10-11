@@ -7,7 +7,7 @@
 #PBS -m abe
 #PBS -A nn4661k
 
-cd /global/work/torbness/aPop/stick_population/simulations
+cd /global/work/torbness/aPop/hbp_population/simulations
 
 rm *sig_*_0???0.npy
 rm *sig_*_0???2.npy
