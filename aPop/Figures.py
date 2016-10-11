@@ -174,6 +174,7 @@ def plot_3d_rot_pop(param_dict):
 
 
 def return_lfp_amp(param_dict, electrode_parameters, x, x_y_z_rot):
+    # print "here", param_dict['end_t']
     plt.seed(1234 * param_dict['cell_number'])
     ns_1 = NeuralSimulation(**param_dict)
     cell = ns_1._return_cell(x_y_z_rot)
@@ -181,7 +182,7 @@ def return_lfp_amp(param_dict, electrode_parameters, x, x_y_z_rot):
     cell.simulate(rec_imem=True)
     electrode = LFPy.RecExtElectrode(cell, **electrode_parameters)
     electrode.calc_lfp()
-    sig_amp = 1e6 * electrode.LFP[:, -1].reshape(x.shape)
+    sig_amp = 1e6 * np.max(electrode.LFP[:, :], axis=1).reshape(x.shape)
     return sig_amp, cell
 
 
@@ -192,8 +193,8 @@ def plot_asymetric_conductance_space_average_movie(param_dict):
     x_y_z_rot = np.load(os.path.join(param_dict['root_folder'],
                                      param_dict['save_folder'],
                                      'x_y_z_rot_%s.npy' % param_dict['name']))
-    x = np.linspace(-1500, 1500, 150)
-    z = np.linspace(-1000, 2000, 150)
+    x = np.linspace(-1500, 1500, 30)
+    z = np.linspace(-1000, 2000, 30)
     x, z = np.meshgrid(x, z)
     elec_x = x.flatten()
     elec_z = z.flatten()
@@ -207,30 +208,32 @@ def plot_asymetric_conductance_space_average_movie(param_dict):
         'method': 'linesource'
     }
     param_dict.update({
-                       'input_region': 'homogeneous',
-                       'mu': 0.0,
+                       'input_region': 'distal_tuft',
                        'correlation': 0.0,
                        'cell_number': 0,
+                        'holding_potential': -80,
                        'cut_off': 10.0,
+                        # 'distribution': 'linear_increase',
                        'end_t': 1,
                       })
+
     param_dict_1 = param_dict.copy()
     param_dict_2 = param_dict.copy()
 
-    param_dict_1['distribution'] = 'uniform'
-    param_dict_2['distribution'] = 'linear_increase'
+    param_dict_1['conductance_type'] = 'passive'
+    param_dict_2['conductance_type'] = 'active'
 
     tot_sig_1 = np.zeros(x.shape)
     tot_sig_2 = np.zeros(x.shape)
 
     sig_amp_1, cell = return_lfp_amp(param_dict_1, electrode_parameters, x, x_y_z_rot[0])
-    sig_amp_2, cell = return_lfp_amp(param_dict_2, electrode_parameters, x, x_y_z_rot[0])
+    # sig_amp_2, cell = return_lfp_amp(param_dict_2, electrode_parameters, x, x_y_z_rot[0])
 
     tot_sig_1 += sig_amp_1
-    tot_sig_2 += sig_amp_2
+    # tot_sig_2 += sig_amp_2
 
     logthresh = 1
-    color_lim = np.max(np.abs(tot_sig_2)) * 5
+    color_lim = np.max(np.abs(tot_sig_1)) * 1
 
     vmax = color_lim
     vmin = -color_lim
@@ -251,27 +254,27 @@ def plot_asymetric_conductance_space_average_movie(param_dict):
     name = fig.suptitle("Number of cells: %d" % num_cells)
 
     fig.subplots_adjust(wspace=0.6, hspace=0.6)
-    ax_lfp_1 = fig.add_subplot(221, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.min(elec_x), np.max(elec_x)],
-                                 aspect=1, frameon=False, xticks=[], yticks=[], title='Symmetric conductance\nPopulation LFP')
-    ax_lfp_2 = fig.add_subplot(222, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.min(elec_x), np.max(elec_x)],
-                                 aspect=1, frameon=False, xticks=[], yticks=[], title='Asymmetric conductance\nPopulation LFP')
-
-    ax_lfp_1_single = fig.add_subplot(223, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.min(elec_x), np.max(elec_x)],
-                                 aspect=1, frameon=False, xticks=[], yticks=[], title='Singel cell LFP')
-    ax_lfp_2_single = fig.add_subplot(224, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.min(elec_x), np.max(elec_x)],
-                                 aspect=1, frameon=False, xticks=[], yticks=[], title='single cell LFP')
+    ax_lfp_1 = fig.add_subplot(111, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.min(elec_x), np.max(elec_x)],
+                                 aspect=1, frameon=False, xticks=[], yticks=[])#, title='Symmetric conductance\nPopulation LFP')
+    # ax_lfp_2 = fig.add_subplot(222, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.min(elec_x), np.max(elec_x)],
+    #                              aspect=1, frameon=False, xticks=[], yticks=[], title='Asymmetric conductance\nPopulation LFP')
+    #
+    # ax_lfp_1_single = fig.add_subplot(223, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.min(elec_x), np.max(elec_x)],
+    #                              aspect=1, frameon=False, xticks=[], yticks=[], title='Singel cell LFP')
+    # ax_lfp_2_single = fig.add_subplot(224, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.min(elec_x), np.max(elec_x)],
+    #                              aspect=1, frameon=False, xticks=[], yticks=[], title='single cell LFP')
 
     l_1 = []
     l_2 = []
     for idx in xrange(len(cell.xmid)):
-        l_1.append(ax_lfp_1_single.plot([cell.xstart[idx], cell.xend[idx]],
-                                        [cell.zstart[idx], cell.zend[idx]], **morph_line_dict)[0])
+        # l_1.append(ax_lfp_1_single.plot([cell.xstart[idx], cell.xend[idx]],
+        #                                 [cell.zstart[idx], cell.zend[idx]], **morph_line_dict)[0])
         ax_lfp_1.plot([cell.xstart[idx], cell.xend[idx]],
                       [cell.zstart[idx], cell.zend[idx]], **morph_line_dict)
-        ax_lfp_2.plot([cell.xstart[idx], cell.xend[idx]],
-                      [cell.zstart[idx], cell.zend[idx]], **morph_line_dict)
-        l_2.append(ax_lfp_2_single.plot([cell.xstart[idx], cell.xend[idx]],
-                                        [cell.zstart[idx], cell.zend[idx]], **morph_line_dict)[0])
+        # ax_lfp_2.plot([cell.xstart[idx], cell.xend[idx]],
+        #               [cell.zstart[idx], cell.zend[idx]], **morph_line_dict)
+        # l_2.append(ax_lfp_2_single.plot([cell.xstart[idx], cell.xend[idx]],
+        #                                 [cell.zstart[idx], cell.zend[idx]], **morph_line_dict)[0])
 
     img_dict = {'origin': 'lower',
                 'extent': [np.min(x), np.max(x), np.min(z), np.max(z)],
@@ -282,23 +285,23 @@ def plot_asymetric_conductance_space_average_movie(param_dict):
                 'interpolation': 'nearest',
                 'zorder': 0}
 
-    img_lfp_1 = ax_lfp_1.imshow(tot_sig_1[:, :], **img_dict)
-    img_lfp_2 = ax_lfp_2.imshow(tot_sig_2[:, :], **img_dict)
-    img_lfp_1_single = ax_lfp_1_single.imshow(sig_amp_1[:, :], **img_dict)
-    img_lfp_2_single = ax_lfp_2_single.imshow(sig_amp_2[:, :], **img_dict)
+    img_lfp_1 = ax_lfp_1.contour(tot_sig_1[:, :], **img_dict)
+    # img_lfp_2 = ax_lfp_2.imshow(tot_sig_2[:, :], **img_dict)
+    # img_lfp_1_single = ax_lfp_1_single.imshow(sig_amp_1[:, :], **img_dict)
+    # img_lfp_2_single = ax_lfp_2_single.imshow(sig_amp_2[:, :], **img_dict)
 
-    cb = plt.colorbar(img_lfp_1_single, ax=ax_lfp_1_single, shrink=0.5, ticks=tick_locations)
-    cb2 = plt.colorbar(img_lfp_2_single, ax=ax_lfp_2_single, shrink=0.5, ticks=tick_locations)
-    cb.set_label('nV', labelpad=0)
-    cb2.set_label('nV', labelpad=0)
+    # cb = plt.colorbar(img_lfp_1_single, ax=ax_lfp_1_single, shrink=0.5, ticks=tick_locations)
+    # cb2 = plt.colorbar(img_lfp_2_single, ax=ax_lfp_2_single, shrink=0.5, ticks=tick_locations)
+    # cb.set_label('nV', labelpad=0)
+    # cb2.set_label('nV', labelpad=0)
 
-    cb = plt.colorbar(img_lfp_1, ax=ax_lfp_1, shrink=0.5, ticks=tick_locations)
-    cb2 = plt.colorbar(img_lfp_2, ax=ax_lfp_2, shrink=0.5, ticks=tick_locations)
-    cb.set_label('nV', labelpad=0)
-    cb2.set_label('nV', labelpad=0)
-    fig.savefig(join(param_dict['root_folder'], 'asym_conductance_spatial',
+    # cb = plt.colorbar(img_lfp_1, ax=ax_lfp_1, shrink=0.5, ticks=tick_locations)
+    # cb2 = plt.colorbar(img_lfp_2, ax=ax_lfp_2, shrink=0.5, ticks=tick_locations)
+    # cb.set_label('nV', labelpad=0)
+    # cb2.set_label('nV', labelpad=0)
+    fig.savefig(join(param_dict['root_folder'], 'hbp_fig',
                          'hay_%04d.png' % (num_cells)))
-
+    sys.exit()
     for num_cells in np.arange(2, tot_num_cells):
         print num_cells
         name.set_text("Number of cells: %d" % num_cells)
@@ -323,8 +326,100 @@ def plot_asymetric_conductance_space_average_movie(param_dict):
         img_lfp_1_single.set_data(sig_amp_1[:, :])
         img_lfp_2_single.set_data(sig_amp_2[:, :])
 
-        fig.savefig(join(param_dict['root_folder'], 'asym_conductance_spatial',
-                         'hay_%04d.png' % (num_cells)))
+        fig.savefig(join(param_dict['root_folder'], 'hbp_fig', 'hay_%04d.png' % (num_cells)))
+
+def plot_hbp_illustration(param_dict):
+
+    tot_num_cells = 500
+    num_cells = 1
+    x_y_z_rot = np.load(os.path.join(param_dict['root_folder'],
+                                     param_dict['save_folder'],
+                                     'x_y_z_rot_%s.npy' % param_dict['name']))
+    x = np.linspace(-1777.77, 1777.77, 177)
+    z = np.linspace(-500, 1500, 100)
+    x, z = np.meshgrid(x, z)
+    elec_x = x.flatten()
+    elec_z = z.flatten()
+    elec_y = np.ones(len(elec_x)) * 0
+
+    electrode_parameters = {
+        'sigma': 0.3,              # extracellular conductivity
+        'x': elec_x,        # x,y,z-coordinates of contact points
+        'y': elec_y,
+        'z': elec_z,
+        'method': 'linesource'
+    }
+    param_dict.update({
+                       'input_region': 'distal_tuft',
+                       'correlation': 0.0,
+                       'cell_number': 0,
+                        'holding_potential': -80,
+                       'cut_off': 10.0,
+                        'distribution': 'linear_increase',
+                       'end_t': 1,
+                      })
+
+    param_dict_1 = param_dict.copy()
+    param_dict_1['mu'] = 0.0
+    tot_sig_1 = np.zeros(x.shape)
+    sig_amp_1, cell = return_lfp_amp(param_dict_1, electrode_parameters, x, x_y_z_rot[0])
+    tot_sig_1 += sig_amp_1
+    color_lim = np.max(np.abs(tot_sig_1)) * 1
+
+    plt.close('all')
+    morph_line_dict = {'solid_capstyle': 'butt',
+                       'zorder': 1}
+
+    fig = plt.figure(figsize=[16, 9])
+    # name = fig.suptitle("Number of cells: %d" % num_cells)
+
+    fig.subplots_adjust(top=1, bottom=0, left=0, right=1)
+    ax_lfp_1 = fig.add_subplot(111, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.min(elec_x), np.max(elec_x)],
+                                 aspect=1, frameon=False, xticks=[], yticks=[])#, title='Symmetric conductance\nPopulation LFP')
+
+    cell_cmap = lambda idx: plt.cm.Blues(0.5 + 0.5 * np.random.random())
+
+    c = cell_cmap(0)
+    for idx in xrange(len(cell.xmid)):
+        ax_lfp_1.plot([cell.xstart[idx], cell.xend[idx]],
+                      [cell.zstart[idx], cell.zend[idx]], lw=cell.diam[idx], c=c, **morph_line_dict)
+    img_dict = {'origin': 'lower',
+                'extent': [np.min(x), np.max(x), np.min(z), np.max(z)],
+                # 'levels': 10,
+                # 'locator': ticker.LogLocator(),
+                'cmap': "rainbow",#'viridis',#plt.cm.bwr,
+                # 'norm': matplotlib.colors.SymLogNorm(10**-logthresh),
+                # 'vmin': vmin,
+                 'linewidths': 2,
+                # 'levels': levels,
+                    # 'vmax': vmax,
+                # 'interpolation': 'nearest',
+                'zorder': 0}
+
+    img_lfp_1 = ax_lfp_1.contour(np.log10(np.abs(tot_sig_1[:, :])), 50, **img_dict)
+
+    fig.savefig(join(param_dict['root_folder'], 'hbp_fig', 'hay_%04d_.png' % (num_cells)), dpi=300)
+    # fig.savefig(join(param_dict['root_folder'], 'hbp_fig', 'hay_%04d_.pdf' % (num_cells)))
+    # sys.exit()
+    for num_cells in np.arange(2, tot_num_cells):
+        print num_cells
+        # name.set_text("Number of cells: %d" % num_cells)
+        param_dict_1['cell_number'] = num_cells - 1
+        sig_amp_1, cell = return_lfp_amp(param_dict_1, electrode_parameters, x, x_y_z_rot[num_cells - 1])
+        c = cell_cmap(num_cells)
+        for idx in xrange(len(cell.xmid)):
+            ax_lfp_1.plot([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]], lw=cell.diam[idx],
+                          c=c, **morph_line_dict)
+
+        tot_sig_1 += sig_amp_1
+
+        for coll in img_lfp_1.collections:
+            plt.gca().collections.remove(coll)
+        img_lfp_1 = ax_lfp_1.contour(np.log10(np.abs(tot_sig_1[:, :])), 50, **img_dict)
+
+        fig.savefig(join(param_dict['root_folder'], 'hbp_fig', 'hay_%04d_terrain_.png' % (num_cells)), dpi=300)
+        # fig.savefig(join(param_dict['root_folder'], 'hbp_fig', 'hay_%04d_terrain_.pdf' % (num_cells)))
+
 
 
 def plot_asymetric_conductance_time_average_movie(param_dict):
@@ -2244,16 +2339,16 @@ if __name__ == '__main__':
     # conductance = 'classic'
 
     # if conductance == 'generic':
-    # from param_dicts import generic_population_params as param_dict
+    from param_dicts import generic_population_params as param_dict
     # elif conductance == 'stick_generic':
-    from param_dicts import stick_population_params as param_dict
+    # from param_dicts import stick_population_params as param_dict
     # else:
     # from param_dicts import classic_population_params as param_dict
     # from param_dicts import hbp_population_params as param_dict
 
     # plot_asymetric_conductance_time_average_movie(param_dict)
     # plot_asymetric_conductance_space_average_movie(param_dict)
-
+    plot_hbp_illustration(param_dict)
     # from param_dicts import vmem_3D_population_params as param_dict
     # input_regions = ['homogeneous']
     # distributions = ['uniform']
@@ -2296,7 +2391,7 @@ if __name__ == '__main__':
     # plot_all_size_dependencies(param_dict)
     # plot_all_soma_sigs_classic(param_dict)
 
-    plot_all_soma_sigs(param_dict)
+    # plot_all_soma_sigs(param_dict)
 
     # plot_LFP_time_trace(param_dict)
     # plot_cell_population(param_dict)   # cell tufts cut from figure!

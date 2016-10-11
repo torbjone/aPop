@@ -561,6 +561,51 @@ def plot_population(param_dict):
                      'population_%s.png' % param_dict['name']))
 
 
+
+def sum_one_population_expand(param_dict, num_cells, num_tsteps):
+
+    x_y_z_rot = np.load(os.path.join(param_dict['root_folder'], param_dict['save_folder'],
+                             'x_y_z_rot_%s.npy' % param_dict['name']))
+    summed_lateral_sig = np.zeros((len(param_dict['lateral_electrode_parameters']['x']), num_tsteps))
+    summed_center_sig = np.zeros((len(param_dict['center_electrode_parameters']['x']), num_tsteps))
+    summed_center_sig_half_density = np.zeros((len(param_dict['center_electrode_parameters']['x']), num_tsteps))
+    # Cells are numbered with increasing distance from population center. We exploit this
+
+    ns = None
+    r = None
+
+    for cell_number in xrange(2000, 4000):
+        param_dict.update({'cell_number': cell_number})
+        r = np.sqrt(x_y_z_rot[cell_number, 0]**2 + x_y_z_rot[cell_number, 1]**2)
+        ns = NeuralSimulation(**param_dict)
+        sim_name = ns.sim_name
+        lateral_lfp = 1000 * np.load(join(ns.sim_folder, 'lateral_sig_%s.npy' % sim_name))  # uV
+        center_lfp = 1000 * np.load(join(ns.sim_folder, 'center_sig_%s.npy' % sim_name))  # uV
+
+        # freqs, lfp_psd = tools.return_freq_and_psd_welch(lfp[:, :], ns.welch_dict)
+        if not summed_lateral_sig.shape == lateral_lfp.shape:
+            print "Reshaping LFP time signal", lateral_lfp.shape
+            summed_lateral_sig = np.zeros(lateral_lfp.shape)
+
+        if not summed_center_sig.shape == center_lfp.shape:
+            print "Reshaping LFP time signal", center_lfp.shape
+            summed_center_sig = np.zeros(center_lfp.shape)
+
+        summed_lateral_sig += lateral_lfp
+        summed_center_sig += center_lfp
+        if not cell_number % 2:
+            summed_center_sig_half_density += center_lfp
+    print r
+
+    np.save(join(ns.sim_folder, 'summed_lateral_signal_%s_extended.npy' %
+                 (ns.population_sim_name)), summed_lateral_sig)
+    np.save(join(ns.sim_folder, 'summed_center_signal_%s_extended.npy' %
+                 (ns.population_sim_name)), summed_center_sig)
+    np.save(join(ns.sim_folder, 'summed_center_signal_half_density_%s_extended.npy' %
+                 (ns.population_sim_name)), summed_center_sig_half_density)
+
+
+
 def sum_one_population(param_dict, num_cells, num_tsteps):
 
     x_y_z_rot = np.load(os.path.join(param_dict['root_folder'], param_dict['save_folder'],
@@ -750,8 +795,9 @@ def sum_population_mpi_generic(param_dict):
             tag = status.Get_tag()
             if tag == tags.START:
                 # Do the work here
+                print "EXPANDED POPULATION SUM"
                 #try:
-                sum_one_population(param_dict, num_cells, num_tsteps)
+                sum_one_population_expand(param_dict, num_cells, num_tsteps)
                 #except:
                 #    print (param_dict['input_region'], param_dict['distribution'],
                 #           param_dict['mu'], param_dict['correlation'])

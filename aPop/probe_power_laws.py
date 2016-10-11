@@ -28,7 +28,56 @@ def return_freq_and_psd(tvec, sig):
 
     return freqs, power
 
+def probe_power_laws_synapses():
 
+    t = np.arange(2**14) * 2**-14
+
+    sig_dict = {}
+    psd_dict = {}
+
+    sig_dict['delta_syn'] = np.zeros(len(t))
+    sig_dict['delta_syn'][len(t)/2] = 1.0
+    # sig_dict['delta_syn'][len(t)/10.4] = 1.0
+    # sig_dict['delta_syn'][len(t)/1.32] = 1.0
+    # sig_dict['delta_syn'][len(t)/4.5] = 1.0
+
+    sig_dict['exp_syn_0.1ms'] = np.zeros(len(t))
+    sig_dict['exp_syn_0.1ms'][len(t)/2:] += np.exp(-t[:len(t)/2] / 1e-4)
+    # sig_dict['exp_syn_0.1ms'][len(t)/2:] += np.exp(-t[:len(t)/2] / 1e-4)
+    # sig_dict['exp_syn_0.1ms'][len(t)/2:] += np.exp(-t[:len(t)/2] / 1e-4)
+
+    sig_dict['exp_syn_2.0ms'] = np.zeros(len(t))
+    sig_dict['exp_syn_2.0ms'][len(t)/2:] += np.exp(-t[:len(t)/2] / 2e-3)
+
+    noise = 0#np.random.normal(0, .25, size=len(t))
+
+    for key, sig in sig_dict.items():
+        sig += noise
+
+    for key, sig in sig_dict.items():
+        freqs, psd_dict[key] = return_freq_and_psd(t, sig)
+        # psd_dict[key], freqs = ml.psd(sig, Fs=len(t) / t[-1], NFFT=len(t)/1)
+
+    fig = plt.figure(figsize=[18, 9])
+
+    ax1 = fig.add_subplot(211)
+    ax2 = fig.add_subplot(223)#, ylim=[1e-3, 1e1])
+    ax3 = fig.add_subplot(224, ylim=[1e-4, 1e1])#, ylim=[1e-3, 1e1])
+
+    lines = []
+    line_names = []
+    for key, sig in sig_dict.items():
+        l, = ax1.plot(t, sig, lw=2)
+        l, = ax2.loglog(freqs, psd_dict[key], '-x', lw=2)
+        ax3.loglog(freqs, psd_dict[key] / np.max(psd_dict[key]), '-x', lw=2)
+        lines.append(l)
+        line_names.append(key)
+        # print np.sum(psd_dict[key])
+
+    simplify_axes(fig.axes)
+    fig.legend(lines, line_names, frameon=False, loc='lower center', ncol=5)
+    fig.savefig('prope_powerlaws_synapses.png')
+    plt.show()
 
 
 def probe_power_laws():
@@ -135,4 +184,6 @@ def probe_power_laws_changing_pathways():
 
 if __name__ == '__main__':
 
-    probe_power_laws_changing_pathways()
+    # probe_power_laws_changing_pathways()
+    # probe_power_laws_changing_pathways()
+    probe_power_laws_synapses()
