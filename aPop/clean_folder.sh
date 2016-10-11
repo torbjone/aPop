@@ -7,24 +7,14 @@
 #PBS -m abe
 #PBS -A nn4661k
 
-cd /global/work/torbness/aPop/population/simulations
+cd /global/work/torbness/aPop/stick_population/simulations
 
-rm center*_sig_generic_population_hay_*_generic_*_*_*_0???1.npy
-rm center*_sig_generic_population_hay_*_generic_*_*_*_0???2.npy
-rm center*_sig_generic_population_hay_*_generic_*_*_*_0???3.npy
-rm center*_sig_generic_population_hay_*_generic_*_*_*_0???4.npy
-rm center*_sig_generic_population_hay_*_generic_*_*_*_0???5.npy
-rm center*_sig_generic_population_hay_*_generic_*_*_*_0???6.npy
-rm center*_sig_generic_population_hay_*_generic_*_*_*_0???7.npy
-rm center*_sig_generic_population_hay_*_generic_*_*_*_0???8.npy
-rm center*_sig_generic_population_hay_*_generic_*_*_*_0???9.npy
-
-rm lateral*_sig_generic_population_hay_*_generic_*_*_*_0???1.npy
-rm lateral*_sig_generic_population_hay_*_generic_*_*_*_0???2.npy
-rm lateral*_sig_generic_population_hay_*_generic_*_*_*_0???3.npy
-rm lateral*_sig_generic_population_hay_*_generic_*_*_*_0???4.npy
-rm lateral*_sig_generic_population_hay_*_generic_*_*_*_0???5.npy
-rm lateral*_sig_generic_population_hay_*_generic_*_*_*_0???6.npy
-rm lateral*_sig_generic_population_hay_*_generic_*_*_*_0???7.npy
-rm lateral*_sig_generic_population_hay_*_generic_*_*_*_0???8.npy
-rm lateral*_sig_generic_population_hay_*_generic_*_*_*_0???9.npy
+rm *sig_*_0???0.npy
+rm *sig_*_0???2.npy
+rm *sig_*_0???3.npy
+rm *sig_*_0???4.npy
+rm *sig_*_0???5.npy
+rm *sig_*_0???6.npy
+rm *sig_*_0???7.npy
+rm *sig_*_0???8.npy
+rm *sig_*_0???9.npy
