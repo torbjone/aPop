@@ -562,7 +562,7 @@ def plot_population(param_dict):
 
 
 
-def sum_one_population_expand(param_dict, num_cells, num_tsteps):
+def sum_one_population_expand_deprecated(param_dict, num_cells, num_tsteps):
 
     x_y_z_rot = np.load(os.path.join(param_dict['root_folder'], param_dict['save_folder'],
                              'x_y_z_rot_%s.npy' % param_dict['name']))
@@ -603,6 +603,73 @@ def sum_one_population_expand(param_dict, num_cells, num_tsteps):
                  (ns.population_sim_name)), summed_center_sig)
     np.save(join(ns.sim_folder, 'summed_center_signal_half_density_%s_extended.npy' %
                  (ns.population_sim_name)), summed_center_sig_half_density)
+
+
+def sum_one_population_expanded(param_dict, num_cells, num_tsteps):
+
+    x_y_z_rot = np.load(os.path.join(param_dict['root_folder'], param_dict['save_folder'],
+                             'x_y_z_rot_%s.npy' % param_dict['name']))
+
+    pop_radius = 500
+    ns = NeuralSimulation(**param_dict)
+
+    summed_lateral_sig = np.load(join(ns.sim_folder, 'summed_lateral_signal_%s_%dum.npy' %
+                 (ns.population_sim_name, pop_radius)))
+    summed_center_sig  = np.load(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
+                 (ns.population_sim_name, pop_radius)))
+    summed_center_sig_half_density = np.load(join(ns.sim_folder, 'summed_center_signal_half_density_%s_%dum.npy' %
+                 (ns.population_sim_name, pop_radius)))
+
+    subpopulation_idx = 0
+    ns = None
+    pop_radius = 0
+
+    for cell_number in xrange(0, 2000):
+        param_dict.update({'cell_number': cell_number})
+        r = np.sqrt(x_y_z_rot[cell_number, 0]**2 + x_y_z_rot[cell_number, 1]**2)
+        pop_radius = param_dict['population_radii'][subpopulation_idx]
+
+        if r > pop_radius:
+            print "Moving past population of radius ", pop_radius
+            print "r(-1): ", np.sqrt(x_y_z_rot[cell_number - 1, 0]**2 + x_y_z_rot[cell_number - 1, 1]**2)
+            print "r: ", r
+            subpopulation_idx += 1
+
+
+    for cell_number in xrange(2000, 4000):
+        param_dict.update({'cell_number': cell_number})
+
+        r = np.sqrt(x_y_z_rot[cell_number, 0]**2 + x_y_z_rot[cell_number, 1]**2)
+        pop_radius = param_dict['population_radii'][subpopulation_idx]
+
+        ns = NeuralSimulation(**param_dict)
+        sim_name = ns.sim_name
+        lateral_lfp = 1000 * np.load(join(ns.sim_folder, 'lateral_sig_%s.npy' % sim_name))  # uV
+        center_lfp = 1000 * np.load(join(ns.sim_folder, 'center_sig_%s.npy' % sim_name))  # uV
+
+        if r > pop_radius:
+            print "Saving population of radius ", pop_radius
+            print "r(-1): ", np.sqrt(x_y_z_rot[cell_number - 1, 0]**2 + x_y_z_rot[cell_number - 1, 1]**2)
+            print "r: ", r
+            np.save(join(ns.sim_folder, 'summed_lateral_signal_%s_%dum.npy' %
+                         (ns.population_sim_name, pop_radius)), summed_lateral_sig)
+            np.save(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
+                         (ns.population_sim_name, pop_radius)), summed_center_sig)
+            np.save(join(ns.sim_folder, 'summed_center_signal_half_density_%s_%dum.npy' %
+                         (ns.population_sim_name, pop_radius)), summed_center_sig_half_density)
+            subpopulation_idx += 1
+        summed_lateral_sig += lateral_lfp
+        summed_center_sig += center_lfp
+        if not cell_number % 2:
+            summed_center_sig_half_density += center_lfp
+
+    print "Saving population of radius ", r
+    np.save(join(ns.sim_folder, 'summed_lateral_signal_%s_%dum.npy' %
+                 (ns.population_sim_name, r)), summed_lateral_sig)
+    np.save(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
+                 (ns.population_sim_name, r)), summed_center_sig)
+    np.save(join(ns.sim_folder, 'summed_center_signal_half_density_%s_%dum.npy' %
+                 (ns.population_sim_name, r)), summed_center_sig_half_density)
 
 
 
@@ -797,7 +864,8 @@ def sum_population_mpi_generic(param_dict):
                 # Do the work here
                 print "EXPANDED POPULATION SUM"
                 #try:
-                sum_one_population_expand(param_dict, num_cells, num_tsteps)
+                # sum_one_population_expand(param_dict, num_cells, num_tsteps)
+                sum_one_population_expanded(param_dict, num_cells, num_tsteps)
                 #except:
                 #    print (param_dict['input_region'], param_dict['distribution'],
                 #           param_dict['mu'], param_dict['correlation'])

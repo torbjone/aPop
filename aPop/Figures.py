@@ -636,44 +636,45 @@ def plot_all_soma_sigs(param_dict):
 
     elec_z = param_dict['center_electrode_parameters']['z']
     elec_x = param_dict['center_electrode_parameters']['x']
-    elec = np.argmin(np.abs(elec_z - 300) + np.abs(elec_x - 0))
+    elec = np.argmin(np.abs(elec_z - 0)) #+ np.abs(elec_x - 0))
     print elec, elec_x[elec], elec_z[elec]
     correlations = param_dict['correlations']
-    # input_regions = ['distal_tuft', 'homogeneous', 'basal']
-    input_regions = param_dict['input_regions']#['top', 'homogeneous']#, 'bottom']
-    # distributions = ['uniform', 'linear_increase', 'linear_decrease']
-    distributions = ['uniform', 'increase']#, 'increase']
+    input_regions = ['distal_tuft', 'homogeneous', 'basal']
+    # input_regions = param_dict['input_regions']#['top', 'homogeneous']#, 'bottom']
+    distributions = ['uniform', 'linear_increase', 'linear_decrease']
+    # distributions = ['uniform', 'increase']#, 'increase']
 
     plt.close('all')
     fig = plt.figure(figsize=(18, 9))
     fig.subplots_adjust(right=0.95, wspace=0.5, hspace=0.8, left=0.05, top=0.85, bottom=0.2)
 
-    psd_ax_dict = {'ylim': [1e-9, 1e-4],
+    psd_ax_dict = {'ylim': [1e-10, 1e-3],
                     'yscale': 'log',
                     'xscale': 'log',
                     'xlim': [1, 500],
                    #'xlabel': 'Frequency (Hz)',
                    'xticks': [1e0, 10, 100],
                     }
-    num_plot_cols = 10
-    num_plot_rows = 2
+    num_plot_cols = 17
+    num_plot_rows = 3
     fig.text(0.17, 0.95, 'Uniform conductance')
-    fig.text(0.6, 0.95, 'Increasing conductance')
-    # fig.text(0.45, 0.95, 'Linear increasing conductance')
-    # fig.text(0.75, 0.95, 'Linear decreasing conductance')
+    # fig.text(0.6, 0.95, 'Increasing conductance')
+    fig.text(0.45, 0.95, 'Linear increasing conductance')
+    fig.text(0.75, 0.95, 'Linear decreasing conductance')
 
-    # fig.text(0.05, 0.75, 'Distal tuft\ninput', ha='center')
-    # fig.text(0.05, 0.5, 'Homogeneous\ninput', ha='center')
-    # fig.text(0.05, 0.25, 'Basal\ninput', ha='center')
+    fig.text(0.05, 0.75, 'Distal tuft\ninput', ha='center')
+    fig.text(0.05, 0.5, 'Homogeneous\ninput', ha='center')
+    fig.text(0.05, 0.25, 'Basal\ninput', ha='center')
 
-    ax_morph_1 = fig.add_axes([0, 0.05, 0.12, 0.4], frameon=False, xticks=[], yticks=[])
-    ax_morph_2 = fig.add_axes([0, 0.5, 0.12, 0.4], frameon=False, xticks=[], yticks=[])
-    fig_folder = join(param_dict['root_folder'], 'figures')
+    # ax_morph_1 = fig.add_axes([0, 0.05, 0.12, 0.4], frameon=False, xticks=[], yticks=[])
+    # ax_morph_2 = fig.add_axes([0, 0.5, 0.12, 0.4], frameon=False, xticks=[], yticks=[])
+    # fig_folder = join(param_dict['root_folder'], 'figures')
 
-    dist_image = plt.imread(join(fig_folder, 'linear_increase_homogeneous.png'))
-    dist_image2 = plt.imread(join(fig_folder, 'linear_increase_distal_tuft.png'))
-    ax_morph_1.imshow(dist_image)
-    ax_morph_2.imshow(dist_image2)
+    # dist_image = plt.imread(join(fig_folder, 'uniform_homogeneous.png'))
+    # dist_image2 = plt.imread(join(fig_folder, 'uniform_distal_tuft.png'))
+    # dist_image3 = plt.imread(join(fig_folder, 'uniform_basal.png'))
+    # ax_morph_1.imshow(dist_image)
+    # ax_morph_2.imshow(dist_image2)
 
     lines = None
     line_names = None
@@ -696,14 +697,17 @@ def plot_all_soma_sigs(param_dict):
 
                     ns = NeuralSimulation(**param_dict)
                     name = 'summed_center_signal_%s_%dum' % (ns.population_sim_name, pop_size)
+                    name_expanded = 'summed_center_signal_%s_extended' % (ns.population_sim_name)
 
                     lfp = np.load(join(folder, '%s.npy' % name))[elec, :]
+                    lfp += np.load(join(folder, '%s.npy' % name_expanded))[elec, :]
+
 
                     freq, psd = tools.return_freq_and_psd_welch(lfp, ns.welch_dict)
                     f_idx_max = np.argmin(np.abs(freq - param_dict['max_freq']))
                     f_idx_min = np.argmin(np.abs(freq - 1.))
                     l, = ax.plot(freq[f_idx_min:f_idx_max], psd[0][f_idx_min:f_idx_max],
-                                 c=qa_clr_dict[mu], lw=3, clip_on=False, solid_capstyle='butt')
+                                 c=qa_clr_dict[mu], lw=3, clip_on=True, solid_capstyle='butt')
                     lines.append(l)
                     line_names.append(conductance_names[mu])
                     # img = ax.pcolormesh(freq[1:freq_idx], z, psd[:, 1:freq_idx], **im_dict)
@@ -725,7 +729,7 @@ def plot_all_soma_sigs(param_dict):
     fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
     simplify_axes(fig.axes)
     # mark_subplots([ax_morph_homogeneous], 'B', ypos=1.1, xpos=0.1)
-    plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], 'Figure_all_sigs_stick_new_params_adjusted4.png'))
+    plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], 'Figure_all_sigs_new_sum.png'))
     plt.close('all')
 
 
@@ -2348,7 +2352,7 @@ if __name__ == '__main__':
 
     # plot_asymetric_conductance_time_average_movie(param_dict)
     # plot_asymetric_conductance_space_average_movie(param_dict)
-    plot_hbp_illustration(param_dict)
+    # plot_hbp_illustration(param_dict)
     # from param_dicts import vmem_3D_population_params as param_dict
     # input_regions = ['homogeneous']
     # distributions = ['uniform']
@@ -2390,6 +2394,7 @@ if __name__ == '__main__':
     # plot_population_density_effect(param_dict)
     # plot_all_size_dependencies(param_dict)
     # plot_all_soma_sigs_classic(param_dict)
+    plot_all_soma_sigs(param_dict)
 
     # plot_all_soma_sigs(param_dict)
 
