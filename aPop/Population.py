@@ -611,6 +611,7 @@ def sum_one_population_expanded(param_dict, num_cells, num_tsteps):
                              'x_y_z_rot_%s.npy' % param_dict['name']))
 
     pop_radius = 500
+    param_dict.update({'cell_number': 0})
     ns = NeuralSimulation(**param_dict)
 
     summed_lateral_sig = np.load(join(ns.sim_folder, 'summed_lateral_signal_%s_%dum.npy' %
