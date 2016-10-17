@@ -614,6 +614,11 @@ def sum_one_population_expanded(param_dict, num_cells, num_tsteps):
     param_dict.update({'cell_number': 0})
     ns = NeuralSimulation(**param_dict)
 
+    if os.path.isfile(join(ns.sim_folder, 'summed_lateral_signal_%s_%dum.npy' %
+                 (ns.population_sim_name, 637))):
+        print "Already summed ", ns.population_sim_name
+        return None
+
     summed_lateral_sig = np.load(join(ns.sim_folder, 'summed_lateral_signal_%s_%dum.npy' %
                  (ns.population_sim_name, pop_radius)))
     summed_center_sig  = np.load(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
