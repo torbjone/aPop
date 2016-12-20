@@ -628,7 +628,7 @@ def plot_cell_population(param_dict):
 def plot_all_soma_sigs(param_dict):
 
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
-    pop_size = 500
+    pop_size = 637
 
     param_dict.update({
                        'cell_number': 0,
@@ -697,10 +697,10 @@ def plot_all_soma_sigs(param_dict):
 
                     ns = NeuralSimulation(**param_dict)
                     name = 'summed_center_signal_%s_%dum' % (ns.population_sim_name, pop_size)
-                    name_expanded = 'summed_center_signal_%s_extended' % (ns.population_sim_name)
+                    # name_expanded = 'summed_center_signal_%s_extended' % (ns.population_sim_name)
 
                     lfp = np.load(join(folder, '%s.npy' % name))[elec, :]
-                    lfp += np.load(join(folder, '%s.npy' % name_expanded))[elec, :]
+                    # lfp += np.load(join(folder, '%s.npy' % name_expanded))[elec, :]
 
 
                     freq, psd = tools.return_freq_and_psd_welch(lfp, ns.welch_dict)
@@ -729,7 +729,7 @@ def plot_all_soma_sigs(param_dict):
     fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
     simplify_axes(fig.axes)
     # mark_subplots([ax_morph_homogeneous], 'B', ypos=1.1, xpos=0.1)
-    plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], 'Figure_all_sigs_new_sum.png'))
+    plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], 'Figure_all_sigs_637um.png'))
     plt.close('all')
 
 
@@ -1142,7 +1142,7 @@ def plot_depth_resolved(param_dict):
 
     correlations = param_dict['correlations']
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
-    pop_size = 500
+    pop_size = 637
     # mu = 0.0
 
     param_dict.update({#'input_region': 'homogeneous',
@@ -1228,7 +1228,7 @@ def plot_depth_resolved(param_dict):
                         ax.set_xlabel('frequency (Hz)', labelpad=-0)
                         ax.set_ylabel('z')
                         ax.set_xticklabels(['1', '10', '100'])
-                        c_ax = fig.add_axes([0.37, 0.05, 0.005, 0.07])
+                        c_ax = fig.add_axes([0.38, 0.05, 0.005, 0.07])
 
                         cbar = plt.colorbar(img, cax=c_ax, label='$\mu$V$^2$/Hz')
 
@@ -1246,7 +1246,7 @@ def plot_depth_resolved(param_dict):
     # fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
     simplify_axes(fig.axes)
     # mark_subplots([ax_morph_homogeneous], 'B', ypos=1.1, xpos=0.1)
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_6_2.png'))
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_6_637um.png'))
     plt.close('all')
 
 def plot_all_dipoles_classic(param_dict):
@@ -1445,7 +1445,7 @@ def plot_figure_5(param_dict):
                         'homogeneous': 'lightgreen'}
     correlations = param_dict['correlations']
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
-    pop_size = 500
+    pop_size = 637
     mu = 2.0
 
     param_dict.update({'input_region': 'homogeneous',
@@ -1526,17 +1526,112 @@ def plot_figure_5(param_dict):
     simplify_axes(fig.axes)
     mark_subplots([ax_morph_distal_tuft], 'A', ypos=1.1, xpos=0.1)
     mark_subplots([ax_morph_homogeneous], 'B', ypos=1.1, xpos=0.1)
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_5.png'))
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_5_637um.png'))
     plt.close('all')
+
+
+
+def plot_figure_perisomatic_inhibition(param_dict):
+
+    input_region_clr = {'basal': 'b',
+                        'homogeneous': 'r'}
+    correlations = param_dict['correlations']
+    folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
+    pop_size = 637
+    mu = 2.0
+
+    param_dict.update({'input_region': 'homogeneous',
+                       'cell_number': 0,
+                       'distribution': 'linear_increase',
+                       'correlation': 0.0,
+                       'mu': mu,
+                      })
+
+    param_dict['input_region'] = 'basal'
+    ns = NeuralSimulation(**param_dict)
+
+    plt.close('all')
+    fig = plt.figure(figsize=(10, 5))
+
+    fig.subplots_adjust(right=0.95, wspace=0.6, hspace=0.5, left=0., top=0.85, bottom=0.2)
+
+    ax_morph_basal = fig.add_axes([0.00, 0.0, 0.17, 1.0], aspect=1, frameon=False, xticks=[], yticks=[])
+    ax_morph_homogeneous = fig.add_axes([0.17, 0.0, 0.17, 1.0], aspect=1, frameon=False, xticks=[], yticks=[])
+
+    fig_folder = join(param_dict['root_folder'], 'figures')
+    basal_image = plt.imread(join(fig_folder, 'perisomatic_inhibition.png'))
+    homo_image = plt.imread(join(fig_folder, 'homogeneous_excitation.png'))
+
+    ax_morph_basal.imshow(basal_image)
+    ax_morph_homogeneous.imshow(homo_image)
+
+    psd_ax_dict = {'xlim': [1e0, 5e2],
+                   # 'xlabel': 'Frequency (Hz)',
+                   'xticks': [1e0, 10, 100],
+                   'ylim': [1e-9, 1e-3]}
+    lines = None
+    line_names = None
+    num_plot_cols = 7
+
+    for idx, elec in enumerate([0, 60]):
+
+        for c, correlation in enumerate(correlations):
+            param_dict['correlation'] = correlation
+            plot_number = idx * num_plot_cols + c
+            ax_tuft = fig.add_subplot(2, num_plot_cols, plot_number + 4, **psd_ax_dict)
+
+            if idx == 0:
+                ax_tuft.set_title('c = %1.2f' % correlation)
+            if c == 0.0:
+                ax_tuft.set_ylabel('LFP-PSD ($\mu$V$^2$/Hz)', labelpad=-5)
+                ax_tuft.set_xlabel('Frequency (Hz)', labelpad=-0)
+            lines = []
+            line_names = []
+            sum = None
+            for i, input_region in enumerate(['basal', 'homogeneous']):
+                param_dict['input_region'] = input_region
+                ns = NeuralSimulation(**param_dict)
+                name = 'summed_lateral_signal_%s_%dum' % (ns.population_sim_name, pop_size)
+                lfp = np.load(join(folder, '%s.npy' % name))
+                if input_region == "basal":
+                    lfp = -lfp
+                # freq, psd = tools.return_freq_and_psd(ns.timeres_python/1000., lfp[elec])
+                freq, psd = tools.return_freq_and_psd_welch(lfp[elec], ns.welch_dict)
+                if sum is None:
+                    sum = lfp[elec]
+                else:
+                    sum += lfp[elec]
+                f_idx_max = np.argmin(np.abs(freq - param_dict['max_freq']))
+                f_idx_min = np.argmin(np.abs(freq - 1.))
+                l, = ax_tuft.loglog(freq[f_idx_min:f_idx_max], psd[0][f_idx_min:f_idx_max],
+                                    c=input_region_clr[input_region], lw=3, solid_capstyle='round')
+                lines.append(l)
+                line_names.append(input_region)
+            freq, sum_psd = tools.return_freq_and_psd_welch(sum, ns.welch_dict)
+            l, = ax_tuft.loglog(freq[f_idx_min:f_idx_max], sum_psd[0][f_idx_min:f_idx_max],
+                                '-', c='k', lw=1, solid_capstyle='round')
+            lines.append(l)
+            line_names.append("Sum")
+
+            ax_tuft.set_xticklabels(['', '1', '10', '100'])
+            ax_tuft.set_yticks(ax_tuft.get_yticks()[1:-1][::2])
+
+    fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
+    simplify_axes(fig.axes)
+    mark_subplots([ax_morph_basal], 'A', ypos=1.1, xpos=0.1)
+    mark_subplots([ax_morph_homogeneous], 'B', ypos=1.1, xpos=0.1)
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_6_inhibition_test.png'))
+    plt.close('all')
+
 
 
 def plot_figure_3(param_dict):
 
-    panel = 'B'
+    panel = 'A'
     correlations = param_dict['correlations']
     mus = [-0.5, 0.0, 2.0]
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
-    pop_size = 500
+    pop_size = 637
     num_plot_cols = 5
     param_dict.update({'input_region': 'homogeneous',
                        'cell_number': 0,
@@ -1561,7 +1656,7 @@ def plot_figure_3(param_dict):
     psd_ax_dict = {'xlim': [1e0, 5e2],
                    'xlabel': 'Frequency (Hz)',
                    'xticks': [1e0, 10, 100],
-                   'ylim': [1e-9, 1e-5]}
+                   'ylim': [1e-9, 2e-5]}
     lines = None
     line_names = None
 
@@ -1599,7 +1694,7 @@ def plot_figure_3(param_dict):
         fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
     simplify_axes(fig.axes)
     mark_subplots([ax_morph_1], panel, ypos=1.1, xpos=0.1)
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_3%s.png' % panel))
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_3%s_637um.png' % panel))
     plt.close('all')
 
 
@@ -1612,9 +1707,9 @@ def plot_figure_2(param_dict):
     correlations = param_dict['correlations']
     mus = [-0.5, 0.0, 2.0]
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
-    pop_size = 500
+    pop_size = 637
 
-    param_dict.update({'input_region': 'basal',#'distal_tuft',#
+    param_dict.update({'input_region': ['basal','distal_tuft'][1],#
                        'cell_number': 0,
                        'distribution': 'linear_increase',
                        'correlation': 0.0,
@@ -1674,7 +1769,7 @@ def plot_figure_2(param_dict):
     fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
     simplify_axes(fig.axes)
     mark_subplots([ax_morph_1], ypos=0.95, xpos=0.1)
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_2_basal.png'))
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_2_tuft_637um.png'))
     plt.close('all')
 
 
@@ -1762,7 +1857,7 @@ def plot_figure_1_population_LFP(param_dict):
                          0.0: 'passive-frozen',
                          2.0: 'restorative'}
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
-    pop_size = 500
+    pop_size = 637
 
     distribution_1 = 'linear_increase'
     correlation = 0.0
@@ -1881,7 +1976,7 @@ def plot_figure_1_population_LFP(param_dict):
     fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
     simplify_axes(fig.axes)
     mark_subplots([ax_morph_1, ax_morph_2], ypos=1., xpos=0.1)
-    plt.savefig(join(param_dict_1['root_folder'], 'figures', 'Figure_1_population.png'))
+    plt.savefig(join(param_dict_1['root_folder'], 'figures', 'Figure_1_population_637um.png'))
     plt.close('all')
 
 def plot_figure_asymmetric_population_LFP():
@@ -2338,7 +2433,7 @@ if __name__ == '__main__':
     # plot_decomposed_dipole()
     # sys.exit()
 
-    # conductance = 'generic'
+    conductance = 'generic'
     # conductance = 'stick_generic'
     # conductance = 'classic'
 
@@ -2358,17 +2453,25 @@ if __name__ == '__main__':
     # distributions = ['uniform']
     # correlations = [0.0]
     # for i, input_region in enumerate(input_regions):
-    #     for d, distribution in enumerate(distributions):
-    #         for c, correlation in enumerate(correlations):
-    #             param_dict.update({
-    #                                'mu': 0.0,
-    #                                'distribution': distribution,
-    #                                 'input_region': input_region,
-    #                                 'correlation': correlation,
-    #                                 'cell_number': 0,
-    #                               })
-    #
-    #             plot_3d_rot_pop(param_dict)
+        # for d, distribution in enumerate(distributions):
+        # for d, conductance_type in enumerate(["active"]):
+        #     for c, correlation in enumerate(correlations):
+                # param_dict.update({
+                #                    'mu': 0.0,
+                #                    'distribution': distribution,
+                #                     'input_region': input_region,
+                #                     'correlation': correlation,
+                #                     'cell_number': 0,
+                #                   })
+                # param_dict.update({
+                #                    'mu': 0.0,
+                #                    'conductance_type': "active",
+                #                     'input_region': input_region,
+                #                     'correlation': correlation,
+                #                     'cell_number': 0,
+                #                   })
+
+                # plot_3d_rot_pop(param_dict)
 
     # plot_coherence(param_dict)
     # plot_generic_population_LFP(param_dict)
@@ -2389,12 +2492,13 @@ if __name__ == '__main__':
     # plot_figure_2_normalized(param_dict)
     # plot_figure_3(param_dict)
     # plot_figure_5(param_dict)
+    plot_figure_perisomatic_inhibition(param_dict)
     # plot_leski_13(param_dict)
     # plot_population_size_effect(param_dict)
     # plot_population_density_effect(param_dict)
     # plot_all_size_dependencies(param_dict)
     # plot_all_soma_sigs_classic(param_dict)
-    plot_all_soma_sigs(param_dict)
+    # plot_all_soma_sigs(param_dict)
 
     # plot_all_soma_sigs(param_dict)
 

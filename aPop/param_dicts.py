@@ -47,6 +47,7 @@ stick_center_electrode_parameters['method'] = 'linesource'
 # Time resolution of 2**-4 is almost identical to 2**-5
 dt = 2**-4
 end_T = 2**13 - dt
+# end_T = 2**10 - dt
 cut_off = 2000
 
 shape_function_params = {'name': 'shape_function',
@@ -127,6 +128,7 @@ generic_population_params = {'input_type': 'distributed_delta',
                              'end_t': end_T,
                              'syn_tau': dt * 3,
                              'syn_weight': 1e-3,
+                             'inhibitory_syn_weight': -1e-3 * 5.,
                              'max_freq': 500,
                              'holding_potential': -80,
                              'conductance_type': 'generic',
@@ -135,10 +137,15 @@ generic_population_params = {'input_type': 'distributed_delta',
                              'center_electrode_parameters': center_electrode_parameters,
                              'root_folder': root_folder,
                              'num_synapses': 1000,
+                             'num_inhibitory_synapses': 100,
                              'input_firing_rate': 5,
-                             'input_regions': ['homogeneous', 'distal_tuft', 'basal'],
-                             'mus': [-0.5, 0.0, 2.0],
-                             'distributions': ['uniform', 'linear_increase', 'linear_decrease'],
+                             'inhibitory_input_firing_rate': 10,
+                             'input_regions': ["balanced", 'perisomatic_inhibition'],
+                                               # 'homogeneous',
+                                               # 'distal_tuft',
+                                               # 'basal'],
+                             'mus': [2.0],#[-0.5, 0.0, 2.0],
+                             'distributions': ['linear_increase'],#, 'uniform', 'linear_decrease'],
                              'correlations': [0.0, 0.01, 0.1, 1.0]
                              }
 

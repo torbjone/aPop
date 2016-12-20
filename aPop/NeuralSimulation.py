@@ -312,11 +312,20 @@ class NeuralSimulation:
 
         # Define synapse parameters
         synapse_params = {
-            'e': 0.,                   # reversal potential
+            'e': 0.,                   # reversal potential (not used for ExpSynI)
             'syntype': syntype,       # synapse type
             'tau': self.param_dict['syn_tau'],                # syn. time constant
             'weight': self.param_dict['syn_weight'],            # syn. weight
             'record_current': False,
+            'color': 'r',
+        }
+        inhibitory_synapse_params = {
+            'e': 0.,                   # reversal potential (not used for ExpSynI)
+            'syntype': syntype,       # synapse type
+            'tau': self.param_dict['syn_tau'],                # syn. time constant
+            'weight': self.param_dict['inhibitory_syn_weight'],            # syn. weight
+            'record_current': False,
+            'color': 'b',
         }
 
         if self.input_region == 'distal_tuft':
@@ -335,6 +344,20 @@ class NeuralSimulation:
             input_pos = ['dend']
             maxpos = 10000
             minpos = -10000
+        elif self.input_region == 'perisomatic_inhibition':
+            inhibitory_input_pos = ['dend']
+            inhibitory_maxpos = 10000
+            inhibitory_minpos = -10000
+
+        elif self.input_region == 'balanced':
+            inhibitory_input_pos = ['dend']
+            inhibitory_maxpos = 10000
+            inhibitory_minpos = -10000
+
+            excitatory_input_pos = ['apic', 'dend']
+            excitatory_maxpos = 10000
+            excitatory_minpos = -10000
+
         elif self.input_region == 'top':
             input_pos = ['dend']
             maxpos = 10000
@@ -365,17 +388,102 @@ class NeuralSimulation:
             cell_input_idxs_homo = cell.get_rand_idx_area_norm(section=input_pos_homo, nidx=num_synapses_homo,
                                                                z_min=minpos_homo, z_max=maxpos_homo)
             cell_input_idxs = np.r_[cell_input_idxs_homo, cell_input_idxs_tuft]
+
+        elif self.input_region == 'balanced':
+
+            cell_input_idxs_in = cell.get_rand_idx_area_norm(section=inhibitory_input_pos,
+                                                             nidx=self.param_dict['num_inhibitory_synapses'],
+                                                             z_min=inhibitory_minpos,
+                                                             z_max=inhibitory_maxpos)
+
+            cell_input_idxs_ex = cell.get_rand_idx_area_norm(section=excitatory_input_pos,
+                                                             nidx=self.param_dict['num_synapses'],
+                                                             z_min=excitatory_minpos,
+                                                             z_max=excitatory_maxpos)
+        elif self.input_region == 'perisomatic_inhibition':
+
+            cell_input_idxs_in = cell.get_rand_idx_area_norm(section=inhibitory_input_pos,
+                                                             nidx=self.param_dict['num_inhibitory_synapses'],
+                                                             z_min=inhibitory_minpos,
+                                                             z_max=inhibitory_maxpos)
+
         else:
-            cell_input_idxs = cell.get_rand_idx_area_norm(section=input_pos, nidx=num_synapses, z_min=minpos, z_max=maxpos)
+            cell_input_idxs = cell.get_rand_idx_area_norm(section=input_pos,
+                                                          nidx=num_synapses, z_min=minpos, z_max=maxpos)
 
         if self.correlation < 1e-6:
-            spike_trains = LFPy.inputgenerators.stationary_poisson(num_synapses, firing_rate, cell.tstartms, cell.tstopms)
+            if self.input_region == 'balanced':
+                spike_trains_in = LFPy.inputgenerators.stationary_poisson(
+                    self.param_dict['num_inhibitory_synapses'], self.param_dict['inhibitory_input_firing_rate'],
+                    cell.tstartms, cell.tstopms)
+                spike_trains_ex = LFPy.inputgenerators.stationary_poisson(
+                    self.param_dict['num_synapses'], self.param_dict['input_firing_rate'],
+                    cell.tstartms, cell.tstopms)
+
+                synapses_ex = self.set_input_spiketrain(cell, cell_input_idxs_ex,
+                                                        spike_trains_ex, synapse_params)
+                synapses_in = self.set_input_spiketrain(cell, cell_input_idxs_in,
+                                                        spike_trains_in, inhibitory_synapse_params)
+
+                synapses = synapses_ex + synapses_in
+            elif self.input_region == 'perisomatic_inhibition':
+                spike_trains_in = LFPy.inputgenerators.stationary_poisson(
+                    self.param_dict['num_inhibitory_synapses'], self.param_dict['inhibitory_input_firing_rate'],
+                    cell.tstartms, cell.tstopms)
+
+
+                synapses_in = self.set_input_spiketrain(cell, cell_input_idxs_in,
+                                                        spike_trains_in, inhibitory_synapse_params)
+
+                synapses = synapses_in
+            else:
+                spike_trains = LFPy.inputgenerators.stationary_poisson(num_synapses,
+                                                                   firing_rate, cell.tstartms, cell.tstopms)
+                synapses = self.set_input_spiketrain(cell, cell_input_idxs, spike_trains, synapse_params)
+
         else:
-            all_spiketimes = np.load(join(self.param_dict['root_folder'], self.param_dict['save_folder'],
-                             'all_spike_trains_%s.npy' % self.param_dict['name'])).item()
-            spike_train_idxs = np.random.choice(np.arange(int(num_synapses/self.correlation)), num_synapses, replace=False)
-            spike_trains = [all_spiketimes[idx] for idx in spike_train_idxs]
-        synapses = self.set_input_spiketrain(cell, cell_input_idxs, spike_trains, synapse_params)
+            if self.input_region == 'balanced':
+                all_spiketimes_ex = np.load(join(self.param_dict['root_folder'], self.param_dict['save_folder'],
+                                 'all_spike_trains_%s.npy' % self.param_dict['name'])).item()
+                all_spiketimes_in = np.load(join(self.param_dict['root_folder'], self.param_dict['save_folder'],
+                                 'all_inhibitory_spike_trains_%s.npy' % self.param_dict['name'])).item()
+                spike_train_idxs_ex = np.random.choice(np.arange(int(num_synapses/self.correlation)),
+                                                    num_synapses, replace=False)
+
+                spike_train_idxs_in = np.random.choice(
+                    np.arange(int(self.param_dict['num_inhibitory_synapses']/self.correlation)),
+                    self.param_dict['num_inhibitory_synapses'], replace=False)
+
+                spike_trains_ex = [all_spiketimes_ex[idx] for idx in spike_train_idxs_ex]
+                spike_trains_in = [all_spiketimes_in[idx] for idx in spike_train_idxs_in]
+
+                synapses_ex = self.set_input_spiketrain(cell, cell_input_idxs_ex,
+                                                        spike_trains_ex, synapse_params)
+                synapses_in = self.set_input_spiketrain(cell, cell_input_idxs_in,
+                                                        spike_trains_in, inhibitory_synapse_params)
+                synapses = synapses_ex + synapses_in
+            elif self.input_region == 'perisomatic_inhibition':
+
+                all_spiketimes_in = np.load(join(self.param_dict['root_folder'], self.param_dict['save_folder'],
+                                 'all_inhibitory_spike_trains_%s.npy' % self.param_dict['name'])).item()
+
+                spike_train_idxs_in = np.random.choice(
+                    np.arange(int(self.param_dict['num_inhibitory_synapses']/self.correlation)),
+                    self.param_dict['num_inhibitory_synapses'], replace=False)
+
+                spike_trains_in = [all_spiketimes_in[idx] for idx in spike_train_idxs_in]
+
+                synapses_in = self.set_input_spiketrain(cell, cell_input_idxs_in,
+                                                        spike_trains_in, inhibitory_synapse_params)
+                synapses = synapses_in
+            else:
+                all_spiketimes = np.load(join(self.param_dict['root_folder'], self.param_dict['save_folder'],
+                                 'all_spike_trains_%s.npy' % self.param_dict['name'])).item()
+
+                spike_train_idxs = np.random.choice(np.arange(int(num_synapses/self.correlation)),
+                                                    num_synapses, replace=False)
+                spike_trains = [all_spiketimes[idx] for idx in spike_train_idxs]
+                synapses = self.set_input_spiketrain(cell, cell_input_idxs, spike_trains, synapse_params)
 
         return cell, synapses
 
@@ -454,7 +562,10 @@ class NeuralSimulation:
         [ax.plot([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]],
                  lw=1.5, color='0.5', zorder=0, alpha=1)
             for idx in xrange(len(cell.xmid))]
-        [ax.plot(cell.xmid[idx], cell.zmid[idx], 'g.', ms=4) for idx in cell.synidx]
+
+        # [ax.plot(cell.xmid[idx], cell.zmid[idx], 'g.', ms=4) for idx in cell.synidx]
+        for syn in cell.synapses:
+            ax.plot(cell.xmid[syn.idx], cell.zmid[syn.idx], syn.color, marker='.', ms=4)
 
     def _draw_all_elecs_with_distance(self, cell):
 

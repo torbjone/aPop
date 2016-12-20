@@ -507,6 +507,8 @@ def plot_simple_model_LFP(param_dict):
 
 
 def initialize_population(param_dict):
+
+
     print "Initializing cell positions and rotations ..."
     x_y_z_rot = np.zeros((param_dict['num_cells'], 4))
     for cell_number in range(param_dict['num_cells']):
@@ -539,28 +541,46 @@ def initialize_population(param_dict):
     np.save(join(param_dict['root_folder'], param_dict['save_folder'],
                          'all_spike_trains_%s.npy' % param_dict['name']), all_spiketimes)
 
+    print "Initializing inhibitory input spike trains"
+    plt.seed(1234)
+    num_synapses = param_dict['num_inhibitory_synapses']
+    firing_rate = param_dict['inhibitory_input_firing_rate']
+    num_trains = int(num_synapses/0.01)
+    all_spiketimes = {}
+    input_method = LFPy.inputgenerators.stationary_poisson
+    for idx in xrange(num_trains):
+        all_spiketimes[idx] = input_method(1, firing_rate, -param_dict['cut_off'], param_dict['end_t'])[0]
+    np.save(join(param_dict['root_folder'], param_dict['save_folder'],
+                         'all_inhibitory_spike_trains_%s.npy' % param_dict['name']), all_spiketimes)
+
 
 def plot_population(param_dict):
     print "Plotting population"
     x_y_z_rot = np.load(join(param_dict['root_folder'], param_dict['save_folder'],
                          'x_y_z_rot_%s.npy' % param_dict['name']))
-    all_spiketimes = np.load(join(param_dict['root_folder'], param_dict['save_folder'],
-                         'all_spike_trains_%s.npy' % param_dict['name'])).item()
 
     plt.subplot(221, xlabel='x', ylabel='y', aspect=1, frameon=False)
-    plt.scatter(x_y_z_rot[:, 0], x_y_z_rot[:, 1], edgecolor='none', s=2)
+    plt.scatter(x_y_z_rot[:, 0], x_y_z_rot[:, 1], edgecolor='none', s=2, color='k')
 
     plt.subplot(222, xlabel='x', ylabel='z', aspect=1, frameon=False)
-    plt.scatter(x_y_z_rot[:, 0], x_y_z_rot[:, 2], edgecolor='none', s=2)
+    plt.scatter(x_y_z_rot[:, 0], x_y_z_rot[:, 2], edgecolor='none', s=2, color='k')
 
     plt.subplot(212, ylabel='Cell number', xlabel='Time', title='Raster plot', frameon=False)
+    all_spiketimes = np.load(join(param_dict['root_folder'], param_dict['save_folder'],
+                         'all_spike_trains_%s.npy' % param_dict['name'])).item()
     for idx in range(200):
-        plt.scatter(all_spiketimes[idx], np.ones(len(all_spiketimes[idx])) * idx, edgecolors='none', s=4)
+        plt.scatter(all_spiketimes[idx], np.ones(len(all_spiketimes[idx])) * idx, color='r',
+                    edgecolors='none', s=4)
 
+    if os.path.isfile(join(param_dict['root_folder'], param_dict['save_folder'],
+                         'all_inhibitory_spike_trains_%s.npy' % param_dict['name'])):
+        all_spiketimes_in = np.load(join(param_dict['root_folder'], param_dict['save_folder'],
+                             'all_inhibitory_spike_trains_%s.npy' % param_dict['name'])).item()
+    for idx in range(200):
+        plt.scatter(all_spiketimes_in[idx], np.ones(len(all_spiketimes_in[idx])) * idx + 200,
+                    edgecolors='none', s=4, color='b')
     plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'],
                      'population_%s.png' % param_dict['name']))
-
-
 
 def sum_one_population_expand_deprecated(param_dict, num_cells, num_tsteps):
 
@@ -630,19 +650,19 @@ def sum_one_population_expanded(param_dict, num_cells, num_tsteps):
     ns = None
     pop_radius = 0
 
-    for cell_number in xrange(0, 2000):
-        param_dict.update({'cell_number': cell_number})
-        r = np.sqrt(x_y_z_rot[cell_number, 0]**2 + x_y_z_rot[cell_number, 1]**2)
-        pop_radius = param_dict['population_radii'][subpopulation_idx]
+    # for cell_number in xrange(0, 2000):
+    #     param_dict.update({'cell_number': cell_number})
+    #     r = np.sqrt(x_y_z_rot[cell_number, 0]**2 + x_y_z_rot[cell_number, 1]**2)
+    #     pop_radius = param_dict['population_radii'][subpopulation_idx]
+    #
+    #     if r > pop_radius:
+    #         print "Moving past population of radius ", pop_radius
+    #         print "r(-1): ", np.sqrt(x_y_z_rot[cell_number - 1, 0]**2 + x_y_z_rot[cell_number - 1, 1]**2)
+    #         print "r: ", r
+    #         subpopulation_idx += 1
 
-        if r > pop_radius:
-            print "Moving past population of radius ", pop_radius
-            print "r(-1): ", np.sqrt(x_y_z_rot[cell_number - 1, 0]**2 + x_y_z_rot[cell_number - 1, 1]**2)
-            print "r: ", r
-            subpopulation_idx += 1
 
-
-    for cell_number in xrange(2000, 4000):
+    for cell_number in xrange(0, 4000):
         param_dict.update({'cell_number': cell_number})
 
         r = np.sqrt(x_y_z_rot[cell_number, 0]**2 + x_y_z_rot[cell_number, 1]**2)
@@ -691,14 +711,14 @@ def sum_one_population(param_dict, num_cells, num_tsteps):
     ns = None
     pop_radius = 0
 
-    sample_freq = sf.fftfreq(num_tsteps, d=param_dict['timeres_python'] / 1000.)
-    pidxs = np.where(sample_freq >= 0)
+    # sample_freq = sf.fftfreq(num_tsteps, d=param_dict['timeres_python'] / 1000.)
+    # pidxs = np.where(sample_freq >= 0)
     # freqs = sample_freq[pidxs]
-    xfft_norm_sum_lateral = np.zeros((len(param_dict['lateral_electrode_parameters']['x']), 
-                                      len(pidxs[0])), dtype=complex)
-    xfft_norm_sum_center = np.zeros((len(param_dict['center_electrode_parameters']['x']), 
-                                     len(pidxs[0])), dtype=complex)
-
+    # xfft_norm_sum_lateral = np.zeros((len(param_dict['lateral_electrode_parameters']['x']),
+    #                                   len(pidxs[0])), dtype=complex)
+    # xfft_norm_sum_center = np.zeros((len(param_dict['center_electrode_parameters']['x']),
+    #                                  len(pidxs[0])), dtype=complex)
+    r = None
     for cell_number in xrange(num_cells):
         param_dict.update({'cell_number': cell_number})
 
@@ -709,30 +729,30 @@ def sum_one_population(param_dict, num_cells, num_tsteps):
         sim_name = ns.sim_name
         lateral_lfp = 1000 * np.load(join(ns.sim_folder, 'lateral_sig_%s.npy' % sim_name))  # uV
         center_lfp = 1000 * np.load(join(ns.sim_folder, 'center_sig_%s.npy' % sim_name))  # uV
-        s_lateral = sf.fft(lateral_lfp, axis=1)[:, pidxs[0]]
-        s_center = sf.fft(center_lfp, axis=1)[:, pidxs[0]]
-        s_norm_lateral = s_lateral / np.abs(s_lateral)
-        s_norm_center = s_center / np.abs(s_center)
+        # s_lateral = sf.fft(lateral_lfp, axis=1)[:, pidxs[0]]
+        # s_center = sf.fft(center_lfp, axis=1)[:, pidxs[0]]
+        # s_norm_lateral = s_lateral / np.abs(s_lateral)
+        # s_norm_center = s_center / np.abs(s_center)
 
         # freqs, lfp_psd = tools.return_freq_and_psd_welch(lfp[:, :], ns.welch_dict)
         if not summed_lateral_sig.shape == lateral_lfp.shape:
             print "Reshaping LFP time signal", lateral_lfp.shape
             summed_lateral_sig = np.zeros(lateral_lfp.shape)
 
-        if not xfft_norm_sum_lateral.shape == s_norm_lateral.shape:
-            print "Reshaping coherence signal", xfft_norm_sum_lateral.shape, s_norm_lateral.shape
-            xfft_norm_sum_lateral = np.zeros(s_norm_lateral.shape)
+        # if not xfft_norm_sum_lateral.shape == s_norm_lateral.shape:
+        #     print "Reshaping coherence signal", xfft_norm_sum_lateral.shape, s_norm_lateral.shape
+        #     xfft_norm_sum_lateral = np.zeros(s_norm_lateral.shape)
 
         if not summed_center_sig.shape == center_lfp.shape:
             print "Reshaping LFP time signal", center_lfp.shape
             summed_center_sig = np.zeros(center_lfp.shape)
 
-        if not xfft_norm_sum_center.shape == s_norm_center.shape:
-            print "Reshaping coherence signal", xfft_norm_sum_center.shape, s_norm_center.shape
-            xfft_norm_sum_center = np.zeros(s_norm_center.shape)
+        # if not xfft_norm_sum_center.shape == s_norm_center.shape:
+        #     print "Reshaping coherence signal", xfft_norm_sum_center.shape, s_norm_center.shape
+        #     xfft_norm_sum_center = np.zeros(s_norm_center.shape)
 
-        xfft_norm_sum_lateral[:] += s_norm_lateral[:]
-        xfft_norm_sum_center[:] += s_norm_center[:]
+        # xfft_norm_sum_lateral[:] += s_norm_lateral[:]
+        # xfft_norm_sum_center[:] += s_norm_center[:]
 
         if r > pop_radius:
             print "Saving population of radius ", pop_radius
@@ -751,16 +771,17 @@ def sum_one_population(param_dict, num_cells, num_tsteps):
             summed_center_sig_half_density += center_lfp
 
     print "Saving population of radius ", pop_radius
+    print "Actual radius: ", r
     np.save(join(ns.sim_folder, 'summed_lateral_signal_%s_%dum.npy' %
                  (ns.population_sim_name, pop_radius)), summed_lateral_sig)
     np.save(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
                  (ns.population_sim_name, pop_radius)), summed_center_sig)
     np.save(join(ns.sim_folder, 'summed_center_signal_half_density_%s_%dum.npy' %
                  (ns.population_sim_name, pop_radius)), summed_center_sig_half_density)
-    c_phi_lateral = (np.abs(xfft_norm_sum_lateral) ** 2 - num_cells) / (num_cells * (num_cells - 1))
-    c_phi_center = (np.abs(xfft_norm_sum_center) ** 2 - num_cells) / (num_cells * (num_cells - 1))
-    np.save(join(ns.sim_folder, 'c_phi_lateral_%s.npy' % ns.population_sim_name), c_phi_lateral)
-    np.save(join(ns.sim_folder, 'c_phi_center_%s.npy' % ns.population_sim_name), c_phi_center)
+    # c_phi_lateral = (np.abs(xfft_norm_sum_lateral) ** 2 - num_cells) / (num_cells * (num_cells - 1))
+    # c_phi_center = (np.abs(xfft_norm_sum_center) ** 2 - num_cells) / (num_cells * (num_cells - 1))
+    # np.save(join(ns.sim_folder, 'c_phi_lateral_%s.npy' % ns.population_sim_name), c_phi_lateral)
+    # np.save(join(ns.sim_folder, 'c_phi_center_%s.npy' % ns.population_sim_name), c_phi_center)
 
 def count_cell_number_for_size(param_dict, num_cells):
 
@@ -816,7 +837,7 @@ def sum_population_mpi_generic(param_dict):
     rank = comm.rank        # rank of this process
     status = MPI.Status()   # get MPI status object
     num_workers = size - 1
-    num_cells = 2000 if at_stallo else 5
+    num_cells = 4000 if at_stallo else 5
     num_tsteps = int(round(param_dict['end_t']/param_dict['timeres_python'] + 1))
 
     if size == 1:
@@ -869,15 +890,15 @@ def sum_population_mpi_generic(param_dict):
             if tag == tags.START:
                 # Do the work here
                 print "EXPANDED POPULATION SUM"
-                #try:
-                # sum_one_population_expand(param_dict, num_cells, num_tsteps)
-                sum_one_population_expanded(param_dict, num_cells, num_tsteps)
-                #except:
-                #    print (param_dict['input_region'], param_dict['distribution'],
-                #           param_dict['mu'], param_dict['correlation'])
-                #     print "\033[91mNode %d exiting with ERROR\033[0m" % rank
-                #     comm.send(None, dest=0, tag=tags.ERROR)
-                #     sys.exit()
+                try:
+                    sum_one_population(param_dict, num_cells, num_tsteps)
+                # sum_one_population_expanded(param_dict, num_cells, num_tsteps)
+                except:
+                    print (param_dict['input_region'], param_dict['distribution'],
+                          param_dict['mu'], param_dict['correlation'])
+                    print "\033[91mNode %d exiting with ERROR\033[0m" % rank
+                    comm.send(None, dest=0, tag=tags.ERROR)
+                    sys.exit()
                 comm.send(None, dest=0, tag=tags.DONE)
             elif tag == tags.EXIT:
                 print "\033[93m%d exiting\033[0m" % rank
@@ -1000,15 +1021,15 @@ def PopulationMPIgeneric():
 
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
-        num_cells = 2000 if at_stallo else 100
+        num_cells = 4000 if at_stallo else 100
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['mus']) *
                      len(param_dict['distributions']) * len(param_dict['correlations']) * (num_cells))
 
-        for input_region in param_dict['input_regions'][::-1]:
-            for distribution in param_dict['distributions'][::-1]:
-                for mu in param_dict['mus'][::-1]:
-                    for correlation in param_dict['correlations'][::-1]:
-                        for cell_idx in range(2000, 4000)[::-1]:
+        for input_region in param_dict['input_regions']:
+            for distribution in param_dict['distributions']:
+                for mu in param_dict['mus']:
+                    for correlation in param_dict['correlations']:
+                        for cell_idx in range(0, num_cells):
                             task += 1
                             sent = False
                             while not sent:
@@ -1164,7 +1185,6 @@ if __name__ == '__main__':
 
     # count_cell_number_for_size(param_dict, 2500)
     # sys.exit()
-
 
     if len(sys.argv) >= 3:
         cell_number = int(sys.argv[3])
