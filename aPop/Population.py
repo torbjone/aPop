@@ -770,14 +770,14 @@ def sum_one_population(param_dict, num_cells, num_tsteps):
         if not cell_number % 2:
             summed_center_sig_half_density += center_lfp
 
-    print "Saving population of radius ", pop_radius
-    print "Actual radius: ", r
+    # print "Saving population of radius ", pop_radius
+    # print "Actual radius: ", r
     np.save(join(ns.sim_folder, 'summed_lateral_signal_%s_%dum.npy' %
-                 (ns.population_sim_name, pop_radius)), summed_lateral_sig)
+                 (ns.population_sim_name, r)), summed_lateral_sig)
     np.save(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
-                 (ns.population_sim_name, pop_radius)), summed_center_sig)
+                 (ns.population_sim_name, r)), summed_center_sig)
     np.save(join(ns.sim_folder, 'summed_center_signal_half_density_%s_%dum.npy' %
-                 (ns.population_sim_name, pop_radius)), summed_center_sig_half_density)
+                 (ns.population_sim_name, r)), summed_center_sig_half_density)
     # c_phi_lateral = (np.abs(xfft_norm_sum_lateral) ** 2 - num_cells) / (num_cells * (num_cells - 1))
     # c_phi_center = (np.abs(xfft_norm_sum_center) ** 2 - num_cells) / (num_cells * (num_cells - 1))
     # np.save(join(ns.sim_folder, 'c_phi_lateral_%s.npy' % ns.population_sim_name), c_phi_lateral)
@@ -889,7 +889,7 @@ def sum_population_mpi_generic(param_dict):
             tag = status.Get_tag()
             if tag == tags.START:
                 # Do the work here
-                print "EXPANDED POPULATION SUM"
+                #print "EXPANDED POPULATION SUM"
                 try:
                     sum_one_population(param_dict, num_cells, num_tsteps)
                 # sum_one_population_expanded(param_dict, num_cells, num_tsteps)

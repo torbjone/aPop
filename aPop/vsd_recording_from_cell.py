@@ -53,7 +53,8 @@ for x in range(len(x_box)):
     for y in range(len(y_box)):
         for z in range(len(z_box)):
             if not cell_area_in_box[x, y, z] == 0.0:
-                # TODO: I THINK THIS IS WRONG! SHOULD BE AVERAGE, NOT SUM (-60 mV + -60 mV = -120 mV)
+                # IS THIS WRONG? SHOULD BE AVERAGE, NOT SUM (-60 mV + -60 mV = -120 mV)?
+                # THEN AGAIN; IT SHOULD BE AREA NORMALIZED...
                 vsd[x, y, z, :] /= 1.0 * cell_area_in_box[x, y, z]
             else:
                 vsd[x, y, z, :] = np.nan
