@@ -991,7 +991,7 @@ def PopulationMPIclassic():
 
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
-        num_cells = 2000 if at_stallo else 2
+        num_cells = 20 if at_stallo else 2
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['holding_potentials']) *
                      len(param_dict['conductance_types']) * len(param_dict['correlations']) * (num_cells))
 
