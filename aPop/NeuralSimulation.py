@@ -189,7 +189,7 @@ class NeuralSimulation:
                 with suppress_stdout_stderr():
                     neuron.load_mechanisms(join(self.neuron_models, 'hay', 'mod'))
 
-                from hay_active_declarations import active_declarations
+                # from hay_active_declarations import active_declarations
                 cell_params = {
                     'morphology': join(self.neuron_models, 'hay', 'cell1.hoc'),
                     'v_init': self.holding_potential if self.holding_potential is not None else -70,
