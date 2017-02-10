@@ -137,7 +137,6 @@ class NeuralSimulation:
 
     def _return_cell(self, cell_x_y_z_rotation=None):
 
-
         remove_lists = {'active': [],
                         'passive': ["Nap_Et2", "NaTa_t", "NaTs2_t", "SKv3_1",
                                     "SK_E2", "K_Tst", "K_Pst", "Im", "Ih",
@@ -149,9 +148,7 @@ class NeuralSimulation:
                         'Ih_frozen': ["Nap_Et2", "NaTa_t", "NaTs2_t", "SKv3_1",
                                "SK_E2", "K_Tst", "K_Pst", "Im", "Ih",
                                "CaDynamics_E2", "Ca_LVAst", "Ca"]
-
                         }
-
 
         if 'i_QA' not in neuron.h.__dict__.keys():
             print "",

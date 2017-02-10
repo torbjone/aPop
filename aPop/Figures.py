@@ -2354,7 +2354,7 @@ def plot_figure_1_single_cell_LFP_classic(param_dict):
     # fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
     simplify_axes(fig.axes)
     mark_subplots([ax_morph_1, ax_morph_2, ax_morph_3], ["B", "C", "D"], ypos=1., xpos=0.05)
-    plt.savefig(join(param_dict_1['root_folder'], 'figures', 'Figure_1_single_cell2_classic.png'))
+    plt.savefig(join(param_dict_1['root_folder'], 'figures', 'Figure_1_single_cell_classic.png'))
     plt.close('all')
 
 
