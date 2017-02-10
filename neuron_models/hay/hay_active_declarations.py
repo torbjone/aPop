@@ -10,33 +10,33 @@ import neuron
 nrn = neuron.h
 import LFPy
 
-def make_cell_uniform(Vrest=-80):
-
-
-    neuron.h.t = 0
-    neuron.h.finitialize(Vrest)
-    neuron.h.fcurrent()
-    for sec in neuron.h.allsec():
-        for seg in sec:
-            seg.e_pas = seg.v
-            if neuron.h.ismembrane("na_ion"):
-                seg.e_pas += seg.ina/seg.g_pas
-            if neuron.h.ismembrane("k_ion"):
-                seg.e_pas += seg.ik/seg.g_pas
-            if neuron.h.ismembrane("ca_ion"):
-                seg.e_pas = seg.e_pas + seg.ica/seg.g_pas
-            if neuron.h.ismembrane("Ih"):
-                seg.e_pas += seg.ihcn_Ih/seg.g_pas
-            if neuron.h.ismembrane("Ih_z"):
-                seg.e_pas += seg.ih_Ih_z/seg.g_pas
-            if neuron.h.ismembrane("Ih_frozen"):
-                seg.e_pas += seg.ihcn_Ih_frozen/seg.g_pas
-            if neuron.h.ismembrane("Ih_linearized_mod"):
-                seg.e_pas += seg.ihcn_Ih_linearized_mod/seg.g_pas
-            if neuron.h.ismembrane("Ih_linearized_v2"):
-                seg.e_pas += seg.ihcn_Ih_linearized_v2/seg.g_pas
-            if neuron.h.ismembrane("Ih_linearized_v2_frozen"):
-                seg.e_pas += seg.ihcn_Ih_linearized_v2_frozen/seg.g_pas
+# def make_cell_uniform(Vrest=-80):
+#
+#
+#     neuron.h.t = 0
+#     neuron.h.finitialize(Vrest)
+#     neuron.h.fcurrent()
+#     for sec in neuron.h.allsec():
+#         for seg in sec:
+#             seg.e_pas = seg.v
+#             if neuron.h.ismembrane("na_ion"):
+#                 seg.e_pas += seg.ina/seg.g_pas
+#             if neuron.h.ismembrane("k_ion"):
+#                 seg.e_pas += seg.ik/seg.g_pas
+#             if neuron.h.ismembrane("ca_ion"):
+#                 seg.e_pas = seg.e_pas + seg.ica/seg.g_pas
+#             if neuron.h.ismembrane("Ih"):
+#                 seg.e_pas += seg.ihcn_Ih/seg.g_pas
+#             if neuron.h.ismembrane("Ih_z"):
+#                 seg.e_pas += seg.ih_Ih_z/seg.g_pas
+#             if neuron.h.ismembrane("Ih_frozen"):
+#                 seg.e_pas += seg.ihcn_Ih_frozen/seg.g_pas
+#             if neuron.h.ismembrane("Ih_linearized_mod"):
+#                 seg.e_pas += seg.ihcn_Ih_linearized_mod/seg.g_pas
+#             if neuron.h.ismembrane("Ih_linearized_v2"):
+#                 seg.e_pas += seg.ihcn_Ih_linearized_v2/seg.g_pas
+#             if neuron.h.ismembrane("Ih_linearized_v2_frozen"):
+#                 seg.e_pas += seg.ihcn_Ih_linearized_v2_frozen/seg.g_pas
 
 
 def _get_longest_distance():
@@ -165,8 +165,8 @@ def biophys_passive(**kwargs):
     for sec in neuron.h.axon:
         sec.g_pas = 0.0000325
 
-    if 'hold_potential' in kwargs and kwargs['hold_potential'] is not None:
-        make_cell_uniform(Vrest=kwargs['hold_potential'])
+    # if 'hold_potential' in kwargs and kwargs['hold_potential'] is not None:
+    #     make_cell_uniform(Vrest=kwargs['hold_potential'])
 
     #print("Passive dynamics inserted.")
 
@@ -202,9 +202,8 @@ def biophys_Ih_linearized_frozen(**kwargs):
     for sec in neuron.h.axon:
         sec.g_pas = 0.0000325
 
-    if 'hold_potential' in kwargs and kwargs['hold_potential'] is not None:
-        make_cell_uniform(Vrest=kwargs['hold_potential'])
-
+    # if 'hold_potential' in kwargs and kwargs['hold_potential'] is not None:
+    #     make_cell_uniform(Vrest=kwargs['hold_potential'])
 
     print("Frozen linearized Ih inserted.")
 
@@ -242,8 +241,8 @@ def biophys_Ih_linearized(**kwargs):
     for sec in neuron.h.axon:
         sec.g_pas = 0.0000325
 
-    if 'hold_potential' in kwargs and kwargs['hold_potential'] is not None:
-        make_cell_uniform(Vrest=kwargs['hold_potential'])
+    # if 'hold_potential' in kwargs and kwargs['hold_potential'] is not None:
+    #     make_cell_uniform(Vrest=kwargs['hold_potential'])
 
 
 
@@ -277,8 +276,8 @@ def biophys_Ih(**kwargs):
     for sec in neuron.h.axon:
         sec.g_pas = 0.0000325
 
-    if 'hold_potential' in kwargs and kwargs['hold_potential'] is not None:
-        make_cell_uniform(Vrest=kwargs['hold_potential'])
+    # if 'hold_potential' in kwargs and kwargs['hold_potential'] is not None:
+    #     make_cell_uniform(Vrest=kwargs['hold_potential'])
     print("Single Ih inserted.")
 
 def biophys_Ih_frozen(**kwargs):
@@ -309,8 +308,8 @@ def biophys_Ih_frozen(**kwargs):
     for sec in neuron.h.axon:
         sec.g_pas = 0.0000325
 
-    if 'hold_potential' in kwargs and kwargs['hold_potential'] is not None:
-        make_cell_uniform(Vrest=kwargs['hold_potential'])
+    # if 'hold_potential' in kwargs and kwargs['hold_potential'] is not None:
+    #     make_cell_uniform(Vrest=kwargs['hold_potential'])
 
     print("Single frozen Ih inserted.")
 
@@ -384,8 +383,8 @@ def biophys_active(**kwargs):
     for sec in neuron.h.axon:
         sec.g_pas = 0.0000325
 
-    if 'hold_potential' in kwargs and kwargs['hold_potential'] is not None:
-        make_cell_uniform(Vrest=kwargs['hold_potential'])
+    # if 'hold_potential' in kwargs and kwargs['hold_potential'] is not None:
+    #     make_cell_uniform(Vrest=kwargs['hold_potential'])
 
 
 

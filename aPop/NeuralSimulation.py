@@ -37,10 +37,10 @@ class NeuralSimulation:
         self.sim_name = self.get_simulation_name()
         self.population_sim_name = self.sim_name[:-6]  # Just remove the cell number
 
-        self.lateral_electrode_parameters = kwargs['lateral_electrode_parameters']
-        self.elec_x_lateral = self.lateral_electrode_parameters['x']
-        self.elec_y_lateral = self.lateral_electrode_parameters['y']
-        self.elec_z_lateral = self.lateral_electrode_parameters['z']
+        # self.lateral_electrode_parameters = kwargs['lateral_electrode_parameters']
+        # self.elec_x_lateral = self.lateral_electrode_parameters['x']
+        # self.elec_y_lateral = self.lateral_electrode_parameters['y']
+        # self.elec_z_lateral = self.lateral_electrode_parameters['z']
 
         self.center_electrode_parameters = kwargs['center_electrode_parameters']
         self.elec_x_center = self.center_electrode_parameters['x']
@@ -94,7 +94,64 @@ class NeuralSimulation:
                     mt.select(mech)
                     mt.remove()
 
+    def make_Ih_frozen(self, cell):
+        neuron.h.t = 0
+        neuron.h.finitialize(cell.v_init)
+        neuron.h.fcurrent()
+        i = 0
+        ehcn_Ih = -45.
+        for sec in neuron.h.allsec():
+            for seg in sec:
+                if hasattr(seg, "gIh_Ih"):
+                    seg.e_pas = (seg.g_pas * seg.e_pas + seg.gIh_Ih * ehcn_Ih) / (seg.g_pas + seg.gIh_Ih)
+                    seg.g_pas += seg.gIh_Ih
+                i += 1
+
+    def make_cell_uniform(self, Vrest=-80):
+
+        neuron.h.t = 0
+        neuron.h.finitialize(Vrest)
+        neuron.h.fcurrent()
+        for sec in neuron.h.allsec():
+            for seg in sec:
+                seg.e_pas = seg.v
+                if neuron.h.ismembrane("na_ion"):
+                    seg.e_pas += seg.ina/seg.g_pas
+                if neuron.h.ismembrane("k_ion"):
+                    seg.e_pas += seg.ik/seg.g_pas
+                if neuron.h.ismembrane("ca_ion"):
+                    seg.e_pas = seg.e_pas + seg.ica/seg.g_pas
+                if neuron.h.ismembrane("Ih"):
+                    seg.e_pas += seg.ihcn_Ih/seg.g_pas
+                if neuron.h.ismembrane("Ih_z"):
+                    seg.e_pas += seg.ih_Ih_z/seg.g_pas
+                if neuron.h.ismembrane("Ih_frozen"):
+                    seg.e_pas += seg.ihcn_Ih_frozen/seg.g_pas
+                if neuron.h.ismembrane("Ih_linearized_mod"):
+                    seg.e_pas += seg.ihcn_Ih_linearized_mod/seg.g_pas
+                if neuron.h.ismembrane("Ih_linearized_v2"):
+                    seg.e_pas += seg.ihcn_Ih_linearized_v2/seg.g_pas
+                if neuron.h.ismembrane("Ih_linearized_v2_frozen"):
+                    seg.e_pas += seg.ihcn_Ih_linearized_v2_frozen/seg.g_pas
+
+
     def _return_cell(self, cell_x_y_z_rotation=None):
+
+
+        remove_lists = {'active': [],
+                        'passive': ["Nap_Et2", "NaTa_t", "NaTs2_t", "SKv3_1",
+                                    "SK_E2", "K_Tst", "K_Pst", "Im", "Ih",
+                                    "CaDynamics_E2", "Ca_LVAst", "Ca"],
+                        'Ih': ["Nap_Et2", "NaTa_t", "NaTs2_t", "SKv3_1",
+                               "SK_E2", "K_Tst", "K_Pst", "Im",
+                               "CaDynamics_E2", "Ca_LVAst", "Ca"],
+
+                        'Ih_frozen': ["Nap_Et2", "NaTa_t", "NaTs2_t", "SKv3_1",
+                               "SK_E2", "K_Tst", "K_Pst", "Im", "Ih",
+                               "CaDynamics_E2", "Ca_LVAst", "Ca"]
+
+                        }
+
 
         if 'i_QA' not in neuron.h.__dict__.keys():
             print "",
@@ -146,12 +203,20 @@ class NeuralSimulation:
                     'timeres_python': self.timeres_python,
                     'tstartms': -self.cut_off,          # start time, recorders start at t=0
                     'tstopms': self.end_t,
-                    'custom_code': [join(self.neuron_models, 'hay', 'custom_codes.hoc')],
-                    'custom_fun': [active_declarations],  # will execute this function
-                    'custom_fun_args': [{'conductance_type': self.conductance_type,
-                                         'hold_potential': self.holding_potential}]
+                    'custom_code': [join(self.neuron_models, 'hay', 'custom_codes.hoc'),
+                                    join(self.neuron_models, 'hay', 'biophys3.hoc')],
+                    # 'custom_fun': [active_declarations],  # will execute this function
+                    # 'custom_fun_args': [{'conductance_type': "active",
+                    #                      'hold_potential': self.holding_potential}]
                 }
+
                 cell = LFPy.Cell(**cell_params)
+                if self.conductance_type == "Ih_frozen":
+                    self.make_Ih_frozen(cell)
+                self.remove_active_mechanisms(remove_lists[self.conductance_type])
+                self.make_cell_uniform(self.holding_potential)
+
+
         elif 'L5_' in self.cell_name or 'L4_' in self.cell_name:
             remove_lists = {'active': [],
                             'passive': ["Nap_Et2", "NaTa_t", "NaTs2_t", "SKv3_1",
@@ -200,67 +265,54 @@ class NeuralSimulation:
 
     def save_neural_sim_single_input_data(self, cell):
 
-        if self.name == 'vmem_3D_population':
-            np.save(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name), cell.vmem)
-            np.save(join(self.sim_folder, 'xstart_%s.npy' % (self.sim_name)), cell.xstart)
-            np.save(join(self.sim_folder, 'ystart_%s.npy' % (self.sim_name)), cell.ystart)
-            np.save(join(self.sim_folder, 'zstart_%s.npy' % (self.sim_name)), cell.zstart)
-            np.save(join(self.sim_folder, 'xend_%s.npy' % (self.sim_name)), cell.xend)
-            np.save(join(self.sim_folder, 'yend_%s.npy' % (self.sim_name)), cell.yend)
-            np.save(join(self.sim_folder, 'zend_%s.npy' % (self.sim_name)), cell.zend)
-            np.save(join(self.sim_folder, 'xmid_%s.npy' % (self.sim_name)), cell.xmid)
-            np.save(join(self.sim_folder, 'ymid_%s.npy' % (self.sim_name)), cell.ymid)
-            np.save(join(self.sim_folder, 'zmid_%s.npy' % (self.sim_name)), cell.zmid)
-            np.save(join(self.sim_folder, 'diam_%s.npy' % (self.sim_name)), cell.diam)
-        else:
-            name = self.sim_name
-            if 'split_sim' in self.param_dict:
-                name += '_%s' % self.param_dict['split_sim']
-            lateral_electrode = LFPy.RecExtElectrode(cell, **self.lateral_electrode_parameters)
-            lateral_electrode.calc_lfp()
-            np.save(join(self.sim_folder, 'lateral_sig_%s.npy' % name), lateral_electrode.LFP)
-            del lateral_electrode.LFP
+        name = self.sim_name
+        if 'split_sim' in self.param_dict:
+            name += '_%s' % self.param_dict['split_sim']
+        # lateral_electrode = LFPy.RecExtElectrode(cell, **self.lateral_electrode_parameters)
+        # lateral_electrode.calc_lfp()
+        # np.save(join(self.sim_folder, 'lateral_sig_%s.npy' % name), lateral_electrode.LFP)
+        # del lateral_electrode.LFP
 
-            center_electrode = LFPy.RecExtElectrode(cell, **self.center_electrode_parameters)
-            center_electrode.calc_lfp()
-            np.save(join(self.sim_folder, 'center_sig_%s.npy' % name), center_electrode.LFP)
-            del center_electrode.LFP
-            
-            if self.cell_number == 0:
-                np.save(join(self.sim_folder, 'tvec_%s_%s.npy' % (self.cell_name, self.input_type)), cell.tvec)
-                if hasattr(cell, 'vmem'):
-                    np.save(join(self.sim_folder, 'vmem_%s.npy' % name), cell.vmem)
-                np.save(join(self.sim_folder, 'imem_%s.npy' % name), cell.imem)
-                np.save(join(self.sim_folder, 'synidx_%s.npy' % name), cell.synidx)
+        center_electrode = LFPy.RecExtElectrode(cell, **self.center_electrode_parameters)
+        center_electrode.calc_lfp()
+        np.save(join(self.sim_folder, 'center_sig_%s.npy' % name), center_electrode.LFP)
+        del center_electrode.LFP
 
-                np.save(join(self.sim_folder, 'lateral_elec_x_%s.npy' % self.cell_name), lateral_electrode.x)
-                np.save(join(self.sim_folder, 'lateral_elec_y_%s.npy' % self.cell_name), lateral_electrode.y)
-                np.save(join(self.sim_folder, 'lateral_elec_z_%s.npy' % self.cell_name), lateral_electrode.z)
+        if self.cell_number == 0:
+            np.save(join(self.sim_folder, 'tvec_%s_%s.npy' % (self.cell_name, self.input_type)), cell.tvec)
+            if hasattr(cell, 'vmem'):
+                np.save(join(self.sim_folder, 'vmem_%s.npy' % name), cell.vmem)
+            np.save(join(self.sim_folder, 'imem_%s.npy' % name), cell.imem)
+            np.save(join(self.sim_folder, 'synidx_%s.npy' % name), cell.synidx)
 
-                np.save(join(self.sim_folder, 'center_elec_x_%s.npy' % self.cell_name), center_electrode.x)
-                np.save(join(self.sim_folder, 'center_elec_y_%s.npy' % self.cell_name), center_electrode.y)
-                np.save(join(self.sim_folder, 'center_elec_z_%s.npy' % self.cell_name), center_electrode.z)
+            # np.save(join(self.sim_folder, 'lateral_elec_x_%s.npy' % self.cell_name), lateral_electrode.x)
+            # np.save(join(self.sim_folder, 'lateral_elec_y_%s.npy' % self.cell_name), lateral_electrode.y)
+            # np.save(join(self.sim_folder, 'lateral_elec_z_%s.npy' % self.cell_name), lateral_electrode.z)
+            #
+            np.save(join(self.sim_folder, 'center_elec_x_%s.npy' % self.cell_name), center_electrode.x)
+            np.save(join(self.sim_folder, 'center_elec_y_%s.npy' % self.cell_name), center_electrode.y)
+            np.save(join(self.sim_folder, 'center_elec_z_%s.npy' % self.cell_name), center_electrode.z)
 
-                np.save(join(self.sim_folder, 'xstart_%s_%s.npy' %
-                             (self.cell_name, self.param_dict['conductance_type'])), cell.xstart)
-                np.save(join(self.sim_folder, 'ystart_%s_%s.npy' %
-                             (self.cell_name, self.param_dict['conductance_type'])), cell.ystart)
-                np.save(join(self.sim_folder, 'zstart_%s_%s.npy' %
-                             (self.cell_name, self.param_dict['conductance_type'])), cell.zstart)
-                np.save(join(self.sim_folder, 'xend_%s_%s.npy' %
-                             (self.cell_name, self.param_dict['conductance_type'])), cell.xend)
-                np.save(join(self.sim_folder, 'yend_%s_%s.npy' %
-                             (self.cell_name, self.param_dict['conductance_type'])), cell.yend)
-                np.save(join(self.sim_folder, 'zend_%s_%s.npy' %
-                             (self.cell_name, self.param_dict['conductance_type'])), cell.zend)
-                np.save(join(self.sim_folder, 'xmid_%s_%s.npy' %
-                             (self.cell_name, self.param_dict['conductance_type'])), cell.xmid)
-                np.save(join(self.sim_folder, 'ymid_%s_%s.npy' %
-                             (self.cell_name, self.param_dict['conductance_type'])), cell.ymid)
-                np.save(join(self.sim_folder, 'zmid_%s_%s.npy' %
-                             (self.cell_name, self.param_dict['conductance_type'])), cell.zmid)
-                np.save(join(self.sim_folder, 'diam_%s_%s.npy' %
-                             (self.cell_name, self.param_dict['conductance_type'])), cell.diam)
+            np.save(join(self.sim_folder, 'xstart_%s_%s.npy' %
+                         (self.cell_name, self.param_dict['conductance_type'])), cell.xstart)
+            np.save(join(self.sim_folder, 'ystart_%s_%s.npy' %
+                         (self.cell_name, self.param_dict['conductance_type'])), cell.ystart)
+            np.save(join(self.sim_folder, 'zstart_%s_%s.npy' %
+                         (self.cell_name, self.param_dict['conductance_type'])), cell.zstart)
+            np.save(join(self.sim_folder, 'xend_%s_%s.npy' %
+                         (self.cell_name, self.param_dict['conductance_type'])), cell.xend)
+            np.save(join(self.sim_folder, 'yend_%s_%s.npy' %
+                         (self.cell_name, self.param_dict['conductance_type'])), cell.yend)
+            np.save(join(self.sim_folder, 'zend_%s_%s.npy' %
+                         (self.cell_name, self.param_dict['conductance_type'])), cell.zend)
+            np.save(join(self.sim_folder, 'xmid_%s_%s.npy' %
+                         (self.cell_name, self.param_dict['conductance_type'])), cell.xmid)
+            np.save(join(self.sim_folder, 'ymid_%s_%s.npy' %
+                         (self.cell_name, self.param_dict['conductance_type'])), cell.ymid)
+            np.save(join(self.sim_folder, 'zmid_%s_%s.npy' %
+                         (self.cell_name, self.param_dict['conductance_type'])), cell.zmid)
+            np.save(join(self.sim_folder, 'diam_%s_%s.npy' %
+                         (self.cell_name, self.param_dict['conductance_type'])), cell.diam)
 
     def run_distributed_synaptic_simulation(self):
 
@@ -282,15 +334,17 @@ class NeuralSimulation:
         cell = self._return_cell(x_y_z_rot)
         cell, syn = self._make_distributed_synaptic_stimuli(cell)
 
-        rec_vmem = True if self.name is 'vmem_3D_population' else False
+        rec_vmem = False if at_stallo else True
         cell.simulate(rec_imem=True, rec_vmem=rec_vmem)
+        if not at_stallo:
+            print "Max vmem STD: ", np.max(np.std(cell.vmem, axis=1))
 
         # [plt.plot(cell.tvec, cell.vmem[idx, :]) for idx in range(cell.totnsegs)]
         # plt.plot(cell.tvec, cell.vmem[1, :])
         # plt.show()
         self.save_neural_sim_single_input_data(cell)
-        if ('shape_function' in self.name) or (self.cell_number < 5):
-            self._draw_all_elecs_with_distance(cell)
+        if self.cell_number < 5:
+            self._plot_results(cell)
 
 
     def run_asymmetry_simulation(self, mu, fraction, distribution, cell_number):
@@ -299,12 +353,12 @@ class NeuralSimulation:
         #     print "Skipping ", mu, input_sec, distribution, tau_w, weight, 'sig_%s.npy' % sim_name
         #     return
 
-        electrode = LFPy.RecExtElectrode(**self.lateral_electrode_parameters)
+        electrode = LFPy.RecExtElectrode(**self.center_electrode_parameters)
         cell = self._return_cell(mu, distribution)
         cell, syn_apic, syn_basal = self._make_asymmetry_distributed_synaptic_stimuli(cell, fraction)
         cell.simulate(rec_imem=True, rec_vmem=True, electrode=electrode)
         self.save_neural_sim_single_input_data(cell, electrode, 'asymmetry_%1.2f' % fraction, mu, distribution, cell_number)
-        self._draw_all_elecs_with_distance(cell, electrode, 'asymmetry_%1.2f' % fraction, mu, distribution, cell_number)
+        self._plot_results(cell, electrode, 'asymmetry_%1.2f' % fraction, mu, distribution, cell_number)
 
     def _make_distributed_synaptic_stimuli(self, cell):
 
@@ -319,14 +373,15 @@ class NeuralSimulation:
             'record_current': False,
             'color': 'r',
         }
-        inhibitory_synapse_params = {
-            'e': 0.,                   # reversal potential (not used for ExpSynI)
-            'syntype': syntype,       # synapse type
-            'tau': self.param_dict['syn_tau'],                # syn. time constant
-            'weight': self.param_dict['inhibitory_syn_weight'],            # syn. weight
-            'record_current': False,
-            'color': 'b',
-        }
+        if 'inhibitory_syn_weight' in self.param_dict:
+            inhibitory_synapse_params = {
+                'e': 0.,                   # reversal potential (not used for ExpSynI)
+                'syntype': syntype,       # synapse type
+                'tau': self.param_dict['syn_tau'],                # syn. time constant
+                'weight': self.param_dict['inhibitory_syn_weight'],            # syn. weight
+                'record_current': False,
+                'color': 'b',
+            }
 
         if self.input_region == 'distal_tuft':
             input_pos = ['apic']
@@ -337,40 +392,40 @@ class NeuralSimulation:
             maxpos = 10000
             minpos = 600
         elif self.input_region == 'homogeneous':
-            input_pos = ['apic', 'dend']
+            input_pos = ['apic', 'dend', "soma"]
             maxpos = 10000
             minpos = -10000
         elif self.input_region == 'basal':
-            input_pos = ['dend']
+            input_pos = ['dend', "soma"]
             maxpos = 10000
             minpos = -10000
         elif self.input_region == 'perisomatic_inhibition':
-            inhibitory_input_pos = ['dend']
+            inhibitory_input_pos = ['dend', "soma"]
             inhibitory_maxpos = 10000
             inhibitory_minpos = -10000
 
         elif self.input_region == 'balanced':
-            inhibitory_input_pos = ['dend']
+            inhibitory_input_pos = ['dend', "soma"]
             inhibitory_maxpos = 10000
             inhibitory_minpos = -10000
 
-            excitatory_input_pos = ['apic', 'dend']
+            excitatory_input_pos = ['apic', 'dend', "soma"]
             excitatory_maxpos = 10000
             excitatory_minpos = -10000
 
         elif self.input_region == 'top':
-            input_pos = ['dend']
+            input_pos = ['dend', "soma"]
             maxpos = 10000
             minpos = 500
         elif self.input_region == 'bottom':
-            input_pos = ['dend']
+            input_pos = ['dend', "soma"]
             maxpos = 500
             minpos = -1000
         elif 'dual' in self.input_region:
             input_pos_tuft = ['apic']
             maxpos_tuft = 10000
             minpos_tuft = 900
-            input_pos_homo = ['apic', 'dend']
+            input_pos_homo = ['apic', 'dend', "soma"]
             maxpos_homo = 10000
             minpos_homo = -10000
             dual_fraction = float(self.input_region[4:])
@@ -567,166 +622,60 @@ class NeuralSimulation:
         for syn in cell.synapses:
             ax.plot(cell.xmid[syn.idx], cell.zmid[syn.idx], syn.color, marker='.', ms=4)
 
-    def _draw_all_elecs_with_distance(self, cell):
+    def _plot_results(self, cell):
 
         plt.close('all')
         fig = plt.figure(figsize=[18, 9])
         fig.subplots_adjust(right=0.97, left=0.05)
-        apic_clr = 'orange'
-        soma_clr = 'olive'
-        middle_clr = 'm'
-        soma_idx = 0
-        apic_idx = np.argmin(np.abs(cell.zmid - 1000))
-        middle_idx = np.argmin(np.abs(cell.zmid - 500))
 
-        plot_psd = True
+        scale = 'log'
 
-        if plot_psd:
-            scale = 'log'
-            # v_x_apic, [v_y_apic] = tools.return_freq_and_psd_welch(cell.vmem[apic_idx], self.welch_dict)
-            # v_x_middle, [v_y_middle] = tools.return_freq_and_psd_welch(cell.vmem[middle_idx], self.welch_dict)
-            # v_x_soma, [v_y_soma] = tools.return_freq_and_psd_welch(cell.vmem[soma_idx], self.welch_dict)
-            # i_x_apic, [i_y_apic] = tools.return_freq_and_psd_welch(cell.imem[apic_idx], self.welch_dict)
-            # i_x_middle, [i_y_middle] = tools.return_freq_and_psd_welch(cell.imem[middle_idx], self.welch_dict)
-            # i_x_soma, [i_y_soma] = tools.return_freq_and_psd_welch(cell.imem[soma_idx], self.welch_dict)
+        cell_ax = fig.add_subplot(1, 6, 1, aspect=1, frameon=False, xticks=[], yticks=[])
+        ax_center = fig.add_subplot(1, 6, 5, xlim=[1, self.max_freq], xscale=scale, xlabel='Hz', ylabel='z')
+        ax_lfp = fig.add_subplot(1, 6, 4, xlim=[0, cell.tvec[-1]], xlabel="Time [ms]", ylabel='z',
+                                 title="LFP")
+        ax_psd = fig.add_subplot(2, 6, 6, xlim=[1, self.max_freq], xlabel="Hz", ylabel='PSD')
+        ax_psd_n = fig.add_subplot(2, 6, 12, xlim=[1, self.max_freq], ylim=[1e-4, 1e1],
+                                   xlabel="Hz", ylabel='Normalized PSD')
 
-            # v_x_apic, [v_y_apic] = tools.return_freq_and_psd(self.timeres_python/1000., cell.vmem[apic_idx])
-            # v_x_middle, [v_y_middle] = tools.return_freq_and_psd(self.timeres_python/1000., cell.vmem[middle_idx])
-            # v_x_soma, [v_y_soma] = tools.return_freq_and_psd(self.timeres_python/1000., cell.vmem[soma_idx])
-            # i_x_apic, [i_y_apic] = tools.return_freq_and_psd(self.timeres_python/1000., cell.imem[apic_idx])
-            # i_x_middle, [i_y_middle] = tools.return_freq_and_psd(self.timeres_python/1000., cell.imem[middle_idx])
-            # i_x_soma, [i_y_soma] = tools.return_freq_and_psd(self.timeres_python/1000., cell.imem[soma_idx])
+        ax_somav = fig.add_subplot(1, 6, 2, xlabel='Time', ylabel='V$_m$')
+        ax_imem = fig.add_subplot(1, 6, 3, xlabel='Time', ylabel='I$_m$',
+                                  title="Imem close to electrode")
+        if not hasattr(cell, "vmem"):
+            ax_somav.plot(cell.tvec, cell.somav)
         else:
-            scale = 'linear'
-        #     v_x_apic, v_y_apic = cell.tvec, cell.vmem[apic_idx]
-        #     v_x_middle, v_y_middle = cell.tvec, cell.vmem[middle_idx]
-        #     v_x_soma, v_y_soma = cell.tvec, cell.vmem[soma_idx]
-        #     i_x_apic, i_y_apic = cell.tvec, cell.imem[apic_idx]
-        #     i_x_middle, i_y_middle = cell.tvec, cell.imem[middle_idx]
-        #     i_x_soma, i_y_soma = cell.tvec, cell.imem[soma_idx]
-
-        ax_top = fig.add_subplot(3, 6, 4, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
-        ax_top_n = fig.add_subplot(3, 6, 5, xlim=[1, self.max_freq], xscale=scale, yscale=scale, ylim=[1e-3, 1e0])
-        ax_mid = fig.add_subplot(3, 6, 10, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
-        ax_mid_n = fig.add_subplot(3, 6, 11, xlim=[1, self.max_freq], xscale=scale, yscale=scale, ylim=[1e-3, 1e0])
-        ax_bottom = fig.add_subplot(3, 6, 16, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
-        ax_bottom_n = fig.add_subplot(3, 6, 17, xlim=[1, self.max_freq], xscale=scale, yscale=scale, ylim=[1e-3, 1e0])
-        cell_ax = fig.add_subplot(1, 6, 3, aspect=1, frameon=False, xticks=[], yticks=[])
-        ax_center = fig.add_subplot(2, 6, 6, xlim=[1, self.max_freq], xscale=scale, xlabel='Hz', ylabel='z')
-        ax_somav = fig.add_subplot(2, 6, 12, xlabel='Time', ylabel='V$_m$')
-        ax_somav.plot(cell.tvec, cell.somav)
-
+            ax_somav.set_title("Vm (max STD: %1.2f)" % np.max(np.std(cell.vmem, axis=1)))
         self.plot_cell_to_ax(cell, cell_ax)
         center_electrode = LFPy.RecExtElectrode(cell, **self.center_electrode_parameters)
         center_electrode.calc_lfp()
         center_LFP = 1000 * center_electrode.LFP
-
-        # freq, psd = tools.return_freq_and_psd(self.timeres_python/1000., center_LFP)
         freq, psd = tools.return_freq_and_psd_welch(center_LFP, self.welch_dict)
+        elec_clr = lambda elec_idx: plt.cm.rainbow(elec_idx / (len(center_LFP) - 1))
+
+        h = center_electrode.z[1] - center_electrode.z[0]
+        for idx in range(len(center_LFP)):
+            closest_cell_idx = cell.get_closest_idx(x=center_electrode.x[idx],
+                                                    y=center_electrode.y[idx],
+                                                    z=center_electrode.z[idx])
+            im_y = cell.imem[closest_cell_idx] / np.max(cell.imem) * h + center_electrode.z[idx]
+            ax_imem.plot(cell.tvec, im_y, c=elec_clr(idx))
+
+            if hasattr(cell, "vmem"):
+                vm_y = cell.vmem[closest_cell_idx] / np.max(cell.vmem) * h + center_electrode.z[idx]
+                ax_somav.plot(cell.tvec, vm_y, c=elec_clr(idx))
+
+            y = center_LFP[idx]/np.max(np.abs(center_LFP)) * h + center_electrode.z[idx]
+            ax_lfp.plot(cell.tvec, y, c=elec_clr(idx))
+            ax_psd.loglog(freq, psd[idx], c=elec_clr(idx))
+            ax_psd_n.loglog(freq, psd[idx]/np.max(psd[idx]), c=elec_clr(idx))
+            cell_ax.plot(center_electrode.x[idx], center_electrode.z[idx], 'D', c=elec_clr(idx))
+
         vmax = 10**np.ceil(np.log10(np.max(psd)))
         im_dict = {'cmap': 'hot', 'norm': LogNorm(), 'vmin': vmax/1e4, 'vmax': vmax}
         img = ax_center.pcolormesh(freq, center_electrode.z, psd, **im_dict)
         cbar = plt.colorbar(img, ax=ax_center)
-        del center_electrode
-        del center_LFP
-        all_elec_ax = [ax_top, ax_mid, ax_bottom]
-        all_elec_n_ax = [ax_top_n, ax_mid_n, ax_bottom_n]
 
-        # apic_title = '%1.2f (%1.2f) mV' % (np.mean(cell.vmem[apic_idx]), np.std(cell.vmem[apic_idx]))
-        # middle_title = '%1.2f (%1.2f) mV' % (np.mean(cell.vmem[middle_idx]), np.std(cell.vmem[middle_idx]))
-        # soma_title = '%1.2f (%1.2f) mV' % (np.mean(cell.vmem[soma_idx]), np.std(cell.vmem[soma_idx]))
-
-        # ax_v_apic = fig.add_subplot(3, 6, 1, xlim=[1, self.max_freq], ylabel='mV$^2$/Hz',
-        #                             title=apic_title, xscale=scale, yscale=scale)
-        # ax_v_middle = fig.add_subplot(3, 6, 7, xlim=[1, self.max_freq], ylabel='mV$^2$/Hz',
-        #                               title=middle_title, xscale=scale, yscale=scale)
-        # ax_v_soma = fig.add_subplot(3, 6, 13, xlim=[1, self.max_freq], ylabel='mV$^2$/Hz',
-        #                             title=soma_title, xscale=scale, yscale=scale)
-
-        # ax_i_apic = fig.add_subplot(3, 6, 2, xlim=[1, self.max_freq], ylabel='nA$^2$/Hz', xscale=scale, yscale=scale)
-        # ax_i_middle = fig.add_subplot(3, 6, 8, xlim=[1, self.max_freq], ylabel='nA$^2$/Hz', xscale=scale, yscale=scale)
-        # ax_i_soma = fig.add_subplot(3, 6, 14, xlim=[1, self.max_freq], ylabel='nA$^2$/Hz', xscale=scale, yscale=scale)
-
-        # average_over = 4
-        # smooth_v_x_apic = v_x_apic[::average_over]
-        # max_freq_idx = np.argmin(np.abs(freq - self.max_freq))
-
-        # smooth_v_y_apic = tools.smooth_signal(smooth_v_x_apic, v_x_apic, v_y_apic)
-        # smooth_v_x_middle = v_x_middle[::average_over]
-        # smooth_v_y_middle = tools.smooth_signal(smooth_v_x_middle, v_x_middle, v_y_middle)
-
-        # smooth_v_x_soma = v_x_soma[::average_over]
-        # smooth_v_y_soma = tools.smooth_signal(smooth_v_x_soma, v_x_soma, v_y_soma)
-
-        # smooth_i_x_apic = v_x_apic[::average_over]
-        # smooth_i_y_apic = tools.smooth_signal(smooth_i_x_apic, i_x_apic, i_y_apic)
-
-        # smooth_i_x_middle = v_x_middle[::average_over]
-        # smooth_i_y_middle = tools.smooth_signal(smooth_i_x_middle, i_x_middle, i_y_middle)
-
-        # smooth_i_x_soma = v_x_soma[::average_over]
-        # smooth_i_y_soma = tools.smooth_signal(smooth_i_x_soma, i_x_soma, i_y_soma)
-
-        # ax_v_apic.loglog(v_x_apic, v_y_apic, c=apic_clr, lw=0.2, alpha=0.5)
-        # ax_v_middle.loglog(v_x_middle, v_y_middle, c=middle_clr, lw=0.2, alpha=0.5)
-        # ax_v_soma.loglog(v_x_soma, v_y_soma, c=soma_clr, lw=0.2, alpha=0.5)
-
-        # ax_i_apic.loglog(i_x_apic, i_y_apic, c=apic_clr, lw=0.2, alpha=0.5)
-        # ax_i_middle.loglog(i_x_middle, i_y_middle, c=middle_clr, lw=0.2, alpha=0.5)
-        # ax_i_soma.loglog(i_x_soma, i_y_soma, c=soma_clr, lw=0.2, alpha=0.5)
-
-        # ax_v_apic.loglog(smooth_v_x_apic[1:max_freq_idx], smooth_v_y_apic[1:max_freq_idx], c=apic_clr)
-        # ax_v_middle.loglog(smooth_v_x_middle[1:max_freq_idx], smooth_v_y_middle[1:max_freq_idx], c=middle_clr)
-        # ax_v_soma.loglog(smooth_v_x_soma[1:max_freq_idx], smooth_v_y_soma[1:max_freq_idx], c=soma_clr)
-        #
-        # ax_i_apic.loglog(smooth_i_x_apic[1:max_freq_idx], smooth_i_y_apic[1:max_freq_idx], c=apic_clr)
-        # ax_i_middle.loglog(smooth_i_x_middle[1:max_freq_idx], smooth_i_y_middle[1:max_freq_idx], c=middle_clr)
-        # ax_i_soma.loglog(smooth_i_x_soma[1:max_freq_idx], smooth_i_y_soma[1:max_freq_idx], c=soma_clr)
-
-        # cell_ax.plot(cell.xmid[apic_idx], cell.zmid[apic_idx], 'D', ms=10, c=apic_clr)
-        # cell_ax.plot(cell.xmid[middle_idx], cell.zmid[middle_idx], 'D', ms=10, c=middle_clr)
-        # cell_ax.plot(cell.xmid[soma_idx], cell.zmid[soma_idx], 'D', ms=10, c=soma_clr)
-        # if self.conductance_type == 'generic':
-        #     sim_name = '%s_%s_%s_%s_%+1.1f_%1.5fuS_%05d' % (self.cell_name, self.input_type,
-        #                                                 input_region, distribution, mu,
-        #                                                 self.param_dict['syn_weight'], cell_number)
-        # else:
-        #      sim_name = '%s_%s_%s_%s_%+d_%1.5fuS_%05d' % (self.cell_name, self.input_type, input_region,
-        #                                               self.conductance_type, self.holding_potential, self.param_dict['syn_weight'], cell_number)
-        electrode = LFPy.RecExtElectrode(cell, **self.lateral_electrode_parameters)
-        electrode.calc_lfp()
         fig.suptitle(self.sim_name)
-        LFP = 1000 * electrode.LFP#np.load(join(self.sim_folder, 'sig_%s.npy' % sim_name))[:, :]
-
-        if self.input_type == 'distributed_delta':
-            freqs, sig_psd = tools.return_freq_and_psd_welch(LFP, self.welch_dict)
-            # freqs, sig_psd = tools.return_freq_and_psd(self.timeres_python/1000., LFP)
-        else:
-            # freqs, sig_psd = tools.return_freq_and_psd(self.timeres_python/1000., LFP)
-            freqs, sig_psd = tools.return_freq_and_psd_welch(LFP, self.welch_dict)
-
-        cutoff_dist = 1000
-        dist_clr = lambda dist: plt.cm.Greys(np.log(dist) / np.log(cutoff_dist))
-
-        for elec in xrange(len(self.elec_z_lateral)):
-            if self.elec_x_lateral[elec] > cutoff_dist:
-                continue
-            clr = dist_clr(self.elec_x_lateral[elec])
-            cell_ax.plot(self.elec_x_lateral[elec], self.elec_z_lateral[elec], 'o', c=clr)
-
-            row, col = self._return_elec_row_col(elec)
-            # smooth_freqs = freqs[::average_over]
-            # smooth_sig = tools.smooth_signal(smooth_freqs, freqs, sig_psd[elec, :])
-            # smooth_sig = tools.smooth_signal(smooth_freqs, freqs, sig_psd[elec, :])
-
-            all_elec_ax[row].loglog(freqs, sig_psd[elec, :], color=clr)
-            all_elec_n_ax[row].loglog(freqs, sig_psd[elec, :] / np.max(sig_psd[elec, 1:]), color=clr)
-
-            # all_elec_ax[row].loglog(smooth_freqs[1:max_freq_idx], smooth_sig[1:max_freq_idx], color=clr, lw=1)
-            # all_elec_n_ax[row].loglog(smooth_freqs[1:max_freq_idx], smooth_sig[1:max_freq_idx] / np.max(smooth_sig[1:max_freq_idx]), color=clr, lw=1)
-
-        [ax.grid(True) for ax in all_elec_ax + all_elec_n_ax ]
-         #[ax_i_apic, ax_i_middle, ax_i_soma, ax_v_apic, ax_v_middle, ax_v_soma]]
 
         fig.savefig(join(self.figure_folder, '%s.png' % self.sim_name))
 
@@ -832,75 +781,14 @@ class NeuralSimulation:
 
         fig.savefig(join(self.figure_folder, 'LFP_%s.png' % self.sim_name))
 
-    def plot_F(self, freqs, sig_psd):
-        print "Plotting shape function"
-        plt.close('all')
-        fig = plt.figure(figsize=[18, 9])
-        fig.subplots_adjust(right=0.97, left=0.05)
-        plt.seed(123*0)
-
-        scale = 'log'
-        cell_ax = fig.add_subplot(1, 3, 1, aspect=1, frameon=False, xticks=[], yticks=[])
-
-        name = '%s_%s' % (self.cell_name, self.conductance_type)
-        if self.conductance_type == 'generic':
-            xmid = np.load(join(self.sim_folder, 'xmid_%s.npy' % name))
-            zmid = np.load(join(self.sim_folder, 'zmid_%s.npy' % name))
-            xstart = np.load(join(self.sim_folder, 'xstart_%s.npy' % name))
-            zstart = np.load(join(self.sim_folder, 'zstart_%s.npy' % name))
-            xend = np.load(join(self.sim_folder, 'xend_%s.npy' % name))
-            zend = np.load(join(self.sim_folder, 'zend_%s.npy' % name))
-        else:
-            xmid = np.load(join(self.sim_folder, 'xmid_%s.npy' % name))
-            zmid = np.load(join(self.sim_folder, 'zmid_%s.npy' % name))
-            xstart = np.load(join(self.sim_folder, 'xstart_%s.npy' % name))
-            zstart = np.load(join(self.sim_folder, 'zstart_%s.npy' % name))
-            xend = np.load(join(self.sim_folder, 'xend_%s.npy' % name))
-            zend = np.load(join(self.sim_folder, 'zend_%s.npy' % name))
-
-        synidx = np.load(join(self.sim_folder, 'synidx_%s_00000.npy' % self.population_sim_name))
-
-        [cell_ax.plot([xstart[idx], xend[idx]], [zstart[idx], zend[idx]],
-                 lw=1.5, color='0.5', zorder=0, alpha=1)
-            for idx in xrange(len(xmid))]
-        [cell_ax.plot(xmid[idx], zmid[idx], 'g.', ms=4) for idx in synidx]
-
-        ax_top = fig.add_subplot(3, 3, 2, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
-        ax_top_n = fig.add_subplot(3, 3, 3, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
-        ax_mid = fig.add_subplot(3, 3, 5, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
-        ax_mid_n = fig.add_subplot(3, 3, 6, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
-        ax_bottom = fig.add_subplot(3, 3, 8, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
-        ax_bottom_n = fig.add_subplot(3, 3, 9, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
-
-        all_elec_ax = [ax_top, ax_mid, ax_bottom]
-        all_elec_n_ax = [ax_top_n, ax_mid_n, ax_bottom_n]
-        cutoff_dist = 1000
-        dist_clr = lambda dist: plt.cm.Greys(np.log(dist) / np.log(cutoff_dist))
-
-        for elec in xrange(len(self.elec_z_lateral)):
-            if self.elec_x_lateral[elec] > cutoff_dist:
-                continue
-            clr = dist_clr(self.elec_x_lateral[elec])
-            cell_ax.plot(self.elec_x_lateral[elec], self.elec_z_lateral[elec], 'o', c=clr)
-
-            row, col = self._return_elec_row_col(elec)
-            all_elec_ax[row].loglog(freqs, sig_psd[elec, :], color=clr, lw=1)
-            all_elec_n_ax[row].loglog(freqs, sig_psd[elec, :] / np.max(sig_psd[elec, 1:]), color=clr, lw=1)
-
-        [ax.grid(True) for ax in all_elec_ax + all_elec_n_ax]
-
-        for ax in all_elec_ax + all_elec_n_ax:
-            max_exponent = np.ceil(np.log10(np.max([np.max(l.get_ydata()[1:]) for l in ax.get_lines()])))
-            ax.set_ylim([10**(max_exponent - 4), 10**max_exponent])
-
-        fig.savefig(join(self.figure_folder, 'lateral_F_%s.png' % self.population_sim_name))
-
 
 if __name__ == '__main__':
-    from param_dicts import shape_function_params
-    shape_function_params.update({'mu': -0.5, 'input_region': 'basal',
-                                  'distribution': 'linear_decrease',
-                                  'cell_number': 0})
-    ns = NeuralSimulation(**shape_function_params)
+    from param_dicts import classic_population_params as param_dict
+    param_dict.update({'input_region': 'distal_tuft',
+                       'correlation': 0.0,
+                       'conductance_type': 'Ih',
+                       'holding_potential': -80.,
+                       'cell_number': 0})
+    ns = NeuralSimulation(**param_dict)
     ns.run_distributed_synaptic_simulation()
 
