@@ -740,7 +740,7 @@ def plot_all_soma_sigs(param_dict):
 def plot_all_soma_sigs_classic(param_dict):
 
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
-    pop_size = 500
+    pop_size = 51
 
     param_dict.update({
                        'cell_number': 0,
@@ -749,16 +749,16 @@ def plot_all_soma_sigs_classic(param_dict):
     elec_z = param_dict['center_electrode_parameters']['z']
     elec = np.argmin(np.abs(elec_z - 0))
     correlations = param_dict['correlations']
-    input_regions = ['distal_tuft', 'homogeneous']#, 'basal']
+    input_regions = ['distal_tuft', 'homogeneous', 'basal']
     # input_regions = ['top', 'homogeneous', 'bottom']
     # distributions = ['uniform', 'linear_increase', 'linear_decrease']
     # distributions = ['uniform', 'increase']
     # holding_potentials = [-70]
-    holding_potentials = [None]
+    holding_potentials = [-70]
 
     plt.close('all')
-    fig = plt.figure(figsize=(7, 5))
-    fig.subplots_adjust(right=0.97, wspace=0.15, hspace=0.5, left=0.05, top=0.90, bottom=0.17)
+    fig = plt.figure(figsize=(10, 8))
+    fig.subplots_adjust(right=0.97, wspace=0.15, hspace=0.5, left=0.17, top=0.95, bottom=0.1)
 
     psd_ax_dict = {'ylim': [1e-7, 1e-1],
                     'yscale': 'log',
@@ -768,8 +768,8 @@ def plot_all_soma_sigs_classic(param_dict):
                    'xticks': [1e0, 10, 100],
                    'xticklabels': ['1', '10', '100'],
                     }
-    num_plot_cols = 5
-    num_plot_rows = 2
+    num_plot_cols = 4
+    num_plot_rows = 3
     # fig.text(0.17, 0.95, '- 80 mV')
     # fig.text(0.45, 0.95, '- 70 mV')
     # fig.text(0.75, 0.95, '- 60 mV')
@@ -779,13 +779,16 @@ def plot_all_soma_sigs_classic(param_dict):
 
     fig_folder = join(param_dict['root_folder'], 'figures')
 
-    ax_morph_1 = fig.add_axes([0, 0.05, 0.12, 0.5], frameon=False, xticks=[], yticks=[])
-    ax_morph_2 = fig.add_axes([0, 0.5, 0.12, 0.5], frameon=False, xticks=[], yticks=[])
+    ax_tuft = fig.add_axes([0, 0.70, 0.1, 0.3], frameon=False, xticks=[], yticks=[])
+    ax_homo = fig.add_axes([0, 0.35, 0.1, 0.3], frameon=False, xticks=[], yticks=[])
+    ax_basal = fig.add_axes([0, 0.02, 0.1, 0.3], frameon=False, xticks=[], yticks=[])
 
-    dist_image = plt.imread(join(fig_folder, 'linear_increase_homogeneous.png'))
+    homo_image = plt.imread(join(fig_folder, 'linear_increase_homogeneous.png'))
+    basal_image = plt.imread(join(fig_folder, 'linear_increase_basal.png'))
     dist_image2 = plt.imread(join(fig_folder, 'linear_increase_distal_tuft.png'))
-    ax_morph_1.imshow(dist_image)
-    ax_morph_2.imshow(dist_image2)
+    ax_homo.imshow(homo_image)
+    ax_tuft.imshow(dist_image2)
+    ax_basal.imshow(basal_image)
 
     # fig.text(0.05, 0.25, 'Basal\ninput', ha='center')
     lines = None
@@ -794,7 +797,7 @@ def plot_all_soma_sigs_classic(param_dict):
         for d, holding_potential in enumerate(holding_potentials):
             for c, correlation in enumerate(correlations):
                 print input_region, holding_potential, correlation
-                plot_number = i * num_plot_cols + c + 2
+                plot_number = i * num_plot_cols + c + 1
                 lines = []
                 line_names = []
 
@@ -836,7 +839,7 @@ def plot_all_soma_sigs_classic(param_dict):
     fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=4, fontsize=10)
     simplify_axes(fig.axes)
     # mark_subplots([ax_morph_homogeneous], 'B', ypos=1.1, xpos=0.1)
-    plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], 'Figure_classic_all_sigs__hbp.png'), dpi=300)
+    plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'], 'Figure_classic_all_sigs__new_test.png'))
     plt.close('all')
 
 

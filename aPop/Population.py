@@ -508,7 +508,6 @@ def plot_simple_model_LFP(param_dict):
 
 def initialize_population(param_dict):
 
-
     print "Initializing cell positions and rotations ..."
     x_y_z_rot = np.zeros((param_dict['num_cells'], 4))
     for cell_number in range(param_dict['num_cells']):
@@ -809,7 +808,7 @@ def sum_population_mpi_classic(param_dict):
     rank = comm.rank        # rank of this process
     status = MPI.Status()   # get MPI status object
     num_workers = size - 1
-    num_cells = 20
+    num_cells = 2000
     num_tsteps = int(round(param_dict['end_t']/param_dict['timeres_python'] + 1))
 
     if size == 1:
@@ -991,15 +990,15 @@ def PopulationMPIclassic():
 
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
-        num_cells = 20 if at_stallo else 2
+        num_cells = 2000 if at_stallo else 2
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['holding_potentials']) *
                      len(param_dict['conductance_types']) * len(param_dict['correlations']) * (num_cells))
 
-        for input_region in param_dict['input_regions']:
-            for conductance_type in param_dict['conductance_types']:
-                for correlation in param_dict['correlations']:
-                    for holding_potential in param_dict['holding_potentials']:
-                        for cell_idx in range(0, num_cells):
+        for input_region in param_dict['input_regions'][::-1]:
+            for conductance_type in param_dict['conductance_types'][::-1]:
+                for correlation in param_dict['correlations'][::-1]:
+                    for holding_potential in param_dict['holding_potentials'][::-1]:
+                        for cell_idx in range(0, num_cells)[::-1]:
                             task += 1
                             sent = False
                             while not sent:
