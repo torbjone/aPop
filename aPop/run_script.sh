@@ -7,6 +7,6 @@
 #PBS -A nn4661k
 
 cd /global/work/torbness/aPop/aPop
-python Population.py initialize
+#python Population.py initialize
 mpirun -np 160 python Population.py MPI
 mpirun -np 160 python Population.py sum
