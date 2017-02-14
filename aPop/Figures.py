@@ -1822,7 +1822,7 @@ def plot_figure_2_classic(param_dict):
     psd_ax_dict = {'xlim': [1e0, 5e2],
                    # 'xlabel': 'Frequency (Hz)',
                    'xticks': [1e0, 10, 100],
-                   'ylim': [1e-9, 1e-4]}
+                   'ylim': [1e-7, 1e-2]}
     lines = None
     line_names = None
     num_plot_cols = 4

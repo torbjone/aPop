@@ -994,11 +994,11 @@ def PopulationMPIclassic():
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['holding_potentials']) *
                      len(param_dict['conductance_types']) * len(param_dict['correlations']) * (num_cells))
 
-        for input_region in param_dict['input_regions'][::-1]:
-            for conductance_type in param_dict['conductance_types'][::-1]:
-                for correlation in param_dict['correlations'][::-1]:
-                    for holding_potential in param_dict['holding_potentials'][::-1]:
-                        for cell_idx in range(0, num_cells)[::-1]:
+        for holding_potential in param_dict['holding_potentials'][::-1]:
+            for input_region in param_dict['input_regions']:
+                for conductance_type in param_dict['conductance_types']:
+                    for correlation in param_dict['correlations']:
+                        for cell_idx in range(0, num_cells):
                             task += 1
                             sent = False
                             while not sent:

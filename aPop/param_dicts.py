@@ -31,7 +31,7 @@ root_folder = '..'
 center_elec_z = np.arange(-200, 1201, 200)
 center_elec_x = np.zeros(len(center_elec_z))
 center_elec_y = np.zeros(len(center_elec_z))
-center_electrode_parameters = {
+center_elec_params = {
         'sigma': 0.3,
         'x': center_elec_x,
         'y': center_elec_y,
@@ -42,7 +42,7 @@ center_electrode_parameters = {
 # stick_lateral_electrode_parameters = lateral_electrode_parameters.copy()
 # stick_lateral_electrode_parameters['method'] = 'linesource'
 
-stick_center_electrode_parameters = center_electrode_parameters.copy()
+stick_center_electrode_parameters = center_elec_params.copy()
 stick_center_electrode_parameters['method'] = 'linesource'
 
 # Time resolution of 2**-4 is almost identical to 2**-5
@@ -96,7 +96,7 @@ generic_population_params = {'input_type': 'distributed_delta',
                              'conductance_type': 'generic',
                              'save_folder': 'population',
                              # 'lateral_electrode_parameters': lateral_electrode_parameters,
-                             'center_electrode_parameters': center_electrode_parameters,
+                             'center_electrode_parameters': center_elec_params,
                              'root_folder': root_folder,
                              'num_synapses': 1000,
                              'num_inhibitory_synapses': 100,
@@ -131,7 +131,7 @@ asymmetric_population_params = {'input_type': 'distributed_delta',
                              'conductance_type': 'generic',
                              'save_folder': 'asymmetric_population',
                              # 'lateral_electrode_parameters': lateral_electrode_parameters,
-                             'center_electrode_parameters': center_electrode_parameters,
+                             'center_electrode_parameters': center_elec_params,
                              'root_folder': root_folder,
                              'num_synapses': 1000,
                              'num_inhibitory_synapses': 100,
@@ -163,7 +163,7 @@ classic_population_params = {'input_type': 'distributed_delta',
                              'conductance_type': 'classic',
                              'save_folder': 'population',
                              # 'lateral_electrode_parameters': lateral_electrode_parameters,
-                             'center_electrode_parameters': center_electrode_parameters,
+                             'center_electrode_parameters': center_elec_params,
                              'root_folder': root_folder,
                              'num_synapses': 1000,
                              'num_inhibitory_synapses': 100,
@@ -199,7 +199,7 @@ hbp_population_params = {'input_type': 'distributed_delta',
                          'holding_potential': None,
                          'conductance_type': 'classic',
                          # 'lateral_electrode_parameters': lateral_electrode_parameters,
-                         'center_electrode_parameters': center_electrode_parameters,
+                         'center_electrode_parameters': center_elec_params,
                          'root_folder': root_folder,
                          'num_synapses': 1000,
                          'input_firing_rate': 5,
