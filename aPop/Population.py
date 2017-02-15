@@ -583,6 +583,15 @@ def plot_population(param_dict):
 
 def sum_one_population(param_dict, num_cells, num_tsteps):
 
+    param_dict.update({'cell_number': 0})
+    ns = NeuralSimulation(**param_dict)
+    filename = join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
+                 (ns.population_sim_name, 453))
+    if os.path.isfile(filename):
+        return
+
+
+
     x_y_z_rot = np.load(os.path.join(param_dict['root_folder'], param_dict['save_folder'],
                              'x_y_z_rot_%s.npy' % param_dict['name']))
     # summed_lateral_sig = np.zeros((len(param_dict['lateral_electrode_parameters']['x']), num_tsteps))
@@ -656,6 +665,9 @@ def sum_one_population(param_dict, num_cells, num_tsteps):
     # print "Actual radius: ", r
     # np.save(join(ns.sim_folder, 'summed_lateral_signal_%s_%dum.npy' %
     #              (ns.population_sim_name, r)), summed_lateral_sig)
+
+
+
     np.save(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
                  (ns.population_sim_name, r)), summed_center_sig)
     np.save(join(ns.sim_folder, 'summed_center_signal_half_density_%s_%dum.npy' %
