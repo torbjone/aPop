@@ -873,10 +873,12 @@ def sum_population_mpi_classic(param_dict):
             tag = status.Get_tag()
             if tag == tags.START:
                 # Do the work here
-                # try:
-                sum_one_population(param_dict, num_cells, num_tsteps)
-                # except:
-                #     print "\033[91mNode %d exiting with ERROR\033[0m" % rank
+                try:
+                    sum_one_population(param_dict, num_cells, num_tsteps)
+                except:
+                    print "\033[91mNode %d exiting with ERROR\033[0m" % rank
+                    comm.send(None, dest=0, tag=tags.READY)
+
                 #     comm.send(None, dest=0, tag=tags.ERROR)
                 #     sys.exit()
                 comm.send(None, dest=0, tag=tags.DONE)
