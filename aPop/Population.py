@@ -1004,7 +1004,7 @@ def PopulationMPIclassic():
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['holding_potentials']) *
                      len(param_dict['conductance_types']) * len(param_dict['correlations']) * (num_cells - 2000))
 
-        for holding_potential in param_dict['holding_potentials'][::-1]:
+        for holding_potential in param_dict['holding_potentials']:
             for input_region in param_dict['input_regions']:
                 for conductance_type in param_dict['conductance_types']:
                     for correlation in param_dict['correlations']:

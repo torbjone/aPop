@@ -171,9 +171,9 @@ classic_population_params = {'input_type': 'distributed_delta',
                              'inhibitory_input_firing_rate': 10,
                              'input_regions': ['homogeneous', 'distal_tuft', "basal"],
                              'mus': None,
-                             'holding_potentials': [-80, -70],
+                             'holding_potentials': [-70, -80],
                              'distributions': None,
-                             'conductance_types': ['active', 'passive', 'Ih', 'Ih_frozen'],
+                             'conductance_types': ['passive', 'Ih', 'Ih_frozen', 'active'],
                              'correlations': [0.0, 0.01, 0.1, 1.0]
                              }
 
