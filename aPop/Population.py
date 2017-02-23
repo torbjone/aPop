@@ -585,12 +585,10 @@ def sum_one_population(param_dict, num_cells, num_tsteps):
 
     param_dict.update({'cell_number': 0})
     ns = NeuralSimulation(**param_dict)
-    filename = join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
-                 (ns.population_sim_name, 453))
+    filename = join(ns.sim_folder, 'summed_center_signal_%s_%dum_.npy' %
+                 (ns.population_sim_name, 637))
     if os.path.isfile(filename):
         return
-
-
 
     x_y_z_rot = np.load(os.path.join(param_dict['root_folder'], param_dict['save_folder'],
                              'x_y_z_rot_%s.npy' % param_dict['name']))
@@ -610,11 +608,11 @@ def sum_one_population(param_dict, num_cells, num_tsteps):
     # xfft_norm_sum_center = np.zeros((len(param_dict['center_electrode_parameters']['x']),
     #                                  len(pidxs[0])), dtype=complex)
     r = None
-    for cell_number in xrange(num_cells):
+    for cell_number in xrange(2000, num_cells):
         param_dict.update({'cell_number': cell_number})
 
         r = np.sqrt(x_y_z_rot[cell_number, 0]**2 + x_y_z_rot[cell_number, 1]**2)
-        pop_radius = param_dict['population_radii'][subpopulation_idx]
+        # pop_radius = param_dict['population_radii'][subpopulation_idx]
 
         ns = NeuralSimulation(**param_dict)
         sim_name = ns.sim_name
@@ -645,17 +643,17 @@ def sum_one_population(param_dict, num_cells, num_tsteps):
         # xfft_norm_sum_lateral[:] += s_norm_lateral[:]
         # xfft_norm_sum_center[:] += s_norm_center[:]
 
-        if r > pop_radius:
-            print "Saving population of radius ", pop_radius
-            print "r(-1): ", np.sqrt(x_y_z_rot[cell_number - 1, 0]**2 + x_y_z_rot[cell_number - 1, 1]**2)
-            print "r: ", r
+        # if r > pop_radius:
+            # print "Saving population of radius ", pop_radius
+            # print "r(-1): ", np.sqrt(x_y_z_rot[cell_number - 1, 0]**2 + x_y_z_rot[cell_number - 1, 1]**2)
+            # print "r: ", r
             # np.save(join(ns.sim_folder, 'summed_lateral_signal_%s_%dum.npy' %
             #              (ns.population_sim_name, pop_radius)), summed_lateral_sig)
-            np.save(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
-                         (ns.population_sim_name, pop_radius)), summed_center_sig)
-            np.save(join(ns.sim_folder, 'summed_center_signal_half_density_%s_%dum.npy' %
-                         (ns.population_sim_name, pop_radius)), summed_center_sig_half_density)
-            subpopulation_idx += 1
+            # np.save(join(ns.sim_folder, 'summed_center_signal_%s_%dum_.npy' %
+            #              (ns.population_sim_name, r)), summed_center_sig)
+            # np.save(join(ns.sim_folder, 'summed_center_signal_half_density_%s_%dum_.npy' %
+            #              (ns.population_sim_name, r)), summed_center_sig_half_density)
+            # subpopulation_idx += 1
         # summed_lateral_sig += lateral_lfp
         summed_center_sig += center_lfp
         if not cell_number % 2:
@@ -666,11 +664,9 @@ def sum_one_population(param_dict, num_cells, num_tsteps):
     # np.save(join(ns.sim_folder, 'summed_lateral_signal_%s_%dum.npy' %
     #              (ns.population_sim_name, r)), summed_lateral_sig)
 
-
-
-    np.save(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
+    np.save(join(ns.sim_folder, 'summed_center_signal_%s_%dum_.npy' %
                  (ns.population_sim_name, r)), summed_center_sig)
-    np.save(join(ns.sim_folder, 'summed_center_signal_half_density_%s_%dum.npy' %
+    np.save(join(ns.sim_folder, 'summed_center_signal_half_density_%s_%dum_.npy' %
                  (ns.population_sim_name, r)), summed_center_sig_half_density)
     # c_phi_lateral = (np.abs(xfft_norm_sum_lateral) ** 2 - num_cells) / (num_cells * (num_cells - 1))
     # c_phi_center = (np.abs(xfft_norm_sum_center) ** 2 - num_cells) / (num_cells * (num_cells - 1))
@@ -820,7 +816,7 @@ def sum_population_mpi_classic(param_dict):
     rank = comm.rank        # rank of this process
     status = MPI.Status()   # get MPI status object
     num_workers = size - 1
-    num_cells = 2000
+    num_cells = 4000
     num_tsteps = int(round(param_dict['end_t']/param_dict['timeres_python'] + 1))
 
     if size == 1:
@@ -917,9 +913,9 @@ def PopulationMPIgeneric():
 
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
-        num_cells = 2000 if at_stallo else 100
+        num_cells = 4000 if at_stallo else 100
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['mus']) *
-                     len(param_dict['distributions']) * len(param_dict['correlations']) * (num_cells))
+                     len(param_dict['distributions']) * len(param_dict['correlations']) * (num_cells - 2000))
 
         for input_region in param_dict['input_regions']:
             for distribution in param_dict['distributions']:
@@ -1004,15 +1000,15 @@ def PopulationMPIclassic():
 
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
-        num_cells = 2000 if at_stallo else 2
+        num_cells = 4000 if at_stallo else 2
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['holding_potentials']) *
-                     len(param_dict['conductance_types']) * len(param_dict['correlations']) * (num_cells))
+                     len(param_dict['conductance_types']) * len(param_dict['correlations']) * (num_cells - 2000))
 
         for holding_potential in param_dict['holding_potentials'][::-1]:
             for input_region in param_dict['input_regions']:
                 for conductance_type in param_dict['conductance_types']:
                     for correlation in param_dict['correlations']:
-                        for cell_idx in range(0, num_cells):
+                        for cell_idx in range(2000, num_cells):
                             task += 1
                             sent = False
                             while not sent:

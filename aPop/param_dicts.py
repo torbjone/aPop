@@ -106,7 +106,7 @@ generic_population_params = {'input_type': 'distributed_delta',
                                                # 'homogeneous',
                                                # 'distal_tuft',
                                                # 'basal'],
-                             'mus': [2.0],#[-0.5, 0.0, 2.0],
+                             'mus': [-0.5, 0.0, 2.0],
                              'distributions': ['linear_increase'],#, 'uniform', 'linear_decrease'],
                              'correlations': [0.0, 0.01, 0.1, 1.0]
                              }
