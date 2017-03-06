@@ -673,6 +673,29 @@ def sum_one_population(param_dict, num_cells, num_tsteps):
     # np.save(join(ns.sim_folder, 'c_phi_lateral_%s.npy' % ns.population_sim_name), c_phi_lateral)
     # np.save(join(ns.sim_folder, 'c_phi_center_%s.npy' % ns.population_sim_name), c_phi_center)
 
+def extend_one_population(param_dict):
+
+    param_dict.update({'cell_number': 0})
+    for input_region in param_dict['input_regions']:
+        param_dict.update({'input_region': input_region})
+        for conductance_type in param_dict['conductance_types']:
+            param_dict.update({'conductance_type': conductance_type})
+            for correlation in param_dict['correlations']:
+                param_dict.update({'correlation': correlation})
+                for holding_potential in param_dict['holding_potentials']:
+                    param_dict.update({'holding_potential': holding_potential})
+                    ns = NeuralSimulation(**param_dict)
+
+                    sig1 = np.load(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
+                                 (ns.population_sim_name, 453)))
+
+                    sig2 = np.load(join(ns.sim_folder, 'summed_center_signal_%s_%dum_.npy' %
+                                 (ns.population_sim_name, 637)))
+
+                    np.save(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
+                                 (ns.population_sim_name, 637)), sig1 + sig2)
+
+
 def count_cell_number_for_size(param_dict, num_cells):
 
     x_y_z_rot = np.load(os.path.join(param_dict['root_folder'], param_dict['save_folder'],
@@ -1071,6 +1094,8 @@ if __name__ == '__main__':
         from param_dicts import classic_population_params as param_dict
     # from param_dicts import asymmetric_population_params as param_dict
 
+    # extend_one_population(param_dict)
+    # sys.exit()
     # from param_dicts import hbp_population_params as param_dict
     # from param_dicts import classic_population_params as param_dict
     # from param_dicts import generic_population_params as param_dict

@@ -173,7 +173,7 @@ classic_population_params = {'input_type': 'distributed_delta',
                              'mus': None,
                              'holding_potentials': [-70, -80],
                              'distributions': None,
-                             'conductance_types': ['passive', 'Ih', 'Ih_frozen', 'active'],
+                             'conductance_types': ['passive', 'Ih', 'Ih_frozen'],
                              'correlations': [0.0, 0.01, 0.1, 1.0]
                              }
 

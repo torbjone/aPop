@@ -1551,7 +1551,7 @@ def plot_figure_5_classic(param_dict):
                          "homogeneous": "Uniform"}
     correlations = param_dict['correlations']
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
-    pop_size = 453
+    pop_size = 637
 
     param_dict.update({'input_region': 'distal_tuft',
                        'cell_number': 0,
@@ -1896,7 +1896,7 @@ def plot_figure_2_classic(param_dict):
     input_regions = ["distal_tuft", "homogeneous", "basal"]
     correlations = param_dict['correlations']
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
-    pop_size = 453
+    pop_size = 637
 
     param_dict["cell_number"] = 0
     holding_potential = -70
@@ -2653,7 +2653,7 @@ def plot_figure_1_classic(param_dict):
     #                      0.0: 'passive-frozen',
     #                      2.0: 'restorative'}
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
-    pop_size = 453
+    pop_size = 637
 
     correlation = 0.0
 
@@ -3062,9 +3062,9 @@ if __name__ == '__main__':
     # plot_decomposed_dipole()
     # sys.exit()
 
-    conductance = 'generic'
+    # conductance = 'generic'
     # conductance = 'stick_generic'
-    # conductance = 'classic'
+    conductance = 'classic'
 
     if conductance == 'generic':
         from param_dicts import generic_population_params as param_dict
@@ -3120,9 +3120,9 @@ if __name__ == '__main__':
     # plot_figure_2_normalized(param_dict)
     # plot_figure_3(param_dict)
     # plot_figure_5(param_dict)
-    # plot_figure_5_classic(param_dict)
+    plot_figure_5_classic(param_dict)
     # plot_all_soma_sigs_classic(param_dict)
-    plot_all_soma_sigs(param_dict)
+    # plot_all_soma_sigs(param_dict)
 
 
     # plot_figure_asymmetric_population_LFP()
