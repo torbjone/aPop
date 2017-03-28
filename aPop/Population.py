@@ -592,86 +592,33 @@ def sum_one_population(param_dict, num_cells, num_tsteps):
 
     x_y_z_rot = np.load(os.path.join(param_dict['root_folder'], param_dict['save_folder'],
                              'x_y_z_rot_%s.npy' % param_dict['name']))
-    # summed_lateral_sig = np.zeros((len(param_dict['lateral_electrode_parameters']['x']), num_tsteps))
     summed_center_sig = np.zeros((len(param_dict['center_electrode_parameters']['x']), num_tsteps))
     summed_center_sig_half_density = np.zeros((len(param_dict['center_electrode_parameters']['x']), num_tsteps))
-    # Cells are numbered with increasing distance from population center. We exploit this
-    subpopulation_idx = 0
-    ns = None
-    pop_radius = 0
 
-    # sample_freq = sf.fftfreq(num_tsteps, d=param_dict['timeres_python'] / 1000.)
-    # pidxs = np.where(sample_freq >= 0)
-    # freqs = sample_freq[pidxs]
-    # xfft_norm_sum_lateral = np.zeros((len(param_dict['lateral_electrode_parameters']['x']),
-    #                                   len(pidxs[0])), dtype=complex)
-    # xfft_norm_sum_center = np.zeros((len(param_dict['center_electrode_parameters']['x']),
-    #                                  len(pidxs[0])), dtype=complex)
+    ns = None
+
     r = None
     for cell_number in xrange(2000, num_cells):
         param_dict.update({'cell_number': cell_number})
 
         r = np.sqrt(x_y_z_rot[cell_number, 0]**2 + x_y_z_rot[cell_number, 1]**2)
-        # pop_radius = param_dict['population_radii'][subpopulation_idx]
-
         ns = NeuralSimulation(**param_dict)
         sim_name = ns.sim_name
-        # lateral_lfp = 1000 * np.load(join(ns.sim_folder, 'lateral_sig_%s.npy' % sim_name))  # uV
         center_lfp = 1000 * np.load(join(ns.sim_folder, 'center_sig_%s.npy' % sim_name))  # uV
-        # s_lateral = sf.fft(lateral_lfp, axis=1)[:, pidxs[0]]
-        # s_center = sf.fft(center_lfp, axis=1)[:, pidxs[0]]
-        # s_norm_lateral = s_lateral / np.abs(s_lateral)
-        # s_norm_center = s_center / np.abs(s_center)
-
-        # freqs, lfp_psd = tools.return_freq_and_psd_welch(lfp[:, :], ns.welch_dict)
-        # if not summed_lateral_sig.shape == lateral_lfp.shape:
-        #     print "Reshaping LFP time signal", lateral_lfp.shape
-        #     summed_lateral_sig = np.zeros(lateral_lfp.shape)
-
-        # if not xfft_norm_sum_lateral.shape == s_norm_lateral.shape:
-        #     print "Reshaping coherence signal", xfft_norm_sum_lateral.shape, s_norm_lateral.shape
-        #     xfft_norm_sum_lateral = np.zeros(s_norm_lateral.shape)
 
         if not summed_center_sig.shape == center_lfp.shape:
             print "Reshaping LFP time signal", center_lfp.shape
             summed_center_sig = np.zeros(center_lfp.shape)
 
-        # if not xfft_norm_sum_center.shape == s_norm_center.shape:
-        #     print "Reshaping coherence signal", xfft_norm_sum_center.shape, s_norm_center.shape
-        #     xfft_norm_sum_center = np.zeros(s_norm_center.shape)
-
-        # xfft_norm_sum_lateral[:] += s_norm_lateral[:]
-        # xfft_norm_sum_center[:] += s_norm_center[:]
-
-        # if r > pop_radius:
-            # print "Saving population of radius ", pop_radius
-            # print "r(-1): ", np.sqrt(x_y_z_rot[cell_number - 1, 0]**2 + x_y_z_rot[cell_number - 1, 1]**2)
-            # print "r: ", r
-            # np.save(join(ns.sim_folder, 'summed_lateral_signal_%s_%dum.npy' %
-            #              (ns.population_sim_name, pop_radius)), summed_lateral_sig)
-            # np.save(join(ns.sim_folder, 'summed_center_signal_%s_%dum_.npy' %
-            #              (ns.population_sim_name, r)), summed_center_sig)
-            # np.save(join(ns.sim_folder, 'summed_center_signal_half_density_%s_%dum_.npy' %
-            #              (ns.population_sim_name, r)), summed_center_sig_half_density)
-            # subpopulation_idx += 1
-        # summed_lateral_sig += lateral_lfp
         summed_center_sig += center_lfp
         if not cell_number % 2:
             summed_center_sig_half_density += center_lfp
-
-    # print "Saving population of radius ", pop_radius
-    # print "Actual radius: ", r
-    # np.save(join(ns.sim_folder, 'summed_lateral_signal_%s_%dum.npy' %
-    #              (ns.population_sim_name, r)), summed_lateral_sig)
 
     np.save(join(ns.sim_folder, 'summed_center_signal_%s_%dum_.npy' %
                  (ns.population_sim_name, r)), summed_center_sig)
     np.save(join(ns.sim_folder, 'summed_center_signal_half_density_%s_%dum_.npy' %
                  (ns.population_sim_name, r)), summed_center_sig_half_density)
-    # c_phi_lateral = (np.abs(xfft_norm_sum_lateral) ** 2 - num_cells) / (num_cells * (num_cells - 1))
-    # c_phi_center = (np.abs(xfft_norm_sum_center) ** 2 - num_cells) / (num_cells * (num_cells - 1))
-    # np.save(join(ns.sim_folder, 'c_phi_lateral_%s.npy' % ns.population_sim_name), c_phi_lateral)
-    # np.save(join(ns.sim_folder, 'c_phi_center_%s.npy' % ns.population_sim_name), c_phi_center)
+
 
 def extend_one_population(param_dict):
 
@@ -907,7 +854,66 @@ def sum_population_mpi_classic(param_dict):
         comm.send(None, dest=0, tag=tags.EXIT)
 
 
-def PopulationMPIgeneric():
+def sum_and_remove(param_dict, num_cells, remove=False):
+    print "summing LFP and removing single LFP files"
+    import time
+    num_tsteps = int(round(param_dict['end_t']/param_dict['timeres_python'] + 1))
+
+    param_dict.update({'cell_number': 0})
+    # filename = join(ns.sim_folder, 'summed_center_signal_%s_%dum_.npy' %
+    #              (ns.population_sim_name, 637))
+    # if os.path.isfile(filename):
+    #     return
+    x_y_z_rot = np.load(os.path.join(param_dict['root_folder'], param_dict['save_folder'],
+                             'x_y_z_rot_%s.npy' % param_dict['name']))
+    summed_center_sig = np.zeros((len(param_dict['center_electrode_parameters']['x']), num_tsteps))
+    summed_center_sig_half_density = np.zeros((len(param_dict['center_electrode_parameters']['x']), num_tsteps))
+
+    ns = None
+    r = None
+    for cell_number in xrange(0, num_cells):
+        param_dict.update({'cell_number': cell_number})
+        r = np.sqrt(x_y_z_rot[cell_number, 0]**2 + x_y_z_rot[cell_number, 1]**2)
+        ns = NeuralSimulation(**param_dict)
+        sim_name = ns.sim_name
+
+        loaded = False
+        t0 = time.time()
+        while not loaded:
+            try:
+                center_lfp = 1000 * np.load(join(ns.sim_folder, 'center_sig_%s.npy' % sim_name))  # uV
+                loaded = True
+            except IOError:
+                print "Could not load ", cell_number, time.time() - t0
+                time.sleep(5)
+            if time.time() - t0 > 60 * 60:
+                print "waited 60 minute for %s. Can wait no longer" % sim_name
+                return False
+
+        # if not summed_center_sig.shape == center_lfp.shape:
+        #     print "Reshaping LFP time signal", center_lfp.shape
+        #     summed_center_sig = np.zeros(center_lfp.shape)
+        summed_center_sig += center_lfp
+
+        if not cell_number % 2:
+            summed_center_sig_half_density += center_lfp
+
+    np.save(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
+                 (ns.population_sim_name, r)), summed_center_sig)
+    np.save(join(ns.sim_folder, 'summed_center_signal_half_density_%s_%dum.npy' %
+                 (ns.population_sim_name, r)), summed_center_sig_half_density)
+
+    if remove:
+        param_dict.update({'cell_number': 0})
+        ns = NeuralSimulation(**param_dict)
+        sig_name = join(ns.sim_folder, 'center_sig_%s_*.npy' % ns.population_sim_name)
+        print "Remove files %s" % sig_name
+        os.system("rm %s" % sig_name)
+    return True
+
+
+
+def PopulationMPIgeneric(param_dict):
     """ Run with
         mpirun -np 4 python example_mpi.py
     """
@@ -936,14 +942,17 @@ def PopulationMPIgeneric():
 
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
-        num_cells = 4000 if at_stallo else 100
+        num_cells = 4000 if at_stallo else 10
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['mus']) *
-                     len(param_dict['distributions']) * len(param_dict['correlations']) * (num_cells - 2000))
-
+                     len(param_dict['distributions']) * len(param_dict['correlations']) * (num_cells))
         for input_region in param_dict['input_regions']:
+            param_dict['input_region'] = input_region
             for distribution in param_dict['distributions']:
+                param_dict['distribution'] = distribution
                 for mu in param_dict['mus']:
+                    param_dict['mu'] = mu
                     for correlation in param_dict['correlations']:
+                        param_dict["correlation"] = correlation
                         for cell_idx in range(0, num_cells):
                             task += 1
                             sent = False
@@ -953,15 +962,22 @@ def PopulationMPIgeneric():
                                 tag = status.Get_tag()
                                 if tag == tags.READY:
                                     comm.send([input_region, distribution, mu, correlation, cell_idx], dest=source, tag=tags.START)
-                                    print "\033[95m Sending task %d/%d to worker %d\033[0m" % (task, num_tasks, source)
+                                    # print "\033[95m Sending task %d/%d to worker %d\033[0m" % (task, num_tasks, source)
                                     sent = True
                                 elif tag == tags.DONE:
-                                    print "\033[95m Worker %d completed task %d/%d\033[0m" % (source, task, num_tasks)
+                                    pass
+                                    # print "\033[95m Worker %d completed task %d/%d\033[0m" % (source, task, num_tasks)
                                 elif tag == tags.ERROR:
                                     print "\033[91mMaster detected ERROR at node %d. Aborting...\033[0m" % source
                                     for worker in range(1, num_workers + 1):
                                         comm.send([None, None, None, None, None], dest=worker, tag=tags.EXIT)
                                     sys.exit()
+                        success = sum_and_remove(param_dict, num_cells, True)
+                        if not success:
+                            print "Failed to sum. Exiting"
+                            for worker in range(1, num_workers + 1):
+                                comm.send([None, None, None, None, None], dest=worker, tag=tags.EXIT)
+
 
         for worker in range(1, num_workers + 1):
             comm.send([None, None, None, None, None], dest=worker, tag=tags.EXIT)
@@ -1082,9 +1098,9 @@ def PopulationMPIclassic():
 
 
 if __name__ == '__main__':
-    # conductance = 'generic'
+    conductance = 'generic'
     # conductance = 'stick_generic'
-    conductance = 'classic'
+    # conductance = 'classic'
 
     if conductance == 'generic':
         from param_dicts import generic_population_params as param_dict
@@ -1132,7 +1148,7 @@ if __name__ == '__main__':
         plot_population(param_dict)
     elif len(sys.argv) == 2 and sys.argv[1] == 'MPI':
         if conductance == 'generic' or conductance == 'stick_generic':
-            PopulationMPIgeneric()
+            PopulationMPIgeneric(param_dict)
         else:
             PopulationMPIclassic()
     elif len(sys.argv) == 2 and sys.argv[1] == 'sum':

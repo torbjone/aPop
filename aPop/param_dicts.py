@@ -47,9 +47,9 @@ stick_center_electrode_parameters['method'] = 'linesource'
 
 # Time resolution of 2**-4 is almost identical to 2**-5
 dt = 2**-4
-end_T = 2**13 - dt
+end_T = 2**13 - dt if at_stallo else 2**7 - dt
 # end_T = 2**13 - dt
-cut_off = 2000 #if at_stallo else 2000
+cut_off = 2000 if at_stallo else 200
 
 
 # distributed_delta_classic_params = {'input_type': 'distributed_delta',
@@ -89,8 +89,8 @@ generic_population_params = {'input_type': 'distributed_delta',
                              'cut_off': cut_off,
                              'end_t': end_T,
                              'syn_tau': dt * 3,
-                             'syn_weight': 1e-1,
-                             'inhibitory_syn_weight': -1e-1 * 5.,
+                             'syn_weight': 0.03,
+                             'inhibitory_syn_weight': -0.03 * 5.,
                              'max_freq': 500,
                              'holding_potential': -80,
                              'conductance_type': 'generic',
@@ -102,12 +102,13 @@ generic_population_params = {'input_type': 'distributed_delta',
                              'num_inhibitory_synapses': 100,
                              'input_firing_rate': 5,
                              'inhibitory_input_firing_rate': 10,
-                             'input_regions': ["balanced", 'perisomatic_inhibition'],
-                                               # 'homogeneous',
-                                               # 'distal_tuft',
-                                               # 'basal'],
+                             'input_regions': [#"balanced", 'perisomatic_inhibition'],
+                                               'basal',
+                                               'distal_tuft',
+                                               'homogeneous',
+                                               ],
                              'mus': [-0.5, 0.0, 2.0],
-                             'distributions': ['linear_increase'],#, 'uniform', 'linear_decrease'],
+                             'distributions': ['linear_decrease', 'linear_increase', 'uniform', ],
                              'correlations': [0.0, 0.01, 0.1, 1.0]
                              }
 
@@ -173,7 +174,7 @@ classic_population_params = {'input_type': 'distributed_delta',
                              'mus': None,
                              'holding_potentials': [-70, -80],
                              'distributions': None,
-                             'conductance_types': ['passive', 'Ih', 'Ih_frozen'],
+                             'conductance_types': ['active', 'Ih', 'Ih_frozen', 'passive'], #, 'Ih'],
                              'correlations': [0.0, 0.01, 0.1, 1.0]
                              }
 
