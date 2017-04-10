@@ -47,9 +47,9 @@ stick_center_electrode_parameters['method'] = 'linesource'
 
 # Time resolution of 2**-4 is almost identical to 2**-5
 dt = 2**-4
-end_T = 2**13 - dt if at_stallo else 2**7 - dt
+end_T = 2**13 - dt #if at_stallo else 2**7 - dt
 # end_T = 2**13 - dt
-cut_off = 2000 if at_stallo else 200
+cut_off = 2000 #if at_stallo else 200
 
 
 # distributed_delta_classic_params = {'input_type': 'distributed_delta',
@@ -174,7 +174,7 @@ classic_population_params = {'input_type': 'distributed_delta',
                              'mus': None,
                              'holding_potentials': [-70, -80],
                              'distributions': None,
-                             'conductance_types': ['active', 'Ih', 'Ih_frozen', 'passive'], #, 'Ih'],
+                             'conductance_types': ['Ih', 'Ih_frozen', 'passive'], #, 'Ih'],
                              'correlations': [0.0, 0.01, 0.1, 1.0]
                              }
 
