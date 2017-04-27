@@ -792,15 +792,15 @@ def plot_figure_4_all_sigs():
 
     plt.close('all')
     fig = plt.figure(figsize=(18, 12))
-    fig.subplots_adjust(right=0.98, wspace=0.6, hspace=0.5, left=0.12, top=0.8, bottom=0.1)
+    fig.subplots_adjust(right=0.98, wspace=0.6, hspace=0.5, left=0.13, top=0.8, bottom=0.1)
 
     meta_ax = fig.add_axes([0, 0, 1, 1], xlim=[0, 1], ylim=[0, 1])
     meta_ax.axis("off")
-    meta_ax.plot([0.365, 0.365], [0.05, 0.98], ":", lw=3, c='lightgray', solid_capstyle='round')
-    meta_ax.plot([0.66, 0.66], [0.05, 0.98], ":", lw=3, c='lightgray', solid_capstyle='round')
+    meta_ax.plot([0.365, 0.365], [0.05, 0.98], "--", lw=2, c='lightgray')
+    meta_ax.plot([0.66, 0.66], [0.05, 0.98], "--", lw=2, c='lightgray')
 
-    meta_ax.plot([0.01, 0.98], [0.57, 0.57], ":", lw=3, c='lightgray', solid_capstyle='round')
-    meta_ax.plot([0.01, 0.98], [0.31, 0.31], ":", lw=3, c='lightgray', solid_capstyle='round')
+    meta_ax.plot([0.01, 0.98], [0.57, 0.57], "--", lw=2, c='lightgray')
+    meta_ax.plot([0.01, 0.98], [0.31, 0.31], "--", lw=2, c='lightgray')
 
     morph_ax_dict = {"aspect": 1,
                      "frameon": False,
@@ -837,9 +837,31 @@ def plot_figure_4_all_sigs():
     fig.text(0.57, 0.91, 'Decreasing\nconductance', ha='center', fontsize=16)
     fig.text(0.88, 0.91, 'Uniform\nconductance', ha='center', fontsize=16)
     #
-    fig.text(0.035, 0.78, 'Distal tuft\ninput', ha='center', fontsize=16)
-    fig.text(0.035, 0.53, 'Basal\ninput', ha='center', fontsize=16)
-    fig.text(0.035, 0.26, 'Uniform\ninput', ha='center', fontsize=16)
+    fig.text(0.04, 0.78, 'Distal tuft\ninput', ha='center', fontsize=16)
+    fig.text(0.04, 0.53, 'Basal\ninput', ha='center', fontsize=16)
+    fig.text(0.04, 0.26, 'Uniform\ninput', ha='center', fontsize=16)
+
+    # fig.text(0.17, 0.91, '1', ha='center', fontsize=16, fontweight='demibold')
+    # fig.text(0.47, 0.91, '2', ha='center', fontsize=16, fontweight='demibold')
+    # fig.text(0.78, 0.91, '3', ha='center', fontsize=16, fontweight='demibold')
+
+    # fig.text(0.005, 0.79, 'A', ha='center', fontsize=16, fontweight='demibold')
+    # fig.text(0.005, 0.53, 'B', ha='center', fontsize=16, fontweight='demibold')
+    # fig.text(0.005, 0.27, 'C', ha='center', fontsize=16, fontweight='demibold')
+
+    fig.text(0.1, 0.80, 'A1', ha='center', fontsize=16, fontweight='demibold')
+    fig.text(0.1, 0.54, 'B1', ha='center', fontsize=16, fontweight='demibold')
+    fig.text(0.1, 0.28, 'C1', ha='center', fontsize=16, fontweight='demibold')
+
+    fig.text(0.38, 0.80, 'A2', ha='center', fontsize=16, fontweight='demibold')
+    fig.text(0.38, 0.54, 'B2', ha='center', fontsize=16, fontweight='demibold')
+    fig.text(0.38, 0.28, 'C2', ha='center', fontsize=16, fontweight='demibold')
+
+    fig.text(0.675, 0.80, 'A3', ha='center', fontsize=16, fontweight='demibold')
+    fig.text(0.675, 0.54, 'B3', ha='center', fontsize=16, fontweight='demibold')
+    fig.text(0.675, 0.28, 'C3', ha='center', fontsize=16, fontweight='demibold')
+
+
 
     psd_ax_dict = {'ylim': [-6, 1], #[1e-1, 1e1],#
                     # 'yscale': 'log',
@@ -872,8 +894,8 @@ def plot_figure_4_all_sigs():
             ax_psd = fig.add_subplot(num_plot_rows, num_plot_cols,
                                      psd_plot_number, **psd_ax_dict)
             # print ax_psd.get_axes()
-            if i == 0:
-                ax_psd.set_title("passive")
+            # if i == 0:
+            ax_psd.set_title("passive")
             for c, correlation in enumerate([0, 1.0]):
                 param_dict['correlation'] = correlation
                 plot_number = i * num_plot_cols + d * (0 + len(distributions)) + c + 2
@@ -972,7 +994,6 @@ def plot_figure_4_all_sigs():
 
                 # if c == 0:
                 ax.set_yticks(ax.get_yticks()[::2])
-    print line_names
     fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=4)
     simplify_axes(fig.axes)
     # mark_subplots([ax_morph_homogeneous], 'B', ypos=1.1, xpos=0.1)
@@ -3350,9 +3371,9 @@ if __name__ == '__main__':
     # plot_figure_1_classic_population()
     # plot_figure_2_classic()
     # plot_figure_3_uniform_boost()
-    # plot_figure_4_all_sigs()
+    plot_figure_4_all_sigs()
 
-    plot_figure_6_restorative_sum()
+    # plot_figure_6_restorative_sum()
 
 
     # plot_decomposed_dipole()
