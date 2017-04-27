@@ -898,6 +898,13 @@ def sum_and_remove(param_dict, num_cells, remove=False):
         if not cell_number % 2:
             summed_center_sig_half_density += center_lfp
 
+        if cell_number in [10, 50, 100, 200, 500]:
+            np.save(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
+                         (ns.population_sim_name, r)), summed_center_sig)
+            np.save(join(ns.sim_folder, 'summed_center_signal_half_density_%s_%dum.npy' %
+                         (ns.population_sim_name, r)), summed_center_sig_half_density)
+
+
     np.save(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
                  (ns.population_sim_name, r)), summed_center_sig)
     np.save(join(ns.sim_folder, 'summed_center_signal_half_density_%s_%dum.npy' %
@@ -942,7 +949,7 @@ def PopulationMPIgeneric(param_dict):
 
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
-        num_cells = 4000 if at_stallo else 10
+        num_cells = 501 if at_stallo else 2
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['mus']) *
                      len(param_dict['distributions']) * len(param_dict['correlations']) * (num_cells))
         for input_region in param_dict['input_regions']:
@@ -977,7 +984,7 @@ def PopulationMPIgeneric(param_dict):
                             print "Failed to sum. Exiting"
                             for worker in range(1, num_workers + 1):
                                 comm.send([None, None, None, None, None], dest=worker, tag=tags.EXIT)
-
+                                sys.exit()
 
         for worker in range(1, num_workers + 1):
             comm.send([None, None, None, None, None], dest=worker, tag=tags.EXIT)

@@ -103,12 +103,12 @@ generic_population_params = {'input_type': 'distributed_delta',
                              'input_firing_rate': 5,
                              'inhibitory_input_firing_rate': 10,
                              'input_regions': [#"balanced", 'perisomatic_inhibition'],
-                                               'basal',
-                                               'distal_tuft',
+                                               # 'basal',
+                                               # 'distal_tuft',
                                                'homogeneous',
                                                ],
                              'mus': [-0.5, 0.0, 2.0],
-                             'distributions': ['linear_decrease', 'linear_increase', 'uniform', ],
+                             'distributions': ['uniform'],#, 'linear_decrease', 'linear_increase'],
                              'correlations': [0.0, 0.01, 0.1, 1.0]
                              }
 
