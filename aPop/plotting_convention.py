@@ -24,6 +24,13 @@ reg_color = '#ff0000'
 pas_color = 'k'
 syn_color = '#00cc00'
 cell_color = '#c4c4c4'
+
+
+
+apic_qa_clr_dict = {-0.5: "pink",
+               0.0: pas_color,
+               2.0: "lightblue"}
+
 qa_clr_dict = {-0.5: reg_color,
                0.0: pas_color,
                2.0: res_color}
