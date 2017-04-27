@@ -796,11 +796,11 @@ def plot_figure_4_all_sigs():
 
     meta_ax = fig.add_axes([0, 0, 1, 1], xlim=[0, 1], ylim=[0, 1])
     meta_ax.axis("off")
-    meta_ax.plot([0.365, 0.365], [0.05, 0.98], ":", lw=3, c='lightgray', solid_capstyle="butt")
-    meta_ax.plot([0.66, 0.66], [0.05, 0.98], ":", lw=3, c='lightgray', solid_capstyle="butt")
+    meta_ax.plot([0.365, 0.365], [0.05, 0.98], ":", lw=3, c='lightgray', solid_capstyle='round')
+    meta_ax.plot([0.66, 0.66], [0.05, 0.98], ":", lw=3, c='lightgray', solid_capstyle='round')
 
-    meta_ax.plot([0.01, 0.98], [0.57, 0.57], ":", lw=3, c='lightgray', solid_capstyle="butt")
-    meta_ax.plot([0.01, 0.98], [0.31, 0.31], ":", lw=3, c='lightgray', solid_capstyle="butt")
+    meta_ax.plot([0.01, 0.98], [0.57, 0.57], ":", lw=3, c='lightgray', solid_capstyle='round')
+    meta_ax.plot([0.01, 0.98], [0.31, 0.31], ":", lw=3, c='lightgray', solid_capstyle='round')
 
     morph_ax_dict = {"aspect": 1,
                      "frameon": False,
@@ -1691,8 +1691,9 @@ def plot_all_dipoles(param_dict):
 
 
 
-def plot_figure_5(param_dict):
+def plot_figure_6_restorative_sum():
 
+    from param_dicts import generic_population_params as param_dict
     input_region_clr = {'distal_tuft': '#ff5555',
                         'homogeneous': 'lightgreen'}
     input_region_name = {"distal_tuft": "Distal tuft",
@@ -1715,10 +1716,10 @@ def plot_figure_5(param_dict):
     plt.close('all')
     fig = plt.figure(figsize=(10, 5))
 
-    fig.subplots_adjust(right=0.95, wspace=0.6, hspace=0.5, left=0., top=0.85, bottom=0.2)
+    fig.subplots_adjust(right=0.95, wspace=0.1, hspace=0.5, left=0., top=0.85, bottom=0.2)
 
-    ax_morph_distal_tuft = fig.add_axes([0.00, 0.0, 0.17, 1.0], aspect=1, frameon=False, xticks=[], yticks=[])
-    ax_morph_homogeneous = fig.add_axes([0.17, 0.0, 0.17, 1.0], aspect=1, frameon=False, xticks=[], yticks=[])
+    ax_morph_distal_tuft = fig.add_axes([0.00, 0.0, 0.16, 1.0], aspect=1, frameon=False, xticks=[], yticks=[])
+    ax_morph_homogeneous = fig.add_axes([0.17, 0.0, 0.16, 1.0], aspect=1, frameon=False, xticks=[], yticks=[])
 
     fig_folder = join(param_dict['root_folder'], 'figures')
     dist_image = plt.imread(join(fig_folder, 'linear_increase_distal_tuft_light.png'))
@@ -1730,13 +1731,12 @@ def plot_figure_5(param_dict):
     psd_ax_dict = {'xlim': [1e0, 5e2],
                    # 'xlabel': 'Frequency (Hz)',
                    'xticks': [1e0, 10, 100],
-                   'ylim': [1e-6, 1e-0]}
+                   'ylim': [-6, 0]}
     lines = None
     line_names = None
     num_plot_cols = 7
     elec_soma = np.argmin(np.abs(param_dict["center_electrode_parameters"]["z"] - 0))
     elec_apic = np.argmin(np.abs(param_dict["center_electrode_parameters"]["z"] - 1000))
-
 
     for idx, elec in enumerate([elec_apic, elec_soma]):
 
@@ -1748,8 +1748,10 @@ def plot_figure_5(param_dict):
             if idx == 0:
                 ax_tuft.set_title('c = %1.2f' % correlation)
             if c == 0.0:
-                ax_tuft.set_ylabel('LFP-PSD ($\mu$V$^2$/Hz)', labelpad=-5)
-                ax_tuft.set_xlabel('Frequency (Hz)', labelpad=-0)
+                ax_tuft.set_ylabel('LFP-PSD\nlog$_{10}$($\mu$V$^2$/Hz)', labelpad=-2)
+                ax_tuft.set_xlabel('frequency (Hz)', labelpad=-0)
+            else:
+                ax_tuft.set_yticklabels([""] * 4)
             lines = []
             line_names = []
             sum = None
@@ -1760,31 +1762,33 @@ def plot_figure_5(param_dict):
                 lfp = np.load(join(folder, '%s.npy' % name))
                 # freq, psd = tools.return_freq_and_psd(ns.timeres_python/1000., lfp[elec])
                 freq, psd = tools.return_freq_and_psd_welch(lfp[elec], ns.welch_dict)
-                # if sum is None:
-                #     sum = lfp[elec]
-                # else:
-                #     sum += lfp[elec]
+                if sum is None:
+                    sum = lfp[elec]
+                else:
+                    sum += lfp[elec]
                 f_idx_max = np.argmin(np.abs(freq - param_dict['max_freq']))
                 f_idx_min = np.argmin(np.abs(freq - 1.))
-                l, = ax_tuft.loglog(freq[f_idx_min:f_idx_max], psd[0][f_idx_min:f_idx_max],
+                l, = ax_tuft.semilogx(freq[f_idx_min:f_idx_max], np.log10(psd[0][f_idx_min:f_idx_max]),
                                     c=input_region_clr[input_region], lw=3, solid_capstyle='round')
                 lines.append(l)
                 line_names.append(input_region_name[input_region])
-            # freq, sum_psd = tools.return_freq_and_psd_welch(sum, ns.welch_dict)
-            # l, = ax_tuft.loglog(freq[f_idx_min:f_idx_max], sum_psd[0][f_idx_min:f_idx_max],
-            #                     '-', c='k', lw=1, solid_capstyle='round')
-            # lines.append(l)
-            # line_names.append("Sum")
+            freq, sum_psd = tools.return_freq_and_psd_welch(sum, ns.welch_dict)
+            l, = ax_tuft.semilogx(freq[f_idx_min:f_idx_max], np.log10(sum_psd[0][f_idx_min:f_idx_max]),
+                                '-', c='k', lw=1, solid_capstyle='round')
+            lines.append(l)
+            line_names.append("Sum")
 
-            ax_tuft.set_xticklabels(['', '1', '10', '100'])
-            ax_tuft.set_yticks(ax_tuft.get_yticks()[1:-1][::2])
+            ax_tuft.set_xticks([1, 10, 100])
+            ax_tuft.set_xticklabels(['1', '10', '100'])
+
+            # ax_tuft.set_yticks(ax_tuft.get_yticks()[1:-1][::2])
 
     fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
     simplify_axes(fig.axes)
     mark_subplots([ax_morph_distal_tuft], 'A', ypos=1.1, xpos=0.1)
     mark_subplots([ax_morph_homogeneous], 'B', ypos=1.1, xpos=0.1)
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_5_generic_637um.png'))
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_5_generic_637um.pdf'), dpi=300)
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_6_generic.png'))
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_6_generic.pdf'), dpi=300)
     plt.close('all')
 
 
@@ -3346,7 +3350,9 @@ if __name__ == '__main__':
     # plot_figure_1_classic_population()
     # plot_figure_2_classic()
     # plot_figure_3_uniform_boost()
-    plot_figure_4_all_sigs()
+    # plot_figure_4_all_sigs()
+
+    plot_figure_6_restorative_sum()
 
 
     # plot_decomposed_dipole()
@@ -3399,7 +3405,6 @@ if __name__ == '__main__':
 
     # plot_linear_combination(param_dict)
 
-    # plot_figure_5(param_dict)
     # plot_figure_5_classic(param_dict)
 
 
