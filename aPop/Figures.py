@@ -1109,8 +1109,10 @@ def plot_all_soma_sigs_classic(param_dict):
     plt.close('all')
 
 
-def plot_all_size_dependencies(param_dict):
+def plot_all_size_dependencies():
 
+
+    from param_dicts import generic_population_params as param_dict
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     pop_sizes = param_dict['population_radii'][param_dict['population_radii'] <= 500]
 
@@ -1306,17 +1308,45 @@ def plot_population_density_effect(param_dict):
             plt.close('all')
 
 
-def plot_population_size_effect(param_dict):
+def plot_population_size_effect():
+    from param_dicts import generic_population_params as param_dict
 
     conductance_names = {-0.5: 'regenerative',
                          0.0: 'passive-frozen',
                          2.0: 'restorative'}
 
+
+    param_dict["input_region"] = "homogeneous"
+    param_dict["distribution"] = "uniform"
+    param_dict["cell_number"] = 0
+    param_dict["mu"] = 0.0
+    param_dict["correlation"] = 0.0
+
+    ns = NeuralSimulation(**param_dict)
+    x_y_z_rot = np.load(os.path.join(ns.param_dict['root_folder'],
+                                     ns.param_dict['save_folder'],
+                     'x_y_z_rot_%s.npy' % ns.param_dict['name']))
+
+
+    rs = np.sqrt(x_y_z_rot[:, 0]**2 + x_y_z_rot[:, 1]**2)
+
+    # pop_cell_number = [10, 50, 100, 200, 500, 4000]
+    pop_cell_number = [10, 100, 4000]
+    # pop_sizes = [38, 74, 104, 143, 226, 637]
+    pop_sizes = [38, 104, 637]
+
+
+
     correlations = param_dict['correlations']
     mus = [-0.5, 0.0, 2.0]
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
-    pop_sizes = [50, 100, 500]
-    pop_numbers = [17, 89, 2000]
+    cell_nums = [len(np.where(rs <= size)[0]) for size in pop_sizes]
+    print cell_nums
+
+    elec_soma = np.argmin(np.abs(param_dict["center_electrode_parameters"]["z"] - 0))
+    # elec_apic = np.argmin(np.abs(param_dict["center_electrode_parameters"]["z"] - 1000))
+
+    # pop_numbers = [17, 89, 2000]
     for input_region in param_dict['input_regions']:
         for distribution in param_dict['distributions']:
             print input_region, distribution
@@ -1331,21 +1361,21 @@ def plot_population_size_effect(param_dict):
             fig = plt.figure(figsize=(10, 8))
             # fig.suptitle('Soma region LFP\nconductance: %s\ninput region: %s'
             #              % (param_dict['distribution'], param_dict['input_region']))
-            fig.subplots_adjust(right=0.95, wspace=0.4, hspace=0.2, left=0.23, top=0.95, bottom=0.12)
+            fig.subplots_adjust(right=0.98, wspace=0.1, hspace=0.5, left=0.24,
+                                top=0.95, bottom=0.12)
 
             psd_ax_dict = {'xlim': [1e0, 5e2],
-                           # 'xlabel': 'Frequency (Hz)',
                            'xticks': [1e0, 10, 100],
                            'xticklabels': ['', '1', '10', '100'],
-                           # 'ylim': [1e-4, 1.2],
-                           'ylim': [1e-9, 1e-4]
+                           'yticks': [-5, -3, -1],
+                           'ylim': [-1, 1]
                            }
             lines = None
             line_names = None
             num_plot_cols = 4
 
-            elec = 60
             psd_dict = {}
+            psd_dict_half_density = {}
             freq = None
             for idx, pop_size in enumerate(pop_sizes):
                 for c, correlation in enumerate(correlations):
@@ -1353,20 +1383,32 @@ def plot_population_size_effect(param_dict):
                     for mu in mus:
                         param_dict['mu'] = mu
                         ns = NeuralSimulation(**param_dict)
-                        name = 'summed_lateral_signal_%s_%dum' % (ns.population_sim_name, pop_size)
+                        name = 'summed_center_signal_%s_%dum' % (ns.population_sim_name, pop_size)
                         lfp = np.load(join(folder, '%s.npy' % name))
                         # freq, psd = tools.return_freq_and_psd(ns.timeres_python/1000., lfp[elec])
-                        freq, psd = tools.return_freq_and_psd_welch(lfp[elec], ns.welch_dict)
+                        freq, psd = tools.return_freq_and_psd_welch(lfp[elec_soma], ns.welch_dict)
                         psd_dict[name] = psd
+
+            for c, correlation in enumerate(correlations):
+                param_dict['correlation'] = correlation
+                for mu in mus:
+                    param_dict['mu'] = mu
+                    ns = NeuralSimulation(**param_dict)
+                    name = 'summed_center_signal_half_density_%s_%dum' % (ns.population_sim_name, pop_size)
+                    lfp = np.load(join(folder, '%s.npy' % name))
+                    freq, psd = tools.return_freq_and_psd_welch(lfp[elec_soma], ns.welch_dict)
+                    psd_dict_half_density[name] = psd
 
 
             for idx, pop_size in enumerate(pop_sizes):
 
-                fig.text(0.01, 0.8 - 1.1*idx / (len(pop_sizes) + 1), 'R = %d $\mu$m\n(%d cells)' % (pop_size, pop_numbers[idx]))
+                fig.text(0.005, 0.85 - 1.1*idx / (len(pop_sizes) + 2),
+                         'R = %d $\mu$m\n(%d cells)' % (pop_size, pop_cell_number[idx]),
+                         va="center")
                 for c, correlation in enumerate(correlations):
                     param_dict['correlation'] = correlation
                     plot_number = idx * num_plot_cols + c
-                    ax = fig.add_subplot(3, num_plot_cols, plot_number + 1, **psd_ax_dict)
+                    ax = fig.add_subplot(len(pop_sizes) + 1, num_plot_cols, plot_number + 1, **psd_ax_dict)
                     simplify_axes(ax)
                     if idx == 0:
                         ax.set_title('c = %1.2f' % correlation)
@@ -1378,36 +1420,65 @@ def plot_population_size_effect(param_dict):
 
                         ns = NeuralSimulation(**param_dict)
 
-                        name = 'summed_lateral_signal_%s_%dum' % (ns.population_sim_name, pop_size)
-                        name_500 = 'summed_lateral_signal_%s_500um' % (ns.population_sim_name)
+                        name = 'summed_center_signal_%s_%dum' % (ns.population_sim_name, pop_size)
+                        name_637 = 'summed_center_signal_%s_%dum' % (ns.population_sim_name, 637)
 
-                        # lfp = np.load(join(folder, '%s.npy' % name))
+                        psd = psd_dict[name] / psd_dict[name_637]
+                        # print np.average(psd)
 
-                        # freq, psd = tools.return_freq_and_psd(ns.timeres_python/1000., lfp[elec])
-                        # freq, psd = tools.return_freq_and_psd_welch(lfp[elec], ns.welch_dict)
-                        psd = psd_dict[name]#/ psd_dict[name_500]
-
-                        l, = ax.loglog(freq, psd[0], c=qa_clr_dict[mu], lw=3)
+                        l, = ax.semilogx(freq, np.log10(psd[0]), solid_capstyle="round",
+                                         c=qa_clr_dict[mu], lw=3)
 
                         lines.append(l)
                         line_names.append(conductance_names[mu])
-                        if mu == 0.0 and c == 0.00 and pop_size == 500:
-                            ax.set_ylabel('LFP-PSD ($\mu$V$^2$/Hz)', labelpad=-5)
-                            # ax.set_xticks([1., 10., 100.])
-                            # ax.set_xticklabels(['1', '10', '100'])
-                            ax.set_xlabel('Frequency (Hz)')
+                        # if mu == 0.0 and c == 0.00 and idx == len(pop_sizes) -1:
+                        #     ax.set_ylabel('LFP-PSD\nlog$_{10}$($\mu$V$^2$/Hz)', labelpad=-3)
+                        #     ax.set_xlabel('frequency (Hz)')
+                    if not c == 0:
+                        ax.set_yticklabels([''] * 3)
                     ax.set_xticklabels(['', '1', '10', '100'])
 
-                        # else:
-                        #     ax.set_xticks([1, 10, 100])
-                        #     ax.set_xticklabels(['', '', ''])
-                        # ax_tuft.set_xticklabels(['1', '10', '100'])
-                        # ax_tuft.set_yticks(ax_tuft.get_yticks()[1:-1][::2])
+            fig.text(0.005, 0.85 - 1.1*(idx + 1) / (len(pop_sizes) + 2),
+                     'Half density\nR = %d $\mu$m\n(%d cells)' % (637, pop_cell_number[-1] / 2),
+                     va="center")
+            for c, correlation in enumerate(correlations):
+                param_dict['correlation'] = correlation
+                plot_number = (idx + 1) * num_plot_cols + c
+                ax = fig.add_subplot(len(pop_sizes) + 1, num_plot_cols, plot_number + 1, **psd_ax_dict)
+                simplify_axes(ax)
+                if idx == 0:
+                    ax.set_title('c = %1.2f' % correlation)
+                ax.grid(True)
+                lines = []
+                line_names = []
+                for mu in mus:
+                    param_dict['mu'] = mu
+                    ns = NeuralSimulation(**param_dict)
+                    name = 'summed_center_signal_half_density_%s_%dum' % (ns.population_sim_name, pop_size)
+                    name_637 = 'summed_center_signal_%s_%dum' % (ns.population_sim_name, 637)
+
+                    psd = psd_dict_half_density[name] / psd_dict[name_637]
+                    print psd[0]
+                    print np.average(psd[0, 1:])
+
+
+                    l, = ax.semilogx(freq, np.log10(psd[0]), solid_capstyle="round",
+                                     c=qa_clr_dict[mu], lw=3)
+
+                    lines.append(l)
+                    line_names.append(conductance_names[mu])
+                    if mu == 0.0 and c == 0.00 and idx == len(pop_sizes) -1:
+                        ax.set_ylabel('LFP-PSD\nlog$_{10}$($\mu$V$^2$/Hz)', labelpad=-3)
+                        ax.set_xlabel('frequency (Hz)')
+                if not c == 0:
+                    ax.set_yticklabels([''] * 3)
+                ax.set_xticklabels(['', '1', '10', '100'])
+
+
 
             fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=3)
-            # simplify_axes(fig.axes)
-            plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'],
-                             'Figure_population_size_%s_%s_other_sizes.png' % (param_dict['distribution'], param_dict['input_region'])))
+            plt.savefig(join(param_dict['root_folder'], "figures", 'Figure_7_size_dependence.png'))
+            plt.savefig(join(param_dict['root_folder'], "figures", 'Figure_7_size_dependence.pdf'))
             plt.close('all')
 
 
@@ -3371,9 +3442,11 @@ if __name__ == '__main__':
     # plot_figure_1_classic_population()
     # plot_figure_2_classic()
     # plot_figure_3_uniform_boost()
-    plot_figure_4_all_sigs()
-
+    # plot_figure_4_all_sigs()
     # plot_figure_6_restorative_sum()
+
+    plot_population_size_effect()
+
 
 
     # plot_decomposed_dipole()
@@ -3430,6 +3503,7 @@ if __name__ == '__main__':
 
 
     # plot_figure_1_population_LFP(param_dict)
+    # plot_all_size_dependencies()
 
     # plot_figure_2_normalized(param_dict)
     # plot_figure_3(param_dict)
@@ -3444,9 +3518,8 @@ if __name__ == '__main__':
 
     # plot_figure_perisomatic_inhibition(param_dict)
     # plot_leski_13(param_dict)
-    # plot_population_size_effect(param_dict)
     # plot_population_density_effect(param_dict)
-    # plot_all_size_dependencies(param_dict)
+    #
 
     # plot_all_soma_sigs(param_dict)
 

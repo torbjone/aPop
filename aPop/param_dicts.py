@@ -108,7 +108,7 @@ generic_population_params = {'input_type': 'distributed_delta',
                                                'homogeneous',
                                                ],
                              'mus': [-0.5, 0.0, 2.0],
-                             'distributions': ['uniform'],#, 'linear_decrease', 'linear_increase'],
+                             'distributions': ['linear_increase'],#, 'linear_decrease', 'linear_increase'],
                              'correlations': [0.0, 0.01, 0.1, 1.0]
                              }
 
