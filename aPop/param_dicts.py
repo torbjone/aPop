@@ -210,7 +210,7 @@ hbp_population_params = {'input_type': 'distributed_delta',
                          'mus': None,
                          'holding_potentials': [None],
                          'distributions': None,
-                         'conductance_types': ['active', 'passive', 'Ih'],
+                         'conductance_types': ['passive', 'Ih'],#, 'active'],
                          'correlations': [0.0, 0.01, 0.1, 1.0]
                          }
 
@@ -242,7 +242,7 @@ stick_population_params = {'input_type': 'distributed_delta',
                              'inhibitory_input_firing_rate': 10,
                              'num_inhibitory_synapses': 100,
                              'input_firing_rate': 5,
-                             'input_regions': ['top', 'homogeneous', ],
+                             'input_regions': ['top', 'homogeneous'],
                              'mus': [0.0, 2.0],
                              'distributions': ['increase'],
                              'correlations': [0.0, 0.01, 0.1, 1.0],

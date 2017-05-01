@@ -629,7 +629,7 @@ def plot_cell_population(param_dict):
     plt.close('all')
 
 
-def plot_all_soma_sigs(param_dict):
+def plot_all_soma_sigs():
 
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     pop_size = 637
@@ -770,6 +770,254 @@ def plot_all_soma_sigs(param_dict):
     plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_all_sigs_%dum.pdf' % pop_size), dpi=300)
     plt.close('all')
 
+def plot_figure_8_hbp_summary():
+
+    from param_dicts import hbp_population_params as param_dict
+
+    folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
+    pop_size = 500#637
+
+    param_dict.update({
+                       'cell_number': 0,
+                      })
+
+    elec_z = param_dict['center_electrode_parameters']['z']
+    elec_x = param_dict['center_electrode_parameters']['x']
+
+    soma_elec = np.argmin(np.abs(elec_z - 0) + np.abs(elec_x - 0)) #+ np.abs(elec_x - 0))
+    apic_elec = np.argmin(np.abs(elec_z - 1000) + np.abs(elec_x - 0)) #+ np.abs(elec_x - 0))
+
+    correlations = [0, 1.0]#param_dict['correlations']
+    input_regions = ['distal_tuft', 'homogeneous']
+
+    param_dict['distribution'] = 'linear_increase'
+    plt.close('all')
+    fig = plt.figure(figsize=(5, 5))
+    fig.subplots_adjust(right=0.98, wspace=0.1, hspace=0.6,
+                        left=0.095, top=0.83, bottom=0.15)
+
+    psd_ax_dict = {'ylim': [-7, -2], #[1e-1, 1e1],#
+                    # 'yscale': 'log',
+                    'xscale': 'log',
+                    'xlim': [1, 500],
+                   #'xlabel': 'Frequency (Hz)',
+                   'xticklabels': ['1', '10', '100'],
+                   'xticks': [1e0, 10, 100],
+                    }
+    num_plot_cols = 3
+    num_plot_rows = 2
+
+    ax_morph_1 = fig.add_axes([0.05, 0.5, 0.17, 0.3], title="Distal tuft\ninput",
+                              frameon=False, xticks=[], yticks=[])
+    ax_morph_2 = fig.add_axes([0.05, 0.1, 0.17, 0.3], title="Uniform\ninput",
+                              frameon=False, xticks=[], yticks=[])
+
+    dist_image = plt.imread(join(param_dict['root_folder'], 'figures',
+                                 "schematic_pop", 'linear_increase_distal_tuft_single_elec.png'))
+
+    uniform_image = plt.imread(join(param_dict['root_folder'], 'figures',
+                                 "schematic_pop", 'linear_increase_homogeneous_single_elec.png'))
+
+    ax_morph_1.imshow(dist_image)
+    ax_morph_2.imshow(uniform_image)
+
+    lines = None
+    line_names = None
+    for i, input_region in enumerate(input_regions):
+        param_dict['input_region'] = input_region
+
+        for c, correlation in enumerate(correlations):
+            param_dict['correlation'] = correlation
+            plot_number = i * num_plot_cols + c + 2
+            lines = []
+            line_names = []
+
+            ax = fig.add_subplot(num_plot_rows, num_plot_cols, plot_number, **psd_ax_dict)
+            ax.set_title('c=%d' % correlation)
+
+            psd_dict = {}
+            freq = None
+            for conductance_type in param_dict['conductance_types']:
+                param_dict['conductance_type'] = conductance_type
+                ns = NeuralSimulation(**param_dict)
+                name = 'summed_center_signal_%s_%dum' % (ns.population_sim_name, pop_size)
+                # try:
+                lfp = np.load(join(folder, '%s.npy' % name))[[soma_elec, apic_elec], :]
+                # except:
+                #     print name
+                #     continue
+
+                # lfp = np.load(join(folder, '%s.npy' % name))[:, :]
+                # print name, lfp.shape
+                freq, psd = tools.return_freq_and_psd_welch(lfp, ns.welch_dict)
+                print input_region, correlation, conductance_type, np.max(psd), psd.shape
+                # plt.close("all")
+                psd_dict[conductance_type] = psd
+
+            for conductance_type in param_dict['conductance_types']:
+
+                param_dict['conductance_type'] = conductance_type
+                # try:
+                psd = psd_dict[conductance_type] #/ psd_dict[0.0]
+                # except:
+                #     continue
+                f_idx_max = np.argmin(np.abs(freq - param_dict['max_freq']))
+                f_idx_min = np.argmin(np.abs(freq - 1.))
+                l, = ax.plot(freq[f_idx_min:f_idx_max], np.log10(psd[0][f_idx_min:f_idx_max]),
+                             c=conductance_clr_dict[conductance_type], lw=3, clip_on=True, solid_capstyle='round')
+                # ax.plot(freq[f_idx_min:f_idx_max], np.log10(psd[1][f_idx_min:f_idx_max]), '--',
+                #              c=conductance_clr_dict[conductance_type], lw=1.5, clip_on=True, solid_capstyle='butt')
+
+                lines.append(l)
+                line_names.append(conductance_names[conductance_type])
+                # img = ax.pcolormesh(freq[1:freq_idx], z, psd[:, 1:freq_idx], **im_dict)
+                if i==0 and c == 0:
+                    ax.set_xlabel('frequency (Hz)', labelpad=-0)
+                    ax.set_ylabel('LFP-PSD\nlog$_{10}$($\mu$V$^2$/Hz)', labelpad=0)
+                #     c_ax = fig.add_axes([0.37, 0.2, 0.005, 0.17])
+                #     cbar = plt.colorbar(img, cax=c_ax, label='$\mu$V$^2$/Hz')
+                # plt.axis('auto')
+                # plt.colorbar(img)
+                # l, = ax.loglog(freq, psd[0], c=input_region_clr[input_region], lw=3)
+                # lines.append(l)
+                # line_names.append(input_region)
+
+            # if c == 0:
+            # ax.set_yticks(ax.get_yticks()[1:-2][::2])
+            if not c==0:
+                ax.set_yticklabels([])
+            ax.grid(True)
+
+    fig.legend(lines, line_names, loc='lower center',
+               frameon=False, ncol=3, fontsize=11)
+    simplify_axes(fig.axes)
+    fig.suptitle("More complex cortical population")
+
+    mark_subplots([ax_morph_1, ax_morph_2], ypos=1.4, xpos=-0.2)
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_8_hbp.png'))
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_8_hbp.pdf'), dpi=300)
+    plt.close('all')
+
+
+def plot_figure_8_stick_summary():
+
+    from param_dicts import stick_population_params as param_dict
+
+    folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
+    pop_size = 500#637
+
+    param_dict.update({
+                       'cell_number': 0,
+                      })
+
+    elec_z = param_dict['center_electrode_parameters']['z']
+    elec_x = param_dict['center_electrode_parameters']['x']
+
+    soma_elec = np.argmin(np.abs(elec_z - 0) + np.abs(elec_x - 0)) #+ np.abs(elec_x - 0))
+    apic_elec = np.argmin(np.abs(elec_z - 1000) + np.abs(elec_x - 0)) #+ np.abs(elec_x - 0))
+
+    correlations = [0, 1.0]#param_dict['correlations']
+    input_regions = ['top', 'homogeneous']
+
+    param_dict['distribution'] = 'increase'
+    plt.close('all')
+    fig = plt.figure(figsize=(5, 5))
+    fig.subplots_adjust(right=0.98, wspace=0.1, hspace=0.6,
+                        left=0.095, top=0.85, bottom=0.15)
+
+    psd_ax_dict = {'ylim': [-10, -4], #[1e-1, 1e1],#
+                    # 'yscale': 'log',
+                    'xscale': 'log',
+                    'xlim': [1, 500],
+                   #'xlabel': 'Frequency (Hz)',
+                   'xticklabels': ['1', '10', '100'],
+                   'xticks': [1e0, 10, 100],
+                    }
+    num_plot_cols = 3
+    num_plot_rows = 2
+
+    ax_morph_1 = fig.add_axes([0.05, 0.5, 0.17, 0.3], title="Distal tuft\ninput",
+                              frameon=False, xticks=[], yticks=[])
+    ax_morph_2 = fig.add_axes([0.05, 0.1, 0.17, 0.3], title="Uniform\ninput",
+                              frameon=False, xticks=[], yticks=[])
+
+    dist_image = plt.imread(join(param_dict['root_folder'], 'figures',
+                                 "schematic_pop", 'stick_tuft_input.png'))
+
+    uniform_image = plt.imread(join(param_dict['root_folder'], 'figures',
+                                 "schematic_pop", 'stick_uniform_input.png'))
+
+    ax_morph_1.imshow(dist_image)
+    ax_morph_2.imshow(uniform_image)
+
+    lines = None
+    line_names = None
+    for i, input_region in enumerate(input_regions):
+        param_dict['input_region'] = input_region
+
+        for c, correlation in enumerate(correlations):
+            param_dict['correlation'] = correlation
+            plot_number = i * num_plot_cols + c + 2
+            lines = []
+            line_names = []
+
+            ax = fig.add_subplot(num_plot_rows, num_plot_cols, plot_number, **psd_ax_dict)
+            ax.set_title('c=%d' % correlation)
+
+            psd_dict = {}
+            freq = None
+            for conductance_type in param_dict['mus']:
+                param_dict['conductance_type'] = conductance_type
+                ns = NeuralSimulation(**param_dict)
+                # pop_name = ns.population_sim_name
+                pop_name = "stick_population_infinite_neurite_{}_generic_increase_{}_{:0.2f}".format(input_region, conductance_type, correlation)
+                name = 'summed_center_signal_%s_%dum' % (pop_name, pop_size)
+                # try:
+                lfp = np.load(join(folder, '%s.npy' % name))[[soma_elec, apic_elec], :]
+                # except:
+                #     print name
+                #     continue
+
+                # lfp = np.load(join(folder, '%s.npy' % name))[:, :]
+                # print name, lfp.shape
+                freq, psd = tools.return_freq_and_psd_welch(lfp, ns.welch_dict)
+                print input_region, correlation, conductance_type, np.max(psd), psd.shape
+                # plt.close("all")
+                psd_dict[conductance_type] = psd
+
+            for conductance_type in param_dict['mus']:
+
+                param_dict['conductance_type'] = conductance_type
+                # try:
+                psd = psd_dict[conductance_type] #/ psd_dict[0.0]
+                # except:
+                #     continue
+                f_idx_max = np.argmin(np.abs(freq - param_dict['max_freq']))
+                f_idx_min = np.argmin(np.abs(freq - 1.))
+                l, = ax.plot(freq[f_idx_min:f_idx_max], np.log10(psd[0][f_idx_min:f_idx_max]),
+                             c=conductance_clr_dict[conductance_type], lw=3, clip_on=True, solid_capstyle='round')
+                # ax.plot(freq[f_idx_min:f_idx_max], np.log10(psd[1][f_idx_min:f_idx_max]), '--',
+                #              c=conductance_clr_dict[conductance_type], lw=1.5, clip_on=True, solid_capstyle='butt')
+
+                lines.append(l)
+                line_names.append(conductance_names[conductance_type])
+                # img = ax.pcolormesh(freq[1:freq_idx], z, psd[:, 1:freq_idx], **im_dict)
+                if i==0 and c == 0:
+                    ax.set_xlabel('frequency (Hz)', labelpad=-0)
+                    ax.set_ylabel('LFP-PSD\nlog$_{10}$($\mu$V$^2$/Hz)', labelpad=0)
+
+            if not c==0:
+                ax.set_yticklabels([])
+            ax.grid(True)
+
+    fig.legend(lines, line_names, loc='lower center',
+               frameon=False, ncol=3, fontsize=11)
+    fig.suptitle("Simplified stick population")
+    simplify_axes(fig.axes)
+    mark_subplots([ax_morph_1, ax_morph_2], "CD", ypos=1.4, xpos=-0.2)
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_8_stick.png'))
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_8_stick.pdf'), dpi=300)
+    plt.close('all')
 
 def plot_figure_4_all_sigs():
 
@@ -1308,7 +1556,7 @@ def plot_population_density_effect(param_dict):
             plt.close('all')
 
 
-def plot_population_size_effect():
+def plot_figure_7_population_size_effect():
     from param_dicts import generic_population_params as param_dict
 
     conductance_names = {-0.5: 'regenerative',
@@ -3443,8 +3691,10 @@ if __name__ == '__main__':
     # plot_figure_3_uniform_boost()
     # plot_figure_4_all_sigs()
     # plot_figure_6_restorative_sum()
+    # plot_figure_7_population_size_effect()
 
-    plot_population_size_effect()
+    plot_figure_8_hbp_summary()
+    plot_figure_8_stick_summary()
 
 
 
@@ -3520,7 +3770,6 @@ if __name__ == '__main__':
     # plot_population_density_effect(param_dict)
     #
 
-    # plot_all_soma_sigs(param_dict)
 
     # plot_LFP_time_trace(param_dict)
     # plot_cell_population(param_dict)   # cell tufts cut from figure!
