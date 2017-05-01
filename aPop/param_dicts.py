@@ -203,13 +203,15 @@ hbp_population_params = {'input_type': 'distributed_delta',
                          'center_electrode_parameters': center_elec_params,
                          'root_folder': root_folder,
                          'num_synapses': 1000,
+                         'num_inhibitory_synapses': 100,
                          'input_firing_rate': 5,
+                         'inhibitory_input_firing_rate': 10,
                          'input_regions': ['homogeneous', 'distal_tuft'],
                          'mus': None,
                          'holding_potentials': [None],
                          'distributions': None,
                          'conductance_types': ['active', 'passive', 'Ih'],
-                         'correlations': [0.0, 0.1, 1.0]
+                         'correlations': [0.0, 0.01, 0.1, 1.0]
                          }
 
 
@@ -237,10 +239,12 @@ stick_population_params = {'input_type': 'distributed_delta',
                              'center_electrode_parameters': stick_center_electrode_parameters,
                              'root_folder': root_folder,
                              'num_synapses': 1000,
+                             'inhibitory_input_firing_rate': 10,
+                             'num_inhibitory_synapses': 100,
                              'input_firing_rate': 5,
                              'input_regions': ['top', 'homogeneous', ],
-                             'mus': [-0.5, 0.0, 2.0],
-                             'distributions': ['uniform', 'increase'],
+                             'mus': [0.0, 2.0],
+                             'distributions': ['increase'],
                              'correlations': [0.0, 0.01, 0.1, 1.0],
                              'correlation': 0.0,
                              }

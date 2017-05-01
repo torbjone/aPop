@@ -1367,8 +1367,8 @@ def plot_population_size_effect():
             psd_ax_dict = {'xlim': [1e0, 5e2],
                            'xticks': [1e0, 10, 100],
                            'xticklabels': ['', '1', '10', '100'],
-                           'yticks': [-5, -3, -1],
-                           'ylim': [-1, 1]
+                           'yticks': [-6, -4, -2],
+                           'ylim': [-6, -1]
                            }
             lines = None
             line_names = None
@@ -1423,7 +1423,7 @@ def plot_population_size_effect():
                         name = 'summed_center_signal_%s_%dum' % (ns.population_sim_name, pop_size)
                         name_637 = 'summed_center_signal_%s_%dum' % (ns.population_sim_name, 637)
 
-                        psd = psd_dict[name] / psd_dict[name_637]
+                        psd = psd_dict[name] #/ psd_dict[name_637]
                         # print np.average(psd)
 
                         l, = ax.semilogx(freq, np.log10(psd[0]), solid_capstyle="round",
@@ -1457,10 +1457,9 @@ def plot_population_size_effect():
                     name = 'summed_center_signal_half_density_%s_%dum' % (ns.population_sim_name, pop_size)
                     name_637 = 'summed_center_signal_%s_%dum' % (ns.population_sim_name, 637)
 
-                    psd = psd_dict_half_density[name] / psd_dict[name_637]
-                    print psd[0]
-                    print np.average(psd[0, 1:])
-
+                    psd = psd_dict_half_density[name] #/ psd_dict[name_637]
+                    # print psd[0]
+                    print np.average(psd[0, 1:200] / psd_dict[name_637][0, 1:200])
 
                     l, = ax.semilogx(freq, np.log10(psd[0]), solid_capstyle="round",
                                      c=qa_clr_dict[mu], lw=3)
