@@ -859,7 +859,7 @@ def sum_and_remove(param_dict, num_cells, remove=False):
     import time
     num_tsteps = int(round(param_dict['end_t']/param_dict['timeres_python'] + 1))
 
-    param_dict.update({'cell_number': 0})
+    # param_dict.update({'cell_number': 0})
     # filename = join(ns.sim_folder, 'summed_center_signal_%s_%dum_.npy' %
     #              (ns.population_sim_name, 637))
     # if os.path.isfile(filename):
@@ -868,6 +868,9 @@ def sum_and_remove(param_dict, num_cells, remove=False):
                              'x_y_z_rot_%s.npy' % param_dict['name']))
     summed_center_sig = np.zeros((len(param_dict['center_electrode_parameters']['x']), num_tsteps))
     summed_center_sig_half_density = np.zeros((len(param_dict['center_electrode_parameters']['x']), num_tsteps))
+
+
+
 
     ns = None
     r = None
@@ -1016,7 +1019,7 @@ def PopulationMPIgeneric(param_dict):
         comm.send(None, dest=0, tag=tags.EXIT)
 
 
-def PopulationMPIclassic():
+def PopulationMPIclassic(param_dict):
     """ Run with
         mpirun -np 4 python example_mpi.py
     """
@@ -1050,9 +1053,13 @@ def PopulationMPIclassic():
                      len(param_dict['conductance_types']) * len(param_dict['correlations']) * (num_cells))
 
         for holding_potential in param_dict['holding_potentials']:
+            param_dict['holding_potential'] = holding_potential
             for input_region in param_dict['input_regions']:
+                param_dict['input_region'] = input_region
                 for conductance_type in param_dict['conductance_types']:
+                    param_dict['conductance_type'] = conductance_type
                     for correlation in param_dict['correlations']:
+                        param_dict["correlation"] = correlation
                         for cell_idx in range(0, num_cells):
                             task += 1
                             sent = False
@@ -1161,7 +1168,7 @@ if __name__ == '__main__':
         if conductance == 'generic' or conductance == 'stick_generic':
             PopulationMPIgeneric(param_dict)
         else:
-            PopulationMPIclassic()
+            PopulationMPIclassic(param_dict)
     elif len(sys.argv) == 2 and sys.argv[1] == 'sum':
         if conductance == 'generic' or conductance == 'stick_generic':
             sum_population_mpi_generic(param_dict)

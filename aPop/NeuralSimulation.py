@@ -221,7 +221,10 @@ class NeuralSimulation:
                                         "CaDynamics_E2", "Ca_LVAst", "Ca"],
                             'Ih': ["Nap_Et2", "NaTa_t", "NaTs2_t", "SKv3_1",
                                    "SK_E2", "K_Tst", "K_Pst", "Im",
-                                   "CaDynamics_E2", "Ca_LVAst", "Ca"]}
+                                   "CaDynamics_E2", "Ca_LVAst", "Ca"],
+                            'Ih_frozen': ["Nap_Et2", "NaTa_t", "NaTs2_t", "SKv3_1",
+                               "SK_E2", "K_Tst", "K_Pst", "Im", "Ih",
+                               "CaDynamics_E2", "Ca_LVAst", "Ca"]}
 
             sys.path.append(self.param_dict['model_folder'])
             from suppress_print import suppress_stdout_stderr
@@ -230,6 +233,8 @@ class NeuralSimulation:
                 from hbp_cells import return_cell
             cell_folder = join(self.param_dict['model_folder'], 'models', self.cell_name)
             cell = return_cell(cell_folder, self.end_t, self.timeres_NEURON, -self.cut_off)
+            if self.conductance_type == "Ih_frozen":
+                self.make_Ih_frozen(cell)
             self.remove_active_mechanisms(remove_lists[self.conductance_type])
 
         elif self.cell_name == 'infinite_neurite':
