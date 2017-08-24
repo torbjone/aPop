@@ -98,6 +98,15 @@ def biophys_generic(**kwargs):
         sec.cm = 1.0
         sec.g_pas_QA = kwargs['g_pas']
 
+    if kwargs['mu_factor'] is None:
+        print "Not inserting qasi-active conductance, only passive!"
+        for sec in neuron.h.allsec():
+            for seg in sec:
+                seg.g_w_bar_QA = 0
+                seg.mu_QA = 0
+        return
+
+
     total_area = _get_total_area()
     total_w_conductance = kwargs['avrg_w_bar'] * total_area
     max_dist = _get_longest_distance()

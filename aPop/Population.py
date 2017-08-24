@@ -887,7 +887,7 @@ def sum_and_remove(param_dict, num_cells, remove=False):
                 center_lfp = 1000 * np.load(join(ns.sim_folder, 'center_sig_%s.npy' % sim_name))  # uV
                 loaded = True
             except IOError:
-                print "Could not load ", cell_number, time.time() - t0
+                print "Could not load ", cell_number, join(ns.sim_folder, 'center_sig_%s.npy' % sim_name), time.time() - t0
                 time.sleep(5)
             if time.time() - t0 > 60 * 60:
                 print "waited 60 minute for %s. Can wait no longer" % sim_name
@@ -951,7 +951,7 @@ def PopulationMPIgeneric(param_dict):
 
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
-        num_cells = 4000 if at_stallo else 2
+        num_cells = 4000 if at_stallo else 4000
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['mus']) *
                      len(param_dict['distributions']) * len(param_dict['correlations']) * (num_cells))
         for input_region in param_dict['input_regions']:
@@ -981,7 +981,7 @@ def PopulationMPIgeneric(param_dict):
                                     for worker in range(1, num_workers + 1):
                                         comm.send([None, None, None, None, None], dest=worker, tag=tags.EXIT)
                                     sys.exit()
-                        success = sum_and_remove(param_dict, num_cells, True)
+                        success = True#sum_and_remove(param_dict, num_cells, True)
                         if not success:
                             print "Failed to sum. Exiting"
                             for worker in range(1, num_workers + 1):
@@ -1003,11 +1003,11 @@ def PopulationMPIgeneric(param_dict):
             tag = status.Get_tag()
             if tag == tags.START:
                 # Do the work here
-                print "\033[93m%d put to work on %s %s %+1.1f %1.2f cell %d\033[0m" % (rank, input_region,
-                                                                                distribution, mu, correlation, cell_idx)
+                print "\033[93m%d put to work on %s %s %s %1.2f cell %d\033[0m" % (rank, input_region,
+                                                                                distribution, str(mu), correlation, cell_idx)
                 try:
-                    os.system("python %s %s %1.2f %d %s %1.1f" % (sys.argv[0], input_region, correlation, cell_idx,
-                                                                  distribution, mu))
+                    os.system("python %s %s %1.2f %d %s %s" % (sys.argv[0], input_region, correlation, cell_idx,
+                                                                  distribution, str(mu)))
                 except:
                     print "\033[91mNode %d exiting with ERROR\033[0m" % rank
                     comm.send(None, dest=0, tag=tags.ERROR)
@@ -1117,20 +1117,20 @@ def PopulationMPIclassic(param_dict):
 
 if __name__ == '__main__':
     # conductance = 'generic'
-    # conductance = 'stick_generic'
-    conductance = 'classic'
+    conductance = 'stick_generic'
+    # conductance = 'classic'
 
     # if conductance == 'generic':
     #     from param_dicts import generic_population_params as param_dict
     # elif conductance == 'stick_generic':
-    # from param_dicts import stick_population_params as param_dict
+    from param_dicts import stick_population_params as param_dict
     # else:
     # from param_dicts import classic_population_params as param_dict
     # from param_dicts import asymmetric_population_params as param_dict
 
     # extend_one_population(param_dict)
     # sys.exit()
-    from param_dicts import hbp_population_params as param_dict
+    # from param_dicts import hbp_population_params as param_dict
     # from param_dicts import classic_population_params as param_dict
     # from param_dicts import generic_population_params as param_dict
 
@@ -1143,7 +1143,10 @@ if __name__ == '__main__':
         correlation = float(sys.argv[2])
         if conductance == 'generic' or conductance == 'stick_generic':
             distribution = sys.argv[4]
-            mu = float(sys.argv[5])
+            if sys.argv[5] == "None":
+                mu = None
+            else:
+                mu = float(sys.argv[5])
             param_dict.update({'input_region': input_region,
                                'cell_number': cell_number,
                                'mu': mu,

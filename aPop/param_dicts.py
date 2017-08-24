@@ -243,9 +243,9 @@ stick_population_params = {'input_type': 'distributed_delta',
                              'num_inhibitory_synapses': 100,
                              'input_firing_rate': 5,
                              'input_regions': ['top', 'homogeneous'],
-                             'mus': [0.0, 2.0],
+                             'mus': [None],#0.0, 2.0],
                              'distributions': ['increase'],
-                             'correlations': [0.0, 0.01, 0.1, 1.0],
+                             'correlations': [0.0, 1.0],
                              'correlation': 0.0,
                              }
 

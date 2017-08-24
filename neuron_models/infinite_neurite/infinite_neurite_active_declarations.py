@@ -24,6 +24,13 @@ def active_declarations(**kwargs):
             raise ValueError('Distribution not recognized!')
 
         for seg in sec:
+
+            if kwargs['mu_factor'] is None:
+                seg.g_pas_QA = baseline_g
+                seg.g_w_bar_QA = 0
+                seg.mu_QA = 0
+                continue
+
             if neuron.h.distance(seg.x) <= 500:
                 seg.g_pas_QA = baseline_g
                 seg.g_w_bar_QA = baseline_g

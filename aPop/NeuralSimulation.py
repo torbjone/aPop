@@ -68,7 +68,10 @@ class NeuralSimulation:
 
     def get_simulation_name(self):
         if self.conductance_type == 'generic':
-            conductance = '%s_%s_%1.1f' % (self.conductance_type, self.distribution, self.mu)
+            if self.mu in [None, "None"]:
+                conductance = '%s_%s_None' % (self.conductance_type, self.distribution)
+            else:
+                conductance = '%s_%s_%1.1f' % (self.conductance_type, self.distribution, self.mu)
         else:
             if self.holding_potential is None:
                 conductance = '%s_None' % (self.conductance_type)
@@ -785,12 +788,21 @@ class NeuralSimulation:
 
 
 if __name__ == '__main__':
-    from param_dicts import classic_population_params as param_dict
-    param_dict.update({'input_region': 'distal_tuft',
+    # from param_dicts import classic_population_params as param_dict
+    from param_dicts import stick_population_params as param_dict
+    # param_dict.update({'input_region': 'distal_tuft',
+    #                    'correlation': 0.0,
+    #                    'conductance_type': 'Ih',
+    #                    'holding_potential': -80.,
+    #                    'cell_number': 0})
+    param_dict.update({'input_region': 'top',
                        'correlation': 0.0,
-                       'conductance_type': 'Ih',
+                       'distribution': "increase",
+                       'conductance_type': 'generic',
+                       'mu': None,
                        'holding_potential': -80.,
                        'cell_number': 0})
+
     ns = NeuralSimulation(**param_dict)
     ns.run_distributed_synaptic_simulation()
 

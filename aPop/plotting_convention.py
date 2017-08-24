@@ -45,9 +45,9 @@ conductance_clr_dict = {'active': 'r',
                         }
 
 
-conductance_names = {-0.5: 'passive + regenerative',
-                     0.0: 'passive + frozen',
-                     2.0: 'passive + restorative',
+conductance_names = {-0.5: 'passive+regenerative',
+                     0.0: 'passive+frozen',
+                     2.0: 'passive+restorative',
                      'active': 'active',
                      'passive': 'passive',
                      'Ih': 'passive + I$_h$',
