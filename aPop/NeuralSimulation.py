@@ -68,7 +68,7 @@ class NeuralSimulation:
 
     def get_simulation_name(self):
         if self.conductance_type == 'generic':
-            if self.mu in [None, "None"]:
+            if self.mu is None:
                 conductance = '%s_%s_None' % (self.conductance_type, self.distribution)
             else:
                 conductance = '%s_%s_%1.1f' % (self.conductance_type, self.distribution, self.mu)

@@ -869,9 +869,6 @@ def sum_and_remove(param_dict, num_cells, remove=False):
     summed_center_sig = np.zeros((len(param_dict['center_electrode_parameters']['x']), num_tsteps))
     summed_center_sig_half_density = np.zeros((len(param_dict['center_electrode_parameters']['x']), num_tsteps))
 
-
-
-
     ns = None
     r = None
     for cell_number in xrange(0, num_cells):
