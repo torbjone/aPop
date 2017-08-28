@@ -585,7 +585,7 @@ def sum_one_population(param_dict, num_cells, num_tsteps):
 
     param_dict.update({'cell_number': 0})
     ns = NeuralSimulation(**param_dict)
-    filename = join(ns.sim_folder, 'summed_center_signal_%s_%dum_.npy' %
+    filename = join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
                  (ns.population_sim_name, 637))
     if os.path.isfile(filename):
         return
@@ -598,7 +598,7 @@ def sum_one_population(param_dict, num_cells, num_tsteps):
     ns = None
 
     r = None
-    for cell_number in xrange(2000, num_cells):
+    for cell_number in xrange(num_cells):
         param_dict.update({'cell_number': cell_number})
 
         r = np.sqrt(x_y_z_rot[cell_number, 0]**2 + x_y_z_rot[cell_number, 1]**2)
@@ -614,9 +614,9 @@ def sum_one_population(param_dict, num_cells, num_tsteps):
         if not cell_number % 2:
             summed_center_sig_half_density += center_lfp
 
-    np.save(join(ns.sim_folder, 'summed_center_signal_%s_%dum_.npy' %
+    np.save(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
                  (ns.population_sim_name, r)), summed_center_sig)
-    np.save(join(ns.sim_folder, 'summed_center_signal_half_density_%s_%dum_.npy' %
+    np.save(join(ns.sim_folder, 'summed_center_signal_half_density_%s_%dum.npy' %
                  (ns.population_sim_name, r)), summed_center_sig_half_density)
 
 
@@ -697,7 +697,7 @@ def sum_population_mpi_generic(param_dict):
     rank = comm.rank        # rank of this process
     status = MPI.Status()   # get MPI status object
     num_workers = size - 1
-    num_cells = 2000 if at_stallo else 5
+    num_cells = 4000 if at_stallo else 5
     num_tsteps = int(round(param_dict['end_t']/param_dict['timeres_python'] + 1))
 
     if size == 1:
@@ -750,15 +750,15 @@ def sum_population_mpi_generic(param_dict):
             if tag == tags.START:
                 # Do the work here
                 #print "EXPANDED POPULATION SUM"
-                try:
-                    sum_one_population(param_dict, num_cells, num_tsteps)
+                # try:
+                sum_one_population(param_dict, num_cells, num_tsteps)
                 # sum_one_population_expanded(param_dict, num_cells, num_tsteps)
-                except:
-                    print (param_dict['input_region'], param_dict['distribution'],
-                          param_dict['mu'], param_dict['correlation'])
-                    print "\033[91mNode %d exiting with ERROR\033[0m" % rank
-                    comm.send(None, dest=0, tag=tags.ERROR)
-                    sys.exit()
+                # except:
+                #     print (param_dict['input_region'], param_dict['distribution'],
+                #           param_dict['mu'], param_dict['correlation'])
+                #     print "\033[91mNode %d exiting with ERROR\033[0m" % rank
+                #     comm.send(None, dest=0, tag=tags.ERROR)
+                #     sys.exit()
                 comm.send(None, dest=0, tag=tags.DONE)
             elif tag == tags.EXIT:
                 print "\033[93m%d exiting\033[0m" % rank

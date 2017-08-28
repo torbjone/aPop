@@ -1127,12 +1127,13 @@ def plot_figure_4_all_sigs():
                    'xticks': [0, 1, 2],
                     }
 
-    psd_norm_ax_dict = {'ylim': [1e-1, 1e1],#[1e-6, 1e0], #
-                    'yscale': 'log',
+    psd_norm_ax_dict = {'ylim': [-1, 1],#[1e-6, 1e0], #
+                    # 'yscale': 'log',
                     # 'xscale': 'log',
                     'xlim': [0, np.log10(500)],
                    #'xlabel': 'Frequency (Hz)',
                    'xticklabels': ['1', '10', '100'],
+                   'yticks': [-1, 0, 1],
                    'xticks': [0, 1, 2],
                     }
 
@@ -1212,7 +1213,7 @@ def plot_figure_4_all_sigs():
                         psd = psd_dict[mu] / psd_dict[0.0]
 
                         l, = ax.plot(np.log10(freq[f_idx_min:f_idx_max]),
-                                     (psd[0][f_idx_min:f_idx_max]),
+                                     np.log10(psd[0][f_idx_min:f_idx_max]),
                                      c=qa_clr_dict[mu], lw=3, clip_on=True,
                                      solid_capstyle='butt')
 
@@ -1238,7 +1239,7 @@ def plot_figure_4_all_sigs():
                     ax_psd.set_xlabel('frequency (Hz)', labelpad=-0)
 
                     if c == 0:
-                        ax.set_ylabel("PSD modlulation", labelpad=-6)
+                        ax.set_ylabel("PSD modlulation\nlog$_{10}$", labelpad=-6)
                     if c == 1.0:
                         ax.set_yticklabels([""]*3)
                     #     c_ax = fig.add_axes([0.37, 0.2, 0.005, 0.17])
@@ -2508,7 +2509,7 @@ def plot_figure_2_classic():
     fig.subplots_adjust(right=0.95, wspace=0.1, hspace=0.1,
                         left=0.23, top=0.95, bottom=0.1)
 
-    fig_folder = join(param_dict['root_folder'], 'figures')
+    fig_folder = join(param_dict['root_folder'], 'figures', "schematic_pop")
     ax_morph_1 = fig.add_axes([0.0, 0.60, 0.14, 0.4], aspect=1, frameon=False,
                               xticks=[], yticks=[])
     ax_morph_3 = fig.add_axes([0.0, 0.03, 0.14, 0.4], aspect=1, frameon=False,
@@ -2562,8 +2563,13 @@ def plot_figure_2_classic():
                     param_dict['conductance_type'] = conductance_type
 
                     psd = psd_dict[conductance_type] #/ psd_dict["passive"]
+
+
                     f_idx_max = np.argmin(np.abs(freq - param_dict['max_freq']))
                     f_idx_min = np.argmin(np.abs(freq - 1.))
+
+                    print input_region, elec, correlation, conductance_type, np.max(psd[0]) / psd[0][f_idx_min]
+
                     l, = ax_.semilogx(freq[f_idx_min:f_idx_max],
                                       np.log10(psd[0][f_idx_min:f_idx_max]),
                                       c=conductance_clr_dict[conductance_type],
@@ -2606,15 +2612,15 @@ def plot_figure_3_uniform_boost():
     fig.subplots_adjust(right=0.98, wspace=0.1, hspace=0.1,
                         left=0.27, top=0.95, bottom=0.1)
 
-    fig_folder = join(param_dict['root_folder'], 'figures')
+    fig_folder = join(param_dict['root_folder'], 'figures', "schematic_pop")
     ax_morph_2 = fig.add_axes([0.0, 0.4, 0.18, 0.5], aspect=1, frameon=False, xticks=[], yticks=[])
 
-    ax_d = fig.add_axes([0.4, 0.1, 0.3, 0.15], ylabel="Height ($\mu$m)",
-                      xlabel="Average boost (1-10 Hz)")
+    ax_d = fig.add_axes([0.37, 0.12, 0.3, 0.15], ylabel="Height ($\mu$m)", xlim=[-0.4, 2.2],
+                      xlabel="log$_{10}$\nAverage PSD mod. (1-10 Hz)")
 
-    ax_mod = fig.add_axes([0.1, 0.1, 0.15, 0.18], ylabel="PSD modulation",
+    ax_mod = fig.add_axes([0.1, 0.12, 0.15, 0.18], ylabel="PSD modulation\nlog$_{10}$",
                       xlabel="frequency (Hz)", xlim=[1e0, 5e2],
-                          ylim=[0.5, 100])
+                          ylim=[-0.2, 2])
 
     homo_image = plt.imread(join(fig_folder, 'linear_increase_homogeneous.png'))
     ax_morph_2.imshow(homo_image)
@@ -2667,8 +2673,8 @@ def plot_figure_3_uniform_boost():
                     else:
                         lw = 2
 
-                    ax_mod.loglog(freq[f_idx_min:f_idx_max],
-                                    psd[0, f_idx_min:f_idx_max], lw=lw,
+                    ax_mod.semilogx(freq[f_idx_min:f_idx_max],
+                                    np.log10(psd[0, f_idx_min:f_idx_max]), lw=lw,
                                     c=conductance_clr_dict[conductance_type])
 
     for idx, elec in enumerate([elec_apic, elec_soma]):
@@ -2732,18 +2738,18 @@ def plot_figure_3_uniform_boost():
                 lw = 2
             else:
                 continue
-            ax_d.semilogx(boosts[m, c], param_dict["center_electrode_parameters"]["z"],
+            ax_d.plot(np.log10(boosts[m, c]), param_dict["center_electrode_parameters"]["z"],
                         c=conductance_clr_dict[conductance_type], lw=lw)
 
     ax_mod.set_xticklabels(['', '1', '10', '100'])
-    ax_mod.set_yticks([1, 10, 100])
-    ax_mod.set_yticklabels(['1', '10', '100'])
+    # ax_mod.set_yticks([1, 10, 100])
+    # ax_mod.set_yticklabels(['1', '10', '100'])
 
-    ax_d.text(15, 1000, "c=1", fontsize=11)
-    ax_d.text(0.4, 400, "c=0", fontsize=11)
-
-    ax_mod.text(25, 10, "c=1", fontsize=11)
-    ax_mod.text(2, 1.2, "c=0", fontsize=11)
+    ax_d.text(1.2, 1000, "c=1", fontsize=11)
+    ax_d.text(-0.37, 500, "c=0", fontsize=11)
+    ax_d.set_xticks([0, 1, 2])
+    ax_mod.text(25, 1.1, "c=1", fontsize=11)
+    ax_mod.text(2, 0.1, "c=0", fontsize=11)
 
     fig.legend(lines, line_names, loc='lower right', frameon=False, ncol=1)
     simplify_axes(fig.axes)
@@ -3696,9 +3702,9 @@ if __name__ == '__main__':
 
     # plot_figure_1_single_cell_LFP_classic()
     # plot_figure_1_classic_population()
-    # plot_figure_2_classic()
+    plot_figure_2_classic()
     # plot_figure_3_uniform_boost()
-    plot_figure_4_all_sigs()
+    # plot_figure_4_all_sigs()
     # plot_figure_6_restorative_sum()
     # plot_figure_7_population_size_effect()
 
