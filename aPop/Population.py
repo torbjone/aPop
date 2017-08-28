@@ -697,7 +697,7 @@ def sum_population_mpi_generic(param_dict):
     rank = comm.rank        # rank of this process
     status = MPI.Status()   # get MPI status object
     num_workers = size - 1
-    num_cells = 4000 if at_stallo else 5
+    num_cells = 2000 if at_stallo else 5
     num_tsteps = int(round(param_dict['end_t']/param_dict['timeres_python'] + 1))
 
     if size == 1:
@@ -948,7 +948,7 @@ def PopulationMPIgeneric(param_dict):
 
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
-        num_cells = 4000 if at_stallo else 4000
+        num_cells = 4000 if at_stallo else 2
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['mus']) *
                      len(param_dict['distributions']) * len(param_dict['correlations']) * (num_cells))
         for input_region in param_dict['input_regions']:
@@ -978,7 +978,7 @@ def PopulationMPIgeneric(param_dict):
                                     for worker in range(1, num_workers + 1):
                                         comm.send([None, None, None, None, None], dest=worker, tag=tags.EXIT)
                                     sys.exit()
-                        success = True#sum_and_remove(param_dict, num_cells, True)
+                        success = sum_and_remove(param_dict, num_cells, True)
                         if not success:
                             print "Failed to sum. Exiting"
                             for worker in range(1, num_workers + 1):
