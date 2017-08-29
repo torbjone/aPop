@@ -28,6 +28,10 @@ def remove_active_mechanisms(remove_list):
                 mt.remove()
 
 def make_Ih_frozen(cell):
+    """Rescales the passive leak conductance of the cell object, so that the
+    membrane conductance of the Ih channel is included.
+    Note that Ih must be removed afterwards."""
+
     h.t = 0
     h.finitialize(cell.v_init)
     h.fcurrent()
@@ -42,7 +46,9 @@ def make_Ih_frozen(cell):
 
 
 def make_cell_uniform(Vrest=-80):
-
+    """ Shifts the passive leak reversal potential of the cell e_pas, so that
+    each cell compartment will have the resting potential given by Vrest
+    """
     h.t = 0
     h.finitialize(Vrest)
     h.fcurrent()
@@ -59,7 +65,8 @@ def make_cell_uniform(Vrest=-80):
                 seg.e_pas += seg.ihcn_Ih/seg.g_pas
 
 def fetch_hay_model():
-
+    """ Downloads the Hay model and tries to compile the mechanisms
+    """
     #get the model files:
     u = urlopen('http://senselab.med.yale.edu/ModelDB/eavBinDown.asp?o=139653&a=23&mime=application/zip')
     localFile = open('L5bPCmodelsEH.zip', 'w')
@@ -78,7 +85,7 @@ def fetch_hay_model():
 
 
 def return_freq_and_psd(tvec, sig):
-    """ Returns the power and freqency of the input signal"""
+    """ Returns the freqency and Power Spectral Density (PSD) of sig"""
     sig = np.array(sig)
     if len(sig.shape) == 1:
         sig = np.array([sig])
@@ -96,7 +103,28 @@ def return_freq_and_psd(tvec, sig):
 
 
 def return_cell(sim_time, conductance_type, holding_potential=None):
+    """ Returns an LFPy Cell object, based on the cortical pyramidal cell model
+    from Hay et al. (2011).
 
+    Parameters
+    ----------
+    sim_time: float, int
+        Duration of the simulation in ms.
+    conductance_type: str
+        Either 'active', 'passive', 'Ih' or 'Ih_frozen'. If 'active' all
+        original ion-channels are included, if 'passive' they are all removed.
+        'Ih' will include a single active Ih channel. 'Ih_frozen' results in
+        a passive cell with the passive membrane conductance scaled to include
+        the increased membrane conductance that comes with the Ih conductance
+    holding_potential: int, float, None
+        If a number is given (e.g. - 70), the passive leak reversal potential
+        is modified to make the given number the resting potential of the cell,
+        i.e. the resting potential will be uniform.
+        Defaults to None, which does not enforce a uniform potential.
+
+    """
+
+    # Dict of which ion-channels to remove for a given conductance_type
     remove_lists = {'active': [],
                     'passive': ["Nap_Et2", "NaTa_t", "NaTs2_t", "SKv3_1",
                                 "SK_E2", "K_Tst", "K_Pst", "Im", "Ih",
@@ -133,7 +161,6 @@ def return_cell(sim_time, conductance_type, holding_potential=None):
         'celsius': 34,
         'pt3d': True,
     }
-    #Initialize cell instance, using the LFPy.Cell class
     cell = LFPy.TemplateCell(**cellParameters)
 
     if conductance_type == "Ih_frozen":
@@ -147,14 +174,27 @@ def return_cell(sim_time, conductance_type, holding_potential=None):
 def example_synapse(synaptic_z_pos=0, conductance_type='active',
                     weight=0.001, holding_potential=-70):
     """
-    Runs a NEURON simulation and returns an LFPy cell object for a single synaptic input.
-    :param synaptic_z_pos: position along the apical dendrite where the synapse is inserted.
-    :param conductance_type: Either 'active' or 'passive'. If 'active' all original ion-channels are included,
-           if 'passive' they are all removed, yielding a passive cell model.
-    :param weight: Strength of synaptic input.
-    :param input_spike_train: Numpy array containing synaptic spike times
-    :return: cell object where cell.imem gives transmembrane currents, cell.vmem gives membrane potentials.
-             See LFPy documentation for more details and examples.
+    Runs a NEURON simulation with a cortical pyramidal cell that receives a
+    single synaptic input. The Local Field Potential is calculated and
+    plotted.
+
+    Parameters:
+    ----------
+    synaptic_z_pos: float, int
+        position along the apical dendrite where the synapse is inserted.
+    conductance_type: str
+        Either 'active', 'passive', 'Ih' or 'Ih_frozen'. If 'active' all
+        original ion-channels are included, if 'passive' they are all removed.
+        'Ih' will include a single active Ih channel. 'Ih_frozen' results in
+        a passive cell with the passive membrane conductance scaled to include
+        the increased membrane conductance that comes with the Ih conductance
+    weight: float
+        Strength of synaptic input.
+    holding_potential: int, float, None
+        If a number is given (e.g. - 70), the passive leak reversal potential
+        is modified to make the given number the resting potential of the cell,
+        i.e. the resting potential will be uniform.
+        Defaults to None, which does not enforce a uniform potential.
     """
 
     #  Making cell
@@ -170,16 +210,29 @@ def example_synapse(synaptic_z_pos=0, conductance_type='active',
 
 
 def example_white_noise(synaptic_z_pos=0, conductance_type='active',
-                        weight=0.001, holding_potential=-70):
+                        weight=0.001, holding_potential=None):
     """
-    Runs a NEURON simulation and returns an LFPy cell object for a single synaptic input.
-    :param synaptic_z_pos: position along the apical dendrite where the synapse is inserted.
-    :param conductance_type: Either 'active' or 'passive'. If 'active' all original ion-channels are included,
-           if 'passive' they are all removed, yielding a passive cell model.
-    :param weight: Strength of synaptic input.
-    :param input_spike_train: Numpy array containing synaptic spike times
-    :return: cell object where cell.imem gives transmembrane currents, cell.vmem gives membrane potentials.
-             See LFPy documentation for more details and examples.
+    Runs a NEURON simulation with a cortical pyramidal cell that receives a
+    single white noise input. The Local Field Potential is calculated and
+    plotted.
+
+    Parameters:
+    ----------
+    synaptic_z_pos: float, int
+        position along the apical dendrite where the synapse is inserted.
+    conductance_type: str
+        Either 'active', 'passive', 'Ih' or 'Ih_frozen'. If 'active' all
+        original ion-channels are included, if 'passive' they are all removed.
+        'Ih' will include a single active Ih channel. 'Ih_frozen' results in
+        a passive cell with the passive membrane conductance scaled to include
+        the increased membrane conductance that comes with the Ih conductance
+    weight: float
+        Strength of synaptic input.
+    holding_potential: int, float, None
+        If a number is given (e.g. - 70), the passive leak reversal potential
+        is modified to make the given number the resting potential of the cell,
+        i.e. the resting potential will be uniform.
+        Defaults to None, which does not enforce a uniform potential.
     """
 
     # Repeat same stimuli and use only the last repetition. This is to avoid
@@ -220,6 +273,9 @@ def make_synapse(cell, weight, input_idx):
 
 
 def make_white_noise(cell, weight, input_idx):
+    """Makes white noise input to the cell. Dependent on the file stim.mod being
+    compiled. The white noise is a sum of integer frequency sinusoids.
+    """
     max_freq = 600
     min_freq = 2
     plt.seed(1234)
@@ -246,8 +302,9 @@ def make_white_noise(cell, weight, input_idx):
     noiseVec.play(syn._ref_amp, cell.timeres_NEURON)
     return cell, syn, noiseVec
 
-def simplify_axes(axes):
 
+def simplify_axes(axes):
+    """Removes top and right axis line"""
     if not type(axes) is list:
         axes = [axes]
 
