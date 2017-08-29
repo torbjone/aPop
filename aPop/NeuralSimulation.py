@@ -126,16 +126,16 @@ class NeuralSimulation:
                     seg.e_pas = seg.e_pas + seg.ica/seg.g_pas
                 if neuron.h.ismembrane("Ih"):
                     seg.e_pas += seg.ihcn_Ih/seg.g_pas
-                if neuron.h.ismembrane("Ih_z"):
-                    seg.e_pas += seg.ih_Ih_z/seg.g_pas
+                # if neuron.h.ismembrane("Ih_z"):
+                #     seg.e_pas += seg.ih_Ih_z/seg.g_pas
                 if neuron.h.ismembrane("Ih_frozen"):
                     seg.e_pas += seg.ihcn_Ih_frozen/seg.g_pas
-                if neuron.h.ismembrane("Ih_linearized_mod"):
-                    seg.e_pas += seg.ihcn_Ih_linearized_mod/seg.g_pas
-                if neuron.h.ismembrane("Ih_linearized_v2"):
-                    seg.e_pas += seg.ihcn_Ih_linearized_v2/seg.g_pas
-                if neuron.h.ismembrane("Ih_linearized_v2_frozen"):
-                    seg.e_pas += seg.ihcn_Ih_linearized_v2_frozen/seg.g_pas
+                # if neuron.h.ismembrane("Ih_linearized_mod"):
+                #     seg.e_pas += seg.ihcn_Ih_linearized_mod/seg.g_pas
+                # if neuron.h.ismembrane("Ih_linearized_v2"):
+                #     seg.e_pas += seg.ihcn_Ih_linearized_v2/seg.g_pas
+                # if neuron.h.ismembrane("Ih_linearized_v2_frozen"):
+                #     seg.e_pas += seg.ihcn_Ih_linearized_v2_frozen/seg.g_pas
 
 
     def _return_cell(self, cell_x_y_z_rotation=None):

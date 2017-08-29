@@ -3,7 +3,6 @@ matplotlib.rc('pdf', fonttype=42)
 import pylab as plt
 from matplotlib.colors import LogNorm
 
-# THIS IS NOW MY PAPER FIGURE DEFAULT
 plt.rcParams.update({
     'xtick.labelsize': 11,
     'xtick.major.size': 5,
@@ -48,6 +47,7 @@ conductance_clr_dict = {'active': 'r',
 conductance_names = {-0.5: 'passive+regenerative',
                      0.0: 'passive+frozen',
                      2.0: 'passive+restorative',
+                     None: "passive",
                      'active': 'active',
                      'passive': 'passive',
                      'Ih': 'passive + I$_h$',

@@ -17,8 +17,6 @@ import tools
 import scipy.fftpack as sf
 import matplotlib
 
-
-
 def plot_decomposed_dipole():
     sim_folder = join('..', 'stick_population', 'simulations')
 
@@ -904,7 +902,7 @@ def plot_figure_8_stick_summary():
     from param_dicts import stick_population_params as param_dict
 
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
-    pop_size = 500#637
+    pop_size = 637
 
     param_dict.update({
                        'cell_number': 0,
@@ -925,7 +923,7 @@ def plot_figure_8_stick_summary():
     fig.subplots_adjust(right=0.98, wspace=0.1, hspace=0.6,
                         left=0.095, top=0.85, bottom=0.15)
 
-    psd_ax_dict = {'ylim': [-10, -4], #[1e-1, 1e1],#
+    psd_ax_dict = {'ylim': [-9, -3], #[1e-1, 1e1],#
                     # 'yscale': 'log',
                     'xscale': 'log',
                     'xlim': [1, 500],
@@ -952,8 +950,9 @@ def plot_figure_8_stick_summary():
 
 
     clr_dict = {-0.5: reg_color,
-               0.0: "gray",
-               2.0: res_color,
+                None: "black",
+                0.0: "gray",
+                2.0: res_color,
                 }
 
 
@@ -1022,8 +1021,8 @@ def plot_figure_8_stick_summary():
     fig.suptitle("Simplified stick population")
     simplify_axes(fig.axes)
     mark_subplots([ax_morph_1, ax_morph_2], "CD", ypos=1.4, xpos=-0.2)
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_8_stick.png'))
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_8_stick.pdf'), dpi=300)
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_8_stick_637um.png'))
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_8_stick_637um.pdf'), dpi=300)
     plt.close('all')
 
 def plot_figure_4_all_sigs():
@@ -3702,14 +3701,14 @@ if __name__ == '__main__':
 
     # plot_figure_1_single_cell_LFP_classic()
     # plot_figure_1_classic_population()
-    plot_figure_2_classic()
+    # plot_figure_2_classic()
     # plot_figure_3_uniform_boost()
     # plot_figure_4_all_sigs()
     # plot_figure_6_restorative_sum()
     # plot_figure_7_population_size_effect()
 
     # plot_figure_8_hbp_summary()
-    # plot_figure_8_stick_summary()
+    plot_figure_8_stick_summary()
 
 
 
