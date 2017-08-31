@@ -210,7 +210,7 @@ hbp_population_params = {'input_type': 'distributed_delta',
                          'mus': None,
                          'holding_potentials': [None],
                          'distributions': None,
-                         'conductance_types': ["Ih_frozen", 'passive', 'Ih'],#, 'active'],
+                         'conductance_types': ['active'],
                          'correlations': [0.0, 1.0]
                          }
 

@@ -892,8 +892,8 @@ def plot_figure_8_hbp_summary():
     fig.suptitle("More complex cortical population")
 
     mark_subplots([ax_morph_1, ax_morph_2], ypos=1.4, xpos=-0.2)
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_8_hbp.png'))
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_8_hbp.pdf'), dpi=300)
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_8_hbp_with_active.png'))
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_8_hbp_with_active.pdf'), dpi=300)
     plt.close('all')
 
 
@@ -3707,8 +3707,8 @@ if __name__ == '__main__':
     # plot_figure_6_restorative_sum()
     # plot_figure_7_population_size_effect()
 
-    # plot_figure_8_hbp_summary()
-    plot_figure_8_stick_summary()
+    plot_figure_8_hbp_summary()
+    # plot_figure_8_stick_summary()
 
 
 

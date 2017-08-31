@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #PBS -lnodes=10:ppn=16
-#PBS -lwalltime=100:00:00
+#PBS -lwalltime=200:00:00
 #PBS -lpmem=2000MB
 #PBS -m abe
 #PBS -A nn4661k
