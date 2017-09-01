@@ -948,7 +948,7 @@ def PopulationMPIgeneric(param_dict):
 
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
-        num_cells = 4000 if at_stallo else 2
+        num_cells = 10000 if at_stallo else 2
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['mus']) *
                      len(param_dict['distributions']) * len(param_dict['correlations']) * (num_cells))
         for input_region in param_dict['input_regions']:
@@ -1045,7 +1045,7 @@ def PopulationMPIclassic(param_dict):
 
         print("\033[95m Master starting with %d workers\033[0m" % num_workers)
         task = 0
-        num_cells = 4000 if at_stallo else 2
+        num_cells = 10000 if at_stallo else 2
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['holding_potentials']) *
                      len(param_dict['conductance_types']) * len(param_dict['correlations']) * (num_cells))
 
@@ -1127,8 +1127,8 @@ if __name__ == '__main__':
 
     # extend_one_population(param_dict)
     # sys.exit()
-    from param_dicts import hbp_population_params as param_dict
-    # from param_dicts import classic_population_params as param_dict
+    # from param_dicts import hbp_population_params as param_dict
+    from param_dicts import classic_population_params as param_dict
     # from param_dicts import generic_population_params as param_dict
 
     # count_cell_number_for_size(param_dict, 2500)
