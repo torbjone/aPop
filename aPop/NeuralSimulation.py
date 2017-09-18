@@ -789,20 +789,29 @@ class NeuralSimulation:
 
 if __name__ == '__main__':
     # from param_dicts import classic_population_params as param_dict
-    from param_dicts import stick_population_params as param_dict
+    # from param_dicts import stick_population_params as param_dict
+    from param_dicts import generic_population_params as param_dict
+
+
     # param_dict.update({'input_region': 'distal_tuft',
     #                    'correlation': 0.0,
     #                    'conductance_type': 'Ih',
     #                    'holding_potential': -80.,
     #                    'cell_number': 0})
-    param_dict.update({'input_region': 'top',
+    # param_dict.update({'input_region': 'top',
+    #                    'correlation': 0.0,
+    #                    'distribution': "increase",
+    #                    'conductance_type': 'generic',
+    #                    'mu': None,
+    #                    'holding_potential': -80.,
+    #                    'cell_number': 0})
+    param_dict.update({'input_region': 'distal_tuft',
                        'correlation': 0.0,
-                       'distribution': "increase",
+                       'distribution': "linear_increase",
                        'conductance_type': 'generic',
-                       'mu': None,
+                       'mu': 0.0,
                        'holding_potential': -80.,
                        'cell_number': 0})
-
     ns = NeuralSimulation(**param_dict)
     ns.run_distributed_synaptic_simulation()
 

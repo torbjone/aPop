@@ -787,6 +787,7 @@ def plot_figure_8_hbp_summary():
 
     correlations = [0, 1.0]#param_dict['correlations']
     input_regions = ['distal_tuft', 'homogeneous']
+    conductance_types = ["passive", "Ih"]
 
     param_dict['distribution'] = 'linear_increase'
     plt.close('all')
@@ -835,7 +836,7 @@ def plot_figure_8_hbp_summary():
 
             psd_dict = {}
             freq = None
-            for conductance_type in param_dict['conductance_types']:
+            for conductance_type in conductance_types:
                 param_dict['conductance_type'] = conductance_type
                 ns = NeuralSimulation(**param_dict)
                 name = 'summed_center_signal_%s_%dum' % (ns.population_sim_name, pop_size)
@@ -852,7 +853,7 @@ def plot_figure_8_hbp_summary():
                 # plt.close("all")
                 psd_dict[conductance_type] = psd
 
-            for conductance_type in param_dict['conductance_types']:
+            for conductance_type in conductance_types:
 
                 param_dict['conductance_type'] = conductance_type
                 # try:
@@ -892,8 +893,8 @@ def plot_figure_8_hbp_summary():
     fig.suptitle("More complex cortical population")
 
     mark_subplots([ax_morph_1, ax_morph_2], ypos=1.4, xpos=-0.2)
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_8_hbp_with_active.png'))
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_8_hbp_with_active.pdf'), dpi=300)
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_8_hbp.png'))
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_8_hbp.pdf'), dpi=300)
     plt.close('all')
 
 
@@ -916,6 +917,8 @@ def plot_figure_8_stick_summary():
 
     correlations = [0, 1.0]#param_dict['correlations']
     input_regions = ['top', 'homogeneous']
+
+    mus = [None, 2.0]
 
     param_dict['distribution'] = 'increase'
     plt.close('all')
@@ -940,21 +943,19 @@ def plot_figure_8_stick_summary():
                               frameon=False, xticks=[], yticks=[])
 
     dist_image = plt.imread(join(param_dict['root_folder'], 'figures',
-                                 "schematic_pop", 'stick_tuft_input.png'))
+                                 "schematic_pop", 'stick_tuft_input_step.png'))
 
     uniform_image = plt.imread(join(param_dict['root_folder'], 'figures',
-                                 "schematic_pop", 'stick_uniform_input.png'))
+                                 "schematic_pop", 'stick_uniform_input_step.png'))
 
     ax_morph_1.imshow(dist_image)
     ax_morph_2.imshow(uniform_image)
-
 
     clr_dict = {-0.5: reg_color,
                 None: "black",
                 0.0: "gray",
                 2.0: res_color,
                 }
-
 
     lines = None
     line_names = None
@@ -972,7 +973,7 @@ def plot_figure_8_stick_summary():
 
             psd_dict = {}
             freq = None
-            for conductance_type in param_dict['mus']:
+            for conductance_type in mus:
                 param_dict['conductance_type'] = conductance_type
                 ns = NeuralSimulation(**param_dict)
                 # pop_name = ns.population_sim_name
@@ -991,7 +992,7 @@ def plot_figure_8_stick_summary():
                 # plt.close("all")
                 psd_dict[conductance_type] = psd
 
-            for conductance_type in param_dict['mus']:
+            for conductance_type in mus:
 
                 param_dict['conductance_type'] = conductance_type
                 # try:
@@ -1071,13 +1072,13 @@ def plot_figure_4_all_sigs():
 
     fig_folder = join(param_dict['root_folder'], 'figures', "schematic_pop")
 
-    dist_image = plt.imread(join(fig_folder, 'agnostic_conductance_distal_tuft.png'))
-    homo_image = plt.imread(join(fig_folder, 'agnostic_conductance_uniform.png'))
-    basal_image = plt.imread(join(fig_folder, 'agnostic_conductance_basal.png'))
+    dist_image = plt.imread(join(fig_folder, 'agnostic_conductance_distal_tuft_single_elec.png'))
+    homo_image = plt.imread(join(fig_folder, 'agnostic_conductance_uniform_single_elec.png'))
+    basal_image = plt.imread(join(fig_folder, 'agnostic_conductance_basal_single_elec.png'))
 
-    increase_image = plt.imread(join(fig_folder, 'agnostic_input_increasing_conductance.png'))
-    uniform_image = plt.imread(join(fig_folder, 'agnostic_input_uniform_conductance.png'))
-    decrease_image = plt.imread(join(fig_folder, 'agnostic_input_decreasing_conductance.png'))
+    increase_image = plt.imread(join(fig_folder, 'agnostic_input_increasing_conductance_single_elec.png'))
+    uniform_image = plt.imread(join(fig_folder, 'agnostic_input_uniform_conductance_single_elec.png'))
+    decrease_image = plt.imread(join(fig_folder, 'agnostic_input_decreasing_conductance_single_elec.png'))
 
     ax_morph_distal_tuft.imshow(dist_image)
     ax_morph_uniform.imshow(homo_image)
@@ -1115,8 +1116,6 @@ def plot_figure_4_all_sigs():
     fig.text(0.675, 0.54, 'B3', ha='center', fontsize=16, fontweight='demibold')
     fig.text(0.675, 0.28, 'C3', ha='center', fontsize=16, fontweight='demibold')
 
-
-
     psd_ax_dict = {'ylim': [-6, 1], #[1e-1, 1e1],#
                     # 'yscale': 'log',
                     # 'xscale': 'log',
@@ -1126,13 +1125,13 @@ def plot_figure_4_all_sigs():
                    'xticks': [0, 1, 2],
                     }
 
-    psd_norm_ax_dict = {'ylim': [-1, 1],#[1e-6, 1e0], #
-                    # 'yscale': 'log',
+    psd_norm_ax_dict = {'ylim': [0.1, 10],#[1e-6, 1e0], #
+                    'yscale': 'log',
                     # 'xscale': 'log',
                     'xlim': [0, np.log10(500)],
                    #'xlabel': 'Frequency (Hz)',
                    'xticklabels': ['1', '10', '100'],
-                   'yticks': [-1, 0, 1],
+                   # 'yticks': [-1, 0, 1],
                    'xticks': [0, 1, 2],
                     }
 
@@ -1180,7 +1179,7 @@ def plot_figure_4_all_sigs():
                     # lfp = np.load(join(folder, '%s.npy' % name))[:, :]
                     # print name, lfp.shape
                     freq, psd = tools.return_freq_and_psd_welch(lfp, ns.welch_dict)
-                    print input_region, distribution, correlation, mu, plot_number#, np.max(psd), psd.shape
+                    # print input_region, distribution, correlation, mu, psd[0, 1], freq[1]#, psd.shape
                     # plt.close("all")
                     psd_dict[mu] = psd
                 f_idx_max = np.argmin(np.abs(freq - param_dict['max_freq']))
@@ -1210,9 +1209,9 @@ def plot_figure_4_all_sigs():
 
                     else:
                         psd = psd_dict[mu] / psd_dict[0.0]
-
+                        print input_region, distribution, correlation, mu, psd[0][1], np.max(psd[0][1:]), np.min(psd[0][1:])
                         l, = ax.plot(np.log10(freq[f_idx_min:f_idx_max]),
-                                     np.log10(psd[0][f_idx_min:f_idx_max]),
+                                     (psd[0][f_idx_min:f_idx_max]),
                                      c=qa_clr_dict[mu], lw=3, clip_on=True,
                                      solid_capstyle='butt')
 
@@ -1238,7 +1237,7 @@ def plot_figure_4_all_sigs():
                     ax_psd.set_xlabel('frequency (Hz)', labelpad=-0)
 
                     if c == 0:
-                        ax.set_ylabel("PSD modlulation\nlog$_{10}$", labelpad=-6)
+                        ax.set_ylabel("PSD modlulation", labelpad=-6)
                     if c == 1.0:
                         ax.set_yticklabels([""]*3)
                     #     c_ax = fig.add_axes([0.37, 0.2, 0.005, 0.17])
@@ -1251,7 +1250,8 @@ def plot_figure_4_all_sigs():
 
                 # if c == 0:
                 # ax.set_yticks(ax.get_yticks()[::2])
-    fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=4)
+    fig.legend(lines, line_names, loc='lower center',
+               frameon=False, ncol=2, columnspacing=4)
     simplify_axes(fig.axes)
     # mark_subplots([ax_morph_homogeneous], 'B', ypos=1.1, xpos=0.1)
     plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_4_no_apic.png'), dpi=100)
@@ -1568,9 +1568,9 @@ def plot_population_density_effect(param_dict):
 def plot_figure_7_population_size_effect():
     from param_dicts import generic_population_params as param_dict
 
-    conductance_names = {-0.5: 'regenerative',
-                         0.0: 'passive-frozen',
-                         2.0: 'restorative'}
+    conductance_names = {-0.5: 'passive+regenerative',
+                         0.0: 'passive+frozen',
+                         2.0: 'passive+restorative'}
 
 
     param_dict["input_region"] = "homogeneous"
@@ -1595,7 +1595,7 @@ def plot_figure_7_population_size_effect():
 
 
     correlations = param_dict['correlations']
-    mus = [-0.5, 0.0, 2.0]
+    mus = [0.0, 2.0]
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     cell_nums = [len(np.where(rs <= size)[0]) for size in pop_sizes]
     print cell_nums
@@ -2567,7 +2567,7 @@ def plot_figure_2_classic():
                     f_idx_max = np.argmin(np.abs(freq - param_dict['max_freq']))
                     f_idx_min = np.argmin(np.abs(freq - 1.))
 
-                    print input_region, elec, correlation, conductance_type, np.max(psd[0]) / psd[0][f_idx_min]
+                    print input_region, elec, correlation, conductance_type, np.max(psd[0]) / psd[0][f_idx_min], psd[0][f_idx_min]
 
                     l, = ax_.semilogx(freq[f_idx_min:f_idx_max],
                                       np.log10(psd[0][f_idx_min:f_idx_max]),
@@ -2612,14 +2612,16 @@ def plot_figure_3_uniform_boost():
                         left=0.27, top=0.95, bottom=0.1)
 
     fig_folder = join(param_dict['root_folder'], 'figures', "schematic_pop")
-    ax_morph_2 = fig.add_axes([0.0, 0.4, 0.18, 0.5], aspect=1, frameon=False, xticks=[], yticks=[])
+    ax_morph_2 = fig.add_axes([0.0, 0.4, 0.18, 0.5],
+                              aspect=1, frameon=False, xticks=[], yticks=[])
 
-    ax_d = fig.add_axes([0.37, 0.12, 0.3, 0.15], ylabel="Height ($\mu$m)", xlim=[-0.4, 2.2],
-                      xlabel="log$_{10}$\nAverage PSD mod. (1-10 Hz)")
+    ax_d = fig.add_axes([0.37, 0.12, 0.3, 0.15], ylabel="Height ($\mu$m)",
+                        xlim=[0.4, 120], yticks=[0, 500, 1000],
+                      xlabel="Average PSD mod. (1-10 Hz)")
 
-    ax_mod = fig.add_axes([0.1, 0.12, 0.15, 0.18], ylabel="PSD modulation\nlog$_{10}$",
-                      xlabel="frequency (Hz)", xlim=[1e0, 5e2],
-                          ylim=[-0.2, 2])
+    ax_mod = fig.add_axes([0.1, 0.12, 0.15, 0.18], ylabel="PSD modulation",
+                      xlabel="frequency (Hz)", xlim=[1e0, 5e2],)
+                          # ylim=[-0.2, 2])
 
     homo_image = plt.imread(join(fig_folder, 'linear_increase_homogeneous.png'))
     ax_morph_2.imshow(homo_image)
@@ -2672,8 +2674,8 @@ def plot_figure_3_uniform_boost():
                     else:
                         lw = 2
 
-                    ax_mod.semilogx(freq[f_idx_min:f_idx_max],
-                                    np.log10(psd[0, f_idx_min:f_idx_max]), lw=lw,
+                    ax_mod.loglog(freq[f_idx_min:f_idx_max],
+                                    (psd[0, f_idx_min:f_idx_max]), lw=lw,
                                     c=conductance_clr_dict[conductance_type])
 
     for idx, elec in enumerate([elec_apic, elec_soma]):
@@ -2737,18 +2739,19 @@ def plot_figure_3_uniform_boost():
                 lw = 2
             else:
                 continue
-            ax_d.plot(np.log10(boosts[m, c]), param_dict["center_electrode_parameters"]["z"],
+            ax_d.plot(boosts[m, c], param_dict["center_electrode_parameters"]["z"],
                         c=conductance_clr_dict[conductance_type], lw=lw)
 
     ax_mod.set_xticklabels(['', '1', '10', '100'])
+    ax_d.set_xscale("log")
     # ax_mod.set_yticks([1, 10, 100])
     # ax_mod.set_yticklabels(['1', '10', '100'])
 
-    ax_d.text(1.2, 1000, "c=1", fontsize=11)
-    ax_d.text(-0.37, 500, "c=0", fontsize=11)
-    ax_d.set_xticks([0, 1, 2])
-    ax_mod.text(25, 1.1, "c=1", fontsize=11)
-    ax_mod.text(2, 0.1, "c=0", fontsize=11)
+    ax_d.text(16, 1000, "c=1", fontsize=11)
+    ax_d.text(0.43, 500, "c=0", fontsize=11)
+    # ax_d.set_xticks([0, 1, 2])
+    ax_mod.text(25, 11, "c=1", fontsize=11)
+    ax_mod.text(2, 1.1, "c=0", fontsize=11)
 
     fig.legend(lines, line_names, loc='lower right', frameon=False, ncol=1)
     simplify_axes(fig.axes)
@@ -3709,8 +3712,6 @@ if __name__ == '__main__':
 
     plot_figure_8_hbp_summary()
     # plot_figure_8_stick_summary()
-
-
 
     # plot_decomposed_dipole()
     # sys.exit()

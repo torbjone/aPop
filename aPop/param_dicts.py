@@ -170,12 +170,12 @@ classic_population_params = {'input_type': 'distributed_delta',
                              'num_inhibitory_synapses': 100,
                              'input_firing_rate': 5,
                              'inhibitory_input_firing_rate': 10,
-                             'input_regions': ['homogeneous', 'distal_tuft', "basal"],
+                             'input_regions': ["basal"],
                              'mus': None,
                              'holding_potentials': [-70],
                              'distributions': None,
-                             'conductance_types': ['Ih', 'Ih_frozen', 'passive', "active"], #, 'Ih'],
-                             'correlations': [0.0, 0.01, 0.1, 1.0]
+                             'conductance_types': ['Ih_frozen'], #, 'Ih'],
+                             'correlations': [0.0]
                              }
 
 hbp_population_params = {'input_type': 'distributed_delta',

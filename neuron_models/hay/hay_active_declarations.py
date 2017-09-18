@@ -123,7 +123,11 @@ def biophys_generic(**kwargs):
         for sec in neuron.h.allsec():
             for seg in sec:
                 seg.g_w_bar_QA = conductance_factor * (1 + (increase_factor - 1.) * nrn.distance(seg.x) / max_dist)
-        # print 'Linear increase:  %1.8f + %1.10f * x' % (conductance_factor, conductance_factor*(increase_factor - 1.) / max_dist)
+                # if "soma" in sec.name():
+                #     print seg.g_w_bar_QA, conductance_factor
+
+
+        print 'Linear increase:  %1.8f + %1.10f * x' % (conductance_factor, conductance_factor*(increase_factor - 1.) / max_dist)
 
     elif kwargs['distribution'] == 'linear_decrease':
         decrease_factor = 60
@@ -132,7 +136,9 @@ def biophys_generic(**kwargs):
         for sec in neuron.h.allsec():
             for seg in sec:
                 seg.g_w_bar_QA = conductance_factor*(decrease_factor - (decrease_factor - 1.) * nrn.distance(seg.x) / max_dist)
-        # print 'Linear decrease: %1.8f - %1.10f * x' % (conductance_factor * decrease_factor, conductance_factor * (decrease_factor - 1.) / max_dist)
+                # if "soma" in sec.name():
+                #     print seg.g_w_bar_QA, conductance_factor * 60
+        print 'Linear decrease: %1.8f - %1.10f * x' % (conductance_factor * decrease_factor, conductance_factor * (decrease_factor - 1.) / max_dist)
     else:
         raise RuntimeError("Unknown distribution...")
     cond_check = 0

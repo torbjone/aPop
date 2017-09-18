@@ -1122,13 +1122,13 @@ if __name__ == '__main__':
     # elif conductance == 'stick_generic':
     # from param_dicts import stick_population_params as param_dict
     # else:
-    # from param_dicts import classic_population_params as param_dict
+    from param_dicts import classic_population_params as param_dict
     # from param_dicts import asymmetric_population_params as param_dict
 
     # extend_one_population(param_dict)
     # sys.exit()
     # from param_dicts import hbp_population_params as param_dict
-    from param_dicts import classic_population_params as param_dict
+    # from param_dicts import classic_population_params as param_dict
     # from param_dicts import generic_population_params as param_dict
 
     # count_cell_number_for_size(param_dict, 2500)
