@@ -103,12 +103,12 @@ generic_population_params = {'input_type': 'distributed_delta',
                              'input_firing_rate': 5,
                              'inhibitory_input_firing_rate': 10,
                              'input_regions': [#"balanced", 'perisomatic_inhibition'],
-                                               # 'basal',
-                                               # 'distal_tuft',
+                                               'basal',
+                                               'distal_tuft',
                                                'homogeneous',
                                                ],
                              'mus': [-0.5, 0.0, 2.0],
-                             'distributions': ['linear_increase'],#, 'linear_decrease', 'linear_increase'],
+                             'distributions': ['linear_increase', 'linear_decrease', 'linear_increase'],
                              'correlations': [0.0, 0.01, 0.1, 1.0]
                              }
 
@@ -170,12 +170,12 @@ classic_population_params = {'input_type': 'distributed_delta',
                              'num_inhibitory_synapses': 100,
                              'input_firing_rate': 5,
                              'inhibitory_input_firing_rate': 10,
-                             'input_regions': ["basal"],
+                             'input_regions': ["basal", "homogeneous", "distal_tuft"],
                              'mus': None,
                              'holding_potentials': [-70],
                              'distributions': None,
-                             'conductance_types': ['Ih_frozen'], #, 'Ih'],
-                             'correlations': [0.0]
+                             'conductance_types': ['Ih_frozen', 'Ih', "active", "passive"],
+                             'correlations': [0.0, 0.01, 0.1, 1.0]
                              }
 
 hbp_population_params = {'input_type': 'distributed_delta',

@@ -959,6 +959,15 @@ def PopulationMPIgeneric(param_dict):
                     param_dict['mu'] = mu
                     for correlation in param_dict['correlations']:
                         param_dict["correlation"] = correlation
+                        param_dict.update({'cell_number': 0})
+                        ns = NeuralSimulation(**param_dict)
+
+                        if os.path.isfile(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
+                            (ns.population_sim_name, 999))):
+                            print "SKIPPING POPULATION ", ns.population_sim_name
+                            continue
+
+
                         for cell_idx in range(0, num_cells):
                             task += 1
                             sent = False
@@ -1057,6 +1066,13 @@ def PopulationMPIclassic(param_dict):
                     param_dict['conductance_type'] = conductance_type
                     for correlation in param_dict['correlations']:
                         param_dict["correlation"] = correlation
+                        param_dict.update({'cell_number': 0})
+                        ns = NeuralSimulation(**param_dict)
+                        if os.path.isfile(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
+                            (ns.population_sim_name, 999))):
+                            print "SKIPPING POPULATION ", ns.population_sim_name
+                            continue
+
                         for cell_idx in range(0, num_cells):
                             task += 1
                             sent = False
