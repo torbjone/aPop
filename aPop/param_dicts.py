@@ -107,9 +107,9 @@ generic_population_params = {'input_type': 'distributed_delta',
                                                'distal_tuft',
                                                'homogeneous',
                                                ],
-                             'mus': [-0.5, 0.0, 2.0],
-                             'distributions': ['linear_increase', 'linear_decrease', 'linear_increase'],
-                             'correlations': [0.0, 0.01, 0.1, 1.0]
+                             'mus': [-0.5, 0.0, 2.0, None],
+                             'distributions': ['linear_increase', 'linear_decrease', 'uniform'],
+                             'correlations': [0.0, 1.0]
                              }
 
 asymmetric_population_params = {'input_type': 'distributed_delta',

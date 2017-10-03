@@ -898,7 +898,7 @@ def sum_and_remove(param_dict, num_cells, remove=False):
         if not cell_number % 2:
             summed_center_sig_half_density += center_lfp
 
-        if cell_number in [10, 50, 100, 200, 500]:
+        if cell_number in [10, 50, 100, 200, 500, 1000, 4000]:
             np.save(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
                          (ns.population_sim_name, r)), summed_center_sig)
             np.save(join(ns.sim_folder, 'summed_center_signal_half_density_%s_%dum.npy' %
@@ -1101,13 +1101,13 @@ def PopulationMPIclassic(param_dict):
             comm.send([None, None, None, None, None], dest=worker, tag=tags.EXIT)
         print("\033[95m Master finishing\033[0m")
     else:
-        import time
+        # import time
         while True:
-            if rank % 2 == 0:
-                print "Rank %d sleeping" % rank
-                time.sleep(60)
-            else:
-                comm.send(None, dest=0, tag=tags.READY)
+        #     if rank % 2 == 0:
+        #         print "Rank %d sleeping" % rank
+        #         time.sleep(60)
+        #     else:
+            comm.send(None, dest=0, tag=tags.READY)
             [input_region, conductance_type, holding_potential, correlation, cell_idx] = comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
             tag = status.Get_tag()
             if tag == tags.START:
@@ -1129,16 +1129,16 @@ def PopulationMPIclassic(param_dict):
 
 
 if __name__ == '__main__':
-    # conductance = 'generic'
+    conductance = 'generic'
     # conductance = 'stick_generic'
-    conductance = 'classic'
+    # conductance = 'classic'
 
     # if conductance == 'generic':
-    #     from param_dicts import generic_population_params as param_dict
+    from param_dicts import generic_population_params as param_dict
     # elif conductance == 'stick_generic':
     # from param_dicts import stick_population_params as param_dict
     # else:
-    from param_dicts import classic_population_params as param_dict
+    # from param_dicts import classic_population_params as param_dict
     # from param_dicts import asymmetric_population_params as param_dict
 
     # extend_one_population(param_dict)

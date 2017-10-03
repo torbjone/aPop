@@ -5,7 +5,7 @@
 #SBATCH -o population_output.txt
 #SBATCH -e population_output_error.txt
 #SBATCH --ntasks 160
-#SBATCH --mem-per-cpu=2000MB
+#SBATCH --mem-per-cpu=4000MB
 #SBATCH --mail-type=ALL
 
 ################################################################################
