@@ -951,13 +951,13 @@ def PopulationMPIgeneric(param_dict):
         num_cells = 10000 if at_stallo else 2
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['mus']) *
                      len(param_dict['distributions']) * len(param_dict['correlations']) * (num_cells))
-        for input_region in param_dict['input_regions']:
+        for input_region in param_dict['input_regions'][::-1]:
             param_dict['input_region'] = input_region
-            for distribution in param_dict['distributions']:
+            for distribution in param_dict['distributions'][::-1]:
                 param_dict['distribution'] = distribution
-                for mu in param_dict['mus']:
+                for mu in param_dict['mus'][::-1]:
                     param_dict['mu'] = mu
-                    for correlation in param_dict['correlations']:
+                    for correlation in param_dict['correlations'][::-1]:
                         param_dict["correlation"] = correlation
                         param_dict.update({'cell_number': 0})
                         ns = NeuralSimulation(**param_dict)
@@ -968,7 +968,7 @@ def PopulationMPIgeneric(param_dict):
                             continue
 
 
-                        for cell_idx in range(0, num_cells):
+                        for cell_idx in range(0, num_cells)[::-1]:
                             task += 1
                             sent = False
                             while not sent:
