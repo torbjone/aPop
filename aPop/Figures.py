@@ -2494,7 +2494,7 @@ def plot_figure_2_classic():
 
     from param_dicts import classic_population_params as param_dict
     input_regions = ["distal_tuft", "basal"]
-    correlations = [0.0, 0.1, 1.0]#param_dict['correlations']
+    correlations = [0.0, 0.01, 0.1, 1.0]#param_dict['correlations']
 
     conductance_types = ["Ih", "Ih_frozen", "passive"]
 
@@ -2590,9 +2590,9 @@ def plot_figure_2_classic():
     simplify_axes(fig.axes)
     mark_subplots([ax_morph_1, ax_morph_3], ypos=0.99, xpos=0.1)
     plt.savefig(join(param_dict['root_folder'], 'figures',
-                     'Figure_2_classic_%d_%dmV_short.png' % (pop_size, holding_potential)))
+                     'Figure_2_classic_%d_%dmV.png' % (pop_size, holding_potential)))
     plt.savefig(join(param_dict['root_folder'], 'figures',
-                     'Figure_2_classic_%d_%dmV_short.pdf' % (pop_size, holding_potential)), dpi=300)
+                     'Figure_2_classic_%d_%dmV.pdf' % (pop_size, holding_potential)), dpi=300)
     plt.close('all')
 
 
@@ -2602,7 +2602,7 @@ def plot_figure_3_uniform_boost():
     from param_dicts import classic_population_params as param_dict
     input_region = "homogeneous"
     conductance_types = ["Ih", "Ih_frozen", "passive"]
-    correlations = [0.0, 0.1, 1.0]#param_dict['correlations']
+    correlations = [0.0, 0.01, 0.1, 1.0]#param_dict['correlations']
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     pop_size = 999
 
@@ -2763,8 +2763,8 @@ def plot_figure_3_uniform_boost():
     mark_subplots([ax_mod, ax_d], "BC", ypos=1.1, xpos=-0.05)
     # ax_mod.set_xticklabels(['', '1', '10', '100'])
 
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_3_uniform_boost_%d_%dmV_short.png' % (pop_size, holding_potential)))
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_3_uniform_boost_%d_%dmV_short.pdf' % (pop_size, holding_potential)), dpi=300)
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_3_uniform_boost_%d_%dmV.png' % (pop_size, holding_potential)))
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_3_uniform_boost_%d_%dmV.pdf' % (pop_size, holding_potential)), dpi=300)
     plt.close('all')
 
 
@@ -3361,6 +3361,8 @@ def plot_figure_1_classic_population():
 
     correlation = 0.0
 
+    conductance_types = ["passive", 'Ih_frozen', 'Ih']
+
     lfp_1 = {}
     lfp_3 = {}
 
@@ -3381,7 +3383,7 @@ def plot_figure_1_classic_population():
 
     ns_1 = None
     ns_3 = None
-    for conductance_type in param_dict['conductance_types']:
+    for conductance_type in conductance_types:
         param_dict_1['conductance_type'] = conductance_type
         ns_1 = NeuralSimulation(**param_dict_1)
         name_res = 'summed_center_signal_%s_%dum' % (ns_1.population_sim_name, pop_size)
@@ -3434,7 +3436,7 @@ def plot_figure_1_classic_population():
 
         lines = []
         line_names = []
-        for conductance_type in param_dict['conductance_types']:
+        for conductance_type in conductance_types:
 
             freq, psd_tuft_res = tools.return_freq_and_psd_welch(lfp_1[conductance_type][elec], ns_1.welch_dict)
             f_idx_max = np.argmin(np.abs(freq - param_dict['max_freq']))
@@ -3709,8 +3711,8 @@ def plot_figure_1_single_cell_difference(param_dict):
 if __name__ == '__main__':
 
     # plot_figure_1_single_cell_LFP_classic()
-    # plot_figure_1_classic_population()
-    # plot_figure_2_classic()
+    plot_figure_1_classic_population()
+    plot_figure_2_classic()
     plot_figure_3_uniform_boost()
     # plot_figure_4_all_sigs()
     # plot_figure_6_restorative_sum()

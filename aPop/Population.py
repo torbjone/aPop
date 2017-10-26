@@ -1127,14 +1127,14 @@ def PopulationMPIclassic(param_dict):
 
 
 if __name__ == '__main__':
-    conductance = 'generic'
-    # conductance = 'stick_generic'
+    # conductance = 'generic'
+    conductance = 'stick_generic'
     # conductance = 'classic'
 
     # if conductance == 'generic':
-    from param_dicts import generic_population_params as param_dict
+    # from param_dicts import generic_population_params as param_dict
     # elif conductance == 'stick_generic':
-    # from param_dicts import stick_population_params as param_dict
+    from param_dicts import stick_population_params as param_dict
     # else:
     # from param_dicts import classic_population_params as param_dict
     # from param_dicts import asymmetric_population_params as param_dict
