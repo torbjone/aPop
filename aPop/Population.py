@@ -917,8 +917,6 @@ def sum_and_remove(param_dict, num_cells, remove=False):
         os.system("rm %s" % sig_name)
     return True
 
-
-
 def PopulationMPIgeneric(param_dict):
     """ Run with
         mpirun -np 4 python example_mpi.py
@@ -966,7 +964,6 @@ def PopulationMPIgeneric(param_dict):
                             (ns.population_sim_name, 999))):
                             print "SKIPPING POPULATION ", ns.population_sim_name
                             continue
-
 
                         for cell_idx in range(0, num_cells):
                             task += 1
@@ -1023,6 +1020,7 @@ def PopulationMPIgeneric(param_dict):
                 print "\033[93m%d exiting\033[0m" % rank
                 break
         comm.send(None, dest=0, tag=tags.EXIT)
+
 
 
 def PopulationMPIclassic(param_dict):
