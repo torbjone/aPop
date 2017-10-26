@@ -104,10 +104,11 @@ generic_population_params = {'input_type': 'distributed_delta',
                              'inhibitory_input_firing_rate': 10,
                              'input_regions': [#"balanced", 'perisomatic_inhibition'],
                                                'homogeneous',
+                                               "distal_tuft"
                                                ],
-                             'mus': [-0.5, 0.0, 2.0, None],
-                             'distributions': ['linear_increase', 'linear_decrease', 'uniform'],
-                             'correlations': [0.0, 1.0]
+                             'mus': [2.0],
+                             'distributions': ['linear_increase'],
+                             'correlations': [0.01, 0.1]
                              }
 
 asymmetric_population_params = {'input_type': 'distributed_delta',
@@ -208,7 +209,7 @@ hbp_population_params = {'input_type': 'distributed_delta',
                          'mus': None,
                          'holding_potentials': [None],
                          'distributions': None,
-                         'conductance_types': ["Ih", "Ih_frozen", "passive"],
+                         'conductance_types': ["Ih", "passive"],
                          'correlations': [0.0, 1.0]
                          }
 
