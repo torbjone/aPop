@@ -31,6 +31,7 @@ apic_qa_clr_dict = {-0.5: "pink",
                2.0: "lightblue"}
 
 qa_clr_dict = {-0.5: reg_color,
+               None: "k",
                0.0: pas_color,
                2.0: res_color}
 
