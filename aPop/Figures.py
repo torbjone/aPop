@@ -1221,9 +1221,9 @@ def plot_figure_4_all_sigs():
                                     (psd[0][f_idx_min:f_idx_max]),
                                  c=clr, lw=3, clip_on=True, solid_capstyle='butt')
 
-                        # l2, = ax_psd.plot(np.log10(freq[f_idx_min:f_idx_max]),
-                        #             np.log10(psd[1][f_idx_min:f_idx_max]),
-                        #          c=clr, lw=1.5, clip_on=True, solid_capstyle='butt', ls='--')
+                        l2, = ax_psd.plot((freq[f_idx_min:f_idx_max]),
+                                    (psd[1][f_idx_min:f_idx_max]),
+                                 c=clr, lw=1.5, clip_on=True, solid_capstyle='butt', ls='--')
 
                         if i == 0 and d == 0 and c == 0:
                             # lines.extend([l1, l2])
@@ -1243,10 +1243,10 @@ def plot_figure_4_all_sigs():
                                      c=qa_clr_dict[mu], lw=3, clip_on=True,
                                      solid_capstyle='butt')
 
-                        # ax.plot(np.log10(freq[f_idx_min:f_idx_max]),
-                        #              np.log10(psd[1][f_idx_min:f_idx_max]),
-                        #              c=apic_qa_clr_dict[mu], lw=2, clip_on=True,
-                        #         solid_capstyle='butt', ls="--")
+                        ax.loglog((freq[f_idx_min:f_idx_max]),
+                                  (psd[1][f_idx_min:f_idx_max]),
+                                     c=apic_qa_clr_dict[mu], lw=2, clip_on=True,
+                                solid_capstyle='butt', ls="--")
 
                         # ax.plot(freq[f_idx_min:f_idx_max], psd[1][f_idx_min:f_idx_max], '--',
                         #              c=qa_clr_dict[mu], lw=1.5, clip_on=True, solid_capstyle='butt')
@@ -1306,8 +1306,8 @@ def plot_figure_4_all_sigs():
                frameon=False, ncol=2, columnspacing=4)
     simplify_axes(fig.axes)
     # mark_subplots([ax_morph_homogeneous], 'B', ypos=1.1, xpos=0.1)
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_4_no_apic_{}.png'.format(pop_size)), dpi=100)
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_4_no_apic_{}.pdf'.format(pop_size)), dpi=300)
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_4_with_apic_{}.png'.format(pop_size)), dpi=100)
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_4_with_apic_{}.pdf'.format(pop_size)), dpi=300)
     plt.close('all')
 
 
@@ -2641,7 +2641,7 @@ def plot_figure_2_classic():
 
     psd_ax_dict = {'xlim': [1e0, 5e2],
                    'xticks': [1e0, 10, 100],
-                   'ylim': [-6, 0]}
+                   'ylim': [1e-6, 1e0]}
     lines = None
     line_names = None
     num_plot_cols = 4
@@ -2661,7 +2661,7 @@ def plot_figure_2_classic():
                 if idx == 0:
                     ax_.set_title('c = %1.2f' % correlation)
                 if c == 0 and idx == 1:
-                    ax_.set_ylabel('LFP-PSD\nlog$_{10}$($\mu$V$^2$/Hz)', labelpad=-3)
+                    ax_.set_ylabel('LFP-PSD\nlog$_{10}$($\mu$V$^2$/Hz)', labelpad=-0)
                     ax_.set_xlabel('frequency (Hz)', labelpad=-0)
 
                 lines = []
@@ -2686,14 +2686,25 @@ def plot_figure_2_classic():
                     f_idx_max = np.argmin(np.abs(freq - param_dict['max_freq']))
                     f_idx_min = np.argmin(np.abs(freq - 1.))
 
-                    print input_region, elec, correlation, conductance_type, np.max(psd[0]) / psd[0][f_idx_min], psd[0][f_idx_min]
+                    print input_region, elec, correlation, conductance_type, np.max(psd[0][f_idx_min:]) / psd[0][f_idx_min], psd[0][f_idx_min]
 
-                    l, = ax_.semilogx(freq[f_idx_min:f_idx_max],
-                                      np.log10(psd[0][f_idx_min:f_idx_max]),
+                    l, = ax_.loglog(freq[f_idx_min:f_idx_max],
+                                      (psd[0][f_idx_min:f_idx_max]),
                                       c=conductance_clr_dict[conductance_type],
                                       lw=3, solid_capstyle='round')
                     lines.append(l)
                     line_names.append(conductance_names[conductance_type])
+
+                    locmaj = matplotlib.ticker.LogLocator(base=10, numticks=8)
+                    ax_.yaxis.set_major_locator(locmaj)
+                    ax_.yaxis.set_minor_locator(matplotlib.ticker.LogLocator())
+                    ax_.yaxis.set_major_formatter(matplotlib.ticker.LogFormatterExponent())
+
+                    locmin = matplotlib.ticker.LogLocator(base=10.0, numticks=8, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
+                    ax_.yaxis.set_minor_locator(locmin)
+                    ax_.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+
+
 
                     if idx == 1:
                         ax_.set_xticklabels(['', '1', '10', '100'])
@@ -3296,7 +3307,7 @@ def plot_figure_1_single_cell_LFP_2(param_dict):
     plt.close('all')
 
 
-def plot_figure_1_single_cell_LFP_classic():
+def plot_figure_1_single_cell():
 
     from param_dicts import classic_population_params as param_dict
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
@@ -3470,7 +3481,7 @@ def plot_figure_asymmetric_population_LFP():
 
 
 
-def plot_figure_1_classic_population():
+def plot_figure_1_population():
     from param_dicts import classic_population_params as param_dict
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     pop_size = 999
@@ -3841,89 +3852,13 @@ def plot_figure_1_single_cell_difference(param_dict):
 
 if __name__ == '__main__':
 
-    # plot_figure_1_single_cell_LFP_classic()
-    # plot_figure_1_classic_population()
-    # plot_figure_2_classic()
-    # plot_figure_3_uniform_boost()
-    # plot_figure_4_all_sigs()
-    # plot_figure_6_restorative_sum()
+    plot_figure_1_single_cell()
+    plot_figure_1_population()
+    plot_figure_2_classic()
+    plot_figure_3_uniform_boost()
+    plot_figure_4_all_sigs()
+    plot_figure_6_restorative_sum()
     plot_figure_7_population_size_effect()
+    plot_figure_8_hbp_summary()
+    plot_figure_8_stick_summary()
 
-    # plot_figure_8_hbp_summary()
-    # plot_figure_8_stick_summary()
-
-    # plot_decomposed_dipole()
-    # sys.exit()
-
-    # conductance = 'generic'
-    # conductance = 'stick_generic'
-    # conductance = 'classic'
-
-    # if conductance == 'generic':
-    #     from param_dicts import generic_population_params as param_dict
-    # elif conductance == 'stick_generic':
-    #     from param_dicts import stick_population_params as param_dict
-    # else:
-    #     from param_dicts import classic_population_params as param_dict
-        # from param_dicts import hbp_population_params as param_dict
-
-    # plot_asymetric_conductance_time_average_movie(param_dict)
-    # plot_asymetric_conductance_space_average_movie(param_dict)
-    # plot_hbp_illustration(param_dict)
-    # from param_dicts import vmem_3D_population_params as param_dict
-    # input_regions = ['homogeneous']
-    # distributions = ['uniform']
-    # correlations = [0.0]
-    # for i, input_region in enumerate(input_regions):
-        # for d, distribution in enumerate(distributions):
-        # for d, conductance_type in enumerate(["active"]):
-        #     for c, correlation in enumerate(correlations):
-                # param_dict.update({
-                #                    'mu': 0.0,
-                #                    'distribution': distribution,
-                #                     'input_region': input_region,
-                #                     'correlation': correlation,
-                #                     'cell_number': 0,
-                #                   })
-                # param_dict.update({
-                #                    'mu': 0.0,
-                #                    'conductance_type': "active",
-                #                     'input_region': input_region,
-                #                     'correlation': correlation,
-                #                     'cell_number': 0,
-                #                   })
-
-                # plot_3d_rot_pop(param_dict)
-
-    # plot_coherence(param_dict)
-    # plot_generic_population_LFP(param_dict)
-    # plot_classic_population_LFP(param_dict)
-    # plot_simple_model_LFP(param_dict)
-
-    # plot_linear_combination(param_dict)
-
-    # plot_figure_5_classic(param_dict)
-
-
-    # plot_figure_1_population_LFP(param_dict)
-    # plot_all_size_dependencies()
-
-    # plot_figure_2_normalized(param_dict)
-    # plot_figure_3(param_dict)
-    # plot_all_soma_sigs_classic(param_dict)
-
-    # plot_figure_asymmetric_population_LFP()
-    # plot_figure_1_single_cell_LFP_2(param_dict)
-    # plot_figure_1_single_cell_difference(param_dict)
-
-    # plot_depth_resolved(param_dict)
-    # plot_all_dipoles_classic(param_dict)
-
-    # plot_figure_perisomatic_inhibition(param_dict)
-    # plot_leski_13(param_dict)
-    # plot_population_density_effect(param_dict)
-    #
-
-
-    # plot_LFP_time_trace(param_dict)
-    # plot_cell_population(param_dict)   # cell tufts cut from figure!
