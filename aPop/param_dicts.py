@@ -12,21 +12,8 @@ else:
     at_stallo = False
 import numpy as np
 
-# username = os.getenv('USER')
 
 root_folder = '..'
-
-# elec_distances = 10 * np.exp(np.linspace(0, np.log(1000), 30))
-# lateral_elec_x, lateral_elec_z = np.meshgrid(elec_distances, np.array([1000, 500, 0]))
-# lateral_elec_x = lateral_elec_x.flatten()
-# lateral_elec_z = lateral_elec_z.flatten()
-# lateral_elec_y = np.zeros(len(lateral_elec_z))
-# lateral_electrode_parameters = {
-#         'sigma': 0.3,
-#         'x': lateral_elec_x,
-#         'y': lateral_elec_y,
-#         'z': lateral_elec_z
-# }
 
 center_elec_z = np.arange(-200, 1201, 200)
 center_elec_x = np.zeros(len(center_elec_z))
@@ -39,36 +26,15 @@ center_elec_params = {
         'method': "som_as_point",
 }
 
-# stick_lateral_electrode_parameters = lateral_electrode_parameters.copy()
-# stick_lateral_electrode_parameters['method'] = 'linesource'
-
 stick_center_electrode_parameters = center_elec_params.copy()
 stick_center_electrode_parameters['method'] = 'linesource'
 
 # Time resolution of 2**-4 is almost identical to 2**-5
 dt = 2**-4
-end_T = 2**13 - dt #if at_stallo else 2**7 - dt
+end_T = 2**13 - dt
 # end_T = 2**13 - dt
 cut_off = 2000 #if at_stallo else 200
 
-
-# distributed_delta_classic_params = {'input_type': 'distributed_delta',
-#                             'timeres_NEURON': dt,
-#                             'cell_name': 'hay',
-#                             'timeres_python': dt,
-#                             'cut_off': cut_off,
-#                             'end_t': end_T,
-#                             'syn_tau': 0.1,
-#                             'syn_weight': 1e-3,
-#                             'max_freq': 500,
-#                             'conductance_type': None,
-#                             'holding_potential': None,
-#                             'save_folder': 'shape_function',
-#                             'root_folder': root_folder,
-#                             'lateral_electrode_parameters': lateral_electrode_parameters,
-#                             'center_electrode_parameters': center_electrode_parameters,
-#                             'num_synapses': 1000,
-#                             }
 
 scale = 10
 num_cells = 100 * scale ** 2
@@ -104,11 +70,14 @@ generic_population_params = {'input_type': 'distributed_delta',
                              'inhibitory_input_firing_rate': 10,
                              'input_regions': [#"balanced", 'perisomatic_inhibition'],
                                                'homogeneous',
-                                               "distal_tuft"
+                                               "distal_tuft",
+                                               "basal"
                                                ],
-                             'mus': [2.0],
-                             'distributions': ['linear_increase'],
-                             'correlations': [0.01, 0.1]
+                             'mus': [-0.5, 0.0, 2.0, None],
+                             'distributions': ['uniform',
+                                               'linear_increase',
+                                               'linear_decrease'],
+                             'correlations': [0.0, 0.01, 0.1, 1.0]
                              }
 
 asymmetric_population_params = {'input_type': 'distributed_delta',
@@ -139,7 +108,7 @@ asymmetric_population_params = {'input_type': 'distributed_delta',
                              'inhibitory_input_firing_rate': 10,
                              'input_regions': ['dual0.80', 'dual1.00'],
                              'mus': [2.0],
-                             'distributions': ['linear_increase'],#['uniform', 'linear_increase', 'linear_decrease'],
+                             'distributions': ['uniform', 'linear_increase', 'linear_decrease'],
                              'correlations': [0., 0.1, 1.0]
                              }
 
@@ -264,5 +233,7 @@ asymmetry_params = {'input_type': 'distributed_asymmetry',
 
 if __name__ == '__main__':
     from NeuralSimulation import NeuralSimulation
-    generic_population_params.update({'input_region': 'distal_tuft', 'mu': 0.0, 'correlation': 0.0, 'cell_number': 0})
+    generic_population_params.update({'input_region': 'distal_tuft',
+                                      'mu': 0.0, 'correlation': 0.0,
+                                      'cell_number': 0})
     ns = NeuralSimulation(**generic_population_params)

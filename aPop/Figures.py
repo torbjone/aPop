@@ -17,6 +17,7 @@ import tools
 import scipy.fftpack as sf
 import matplotlib
 
+
 def plot_decomposed_dipole():
     sim_folder = join('..', 'stick_population', 'simulations')
 
@@ -46,6 +47,7 @@ def plot_decomposed_dipole():
     ax_i.plot(np.average(i_i, axis=1), np.arange(20), 'k', lw=2)
     ax_i.plot(np.average(i_i_t + i_i_b, axis=1), np.arange(20), '--', c='gray', lw=2)
     plt.savefig('dipole_decomposed_%1.1f.png' % mu)
+
 
 def plot_3d_rot_pop(param_dict):
     # plt.seed(1234)
@@ -326,6 +328,7 @@ def plot_asymetric_conductance_space_average_movie(param_dict):
 
         fig.savefig(join(param_dict['root_folder'], 'hbp_fig', 'hay_%04d.png' % (num_cells)))
 
+
 def plot_hbp_illustration(param_dict):
 
     tot_num_cells = 500
@@ -417,7 +420,6 @@ def plot_hbp_illustration(param_dict):
 
         fig.savefig(join(param_dict['root_folder'], 'hbp_fig', 'hay_%04d_terrain_.png' % (num_cells)), dpi=300)
         # fig.savefig(join(param_dict['root_folder'], 'hbp_fig', 'hay_%04d_terrain_.pdf' % (num_cells)))
-
 
 
 def plot_asymetric_conductance_time_average_movie(param_dict):
@@ -768,7 +770,8 @@ def plot_all_soma_sigs():
     plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_all_sigs_%dum.pdf' % pop_size), dpi=300)
     plt.close('all')
 
-def plot_figure_8_hbp_summary():
+
+def plot_figure_8_hbp():
 
     from param_dicts import hbp_population_params as param_dict
 
@@ -913,7 +916,7 @@ def plot_figure_8_hbp_summary():
     plt.close('all')
 
 
-def plot_figure_8_stick_summary():
+def plot_figure_8_stick():
 
     from param_dicts import stick_population_params as param_dict
 
@@ -1057,7 +1060,8 @@ def plot_figure_8_stick_summary():
     plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_8_stick_{}.pdf'.format(pop_size)), dpi=300)
     plt.close('all')
 
-def plot_figure_4_all_sigs():
+
+def plot_figure_4():
 
     from param_dicts import generic_population_params as param_dict
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
@@ -1299,9 +1303,6 @@ def plot_figure_4_all_sigs():
             ax_psd.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
             ax_psd.set_xticklabels(["", "1", "10", "100"])
 
-
-
-
     fig.legend(lines, line_names, loc='lower center',
                frameon=False, ncol=2, columnspacing=4)
     simplify_axes(fig.axes)
@@ -1309,7 +1310,6 @@ def plot_figure_4_all_sigs():
     plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_4_with_apic_{}.png'.format(pop_size)), dpi=100)
     plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_4_with_apic_{}.pdf'.format(pop_size)), dpi=300)
     plt.close('all')
-
 
 
 def plot_all_soma_sigs_classic(param_dict):
@@ -1617,7 +1617,7 @@ def plot_population_density_effect(param_dict):
             plt.close('all')
 
 
-def plot_figure_7_population_size_effect():
+def plot_figure_7():
     from param_dicts import generic_population_params as param_dict
 
     conductance_names = {-0.5: 'passive+regenerative',
@@ -1943,6 +1943,7 @@ def plot_depth_resolved(param_dict):
     plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_6_637um.png'))
     plt.close('all')
 
+
 def plot_all_dipoles_classic(param_dict):
 
     correlations = param_dict['correlations']
@@ -2131,9 +2132,7 @@ def plot_all_dipoles(param_dict):
     plt.close('all')
 
 
-
-
-def plot_figure_6_restorative_sum():
+def plot_figure_6():
 
     from param_dicts import generic_population_params as param_dict
     input_region_clr = {'distal_tuft': '#ff5555',
@@ -2256,7 +2255,6 @@ def plot_figure_6_restorative_sum():
     plt.close('all')
 
 
-
 def plot_figure_5_classic(param_dict):
 
     input_region_clr = {'distal_tuft': '#ff5555',
@@ -2351,7 +2349,6 @@ def plot_figure_5_classic(param_dict):
     plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_5_%dmV_%dum.png' % (holding_potential, pop_size)))
     plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_5_%dmV_%dum.pdf' % (holding_potential, pop_size)), dpi=300)
     plt.close('all')
-
 
 
 def plot_figure_perisomatic_inhibition(param_dict):
@@ -2457,8 +2454,7 @@ def plot_figure_perisomatic_inhibition(param_dict):
     plt.close('all')
 
 
-
-def plot_figure_3(param_dict):
+def plot_figure_3_old(param_dict):
 
     panel = 'A'
     correlations = param_dict['correlations']
@@ -2531,7 +2527,7 @@ def plot_figure_3(param_dict):
     plt.close('all')
 
 
-def plot_figure_2(param_dict):
+def plot_figure_2_generic(param_dict):
 
     conductance_names = {-0.5: 'regenerative',
                          0.0: 'passive-frozen',
@@ -2606,7 +2602,7 @@ def plot_figure_2(param_dict):
     plt.close('all')
 
 
-def plot_figure_2_classic():
+def plot_figure_2():
 
     from param_dicts import classic_population_params as param_dict
     input_regions = ["distal_tuft", "basal"]
@@ -2723,8 +2719,7 @@ def plot_figure_2_classic():
     plt.close('all')
 
 
-
-def plot_figure_3_uniform_boost():
+def plot_figure_3():
 
     from param_dicts import classic_population_params as param_dict
     input_region = "homogeneous"
@@ -3402,7 +3397,6 @@ def plot_figure_1_single_cell():
     plt.close('all')
 
 
-
 def plot_figure_asymmetric_population_LFP():
     from param_dicts import asymmetric_population_params as param_dict
 
@@ -3477,8 +3471,6 @@ def plot_figure_asymmetric_population_LFP():
     mark_subplots([ax_morph_1], ypos=0.95, xpos=0.1)
     plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_asym.png'))
     plt.close('all')
-
-
 
 
 def plot_figure_1_population():
@@ -3854,11 +3846,11 @@ if __name__ == '__main__':
 
     plot_figure_1_single_cell()
     plot_figure_1_population()
-    plot_figure_2_classic()
-    plot_figure_3_uniform_boost()
-    plot_figure_4_all_sigs()
-    plot_figure_6_restorative_sum()
-    plot_figure_7_population_size_effect()
-    plot_figure_8_hbp_summary()
-    plot_figure_8_stick_summary()
+    plot_figure_2()
+    plot_figure_3()
+    plot_figure_4()
+    plot_figure_6()
+    plot_figure_7()
+    plot_figure_8_hbp()
+    plot_figure_8_stick()
 

@@ -16,6 +16,7 @@ import LFPy
 import tools
 h = neuron.h
 
+
 class NeuralSimulation:
     def __init__(self, **kwargs):
         self.input_type = kwargs['input_type']
@@ -36,11 +37,6 @@ class NeuralSimulation:
         self._set_input_params()
         self.sim_name = self.get_simulation_name()
         self.population_sim_name = self.sim_name[:-6]  # Just remove the cell number
-
-        # self.lateral_electrode_parameters = kwargs['lateral_electrode_parameters']
-        # self.elec_x_lateral = self.lateral_electrode_parameters['x']
-        # self.elec_y_lateral = self.lateral_electrode_parameters['y']
-        # self.elec_z_lateral = self.lateral_electrode_parameters['z']
 
         self.center_electrode_parameters = kwargs['center_electrode_parameters']
         self.elec_x_center = self.center_electrode_parameters['x']
@@ -126,17 +122,8 @@ class NeuralSimulation:
                     seg.e_pas = seg.e_pas + seg.ica/seg.g_pas
                 if neuron.h.ismembrane("Ih"):
                     seg.e_pas += seg.ihcn_Ih/seg.g_pas
-                # if neuron.h.ismembrane("Ih_z"):
-                #     seg.e_pas += seg.ih_Ih_z/seg.g_pas
                 if neuron.h.ismembrane("Ih_frozen"):
                     seg.e_pas += seg.ihcn_Ih_frozen/seg.g_pas
-                # if neuron.h.ismembrane("Ih_linearized_mod"):
-                #     seg.e_pas += seg.ihcn_Ih_linearized_mod/seg.g_pas
-                # if neuron.h.ismembrane("Ih_linearized_v2"):
-                #     seg.e_pas += seg.ihcn_Ih_linearized_v2/seg.g_pas
-                # if neuron.h.ismembrane("Ih_linearized_v2_frozen"):
-                #     seg.e_pas += seg.ihcn_Ih_linearized_v2_frozen/seg.g_pas
-
 
     def _return_cell(self, cell_x_y_z_rotation=None):
 
@@ -216,7 +203,6 @@ class NeuralSimulation:
                 self.remove_active_mechanisms(remove_lists[self.conductance_type])
                 self.make_cell_uniform(self.holding_potential)
 
-
         elif 'L5_' in self.cell_name or 'L4_' in self.cell_name:
             remove_lists = {'active': [],
                             'passive': ["Nap_Et2", "NaTa_t", "NaTs2_t", "SKv3_1",
@@ -249,7 +235,8 @@ class NeuralSimulation:
                      'distribution': self.distribution,
                      }]
             cell_params = {
-                'morphology': join(self.neuron_models, self.cell_name, 'infinite_neurite.hoc'),
+                'morphology': join(self.neuron_models, self.cell_name,
+                                   'infinite_neurite.hoc'),
                 'v_init': self.holding_potential,
                 'passive': False,
                 'nsegs_method': None,
@@ -265,7 +252,9 @@ class NeuralSimulation:
             raise NotImplementedError("Cell name is not recognized")
         if cell_x_y_z_rotation is not None:
             cell.set_rotation(z=cell_x_y_z_rotation[3])
-            cell.set_pos(xpos=cell_x_y_z_rotation[0], ypos=cell_x_y_z_rotation[1], zpos=cell_x_y_z_rotation[2])
+            cell.set_pos(xpos=cell_x_y_z_rotation[0],
+                         ypos=cell_x_y_z_rotation[1],
+                         zpos=cell_x_y_z_rotation[2])
         return cell
 
     def save_neural_sim_single_input_data(self, cell):
@@ -273,10 +262,6 @@ class NeuralSimulation:
         name = self.sim_name
         if 'split_sim' in self.param_dict:
             name += '_%s' % self.param_dict['split_sim']
-        # lateral_electrode = LFPy.RecExtElectrode(cell, **self.lateral_electrode_parameters)
-        # lateral_electrode.calc_lfp()
-        # np.save(join(self.sim_folder, 'lateral_sig_%s.npy' % name), lateral_electrode.LFP)
-        # del lateral_electrode.LFP
 
         center_electrode = LFPy.RecExtElectrode(cell, **self.center_electrode_parameters)
         center_electrode.calc_lfp()
@@ -290,10 +275,6 @@ class NeuralSimulation:
             np.save(join(self.sim_folder, 'imem_%s.npy' % name), cell.imem)
             np.save(join(self.sim_folder, 'synidx_%s.npy' % name), cell.synidx)
 
-            # np.save(join(self.sim_folder, 'lateral_elec_x_%s.npy' % self.cell_name), lateral_electrode.x)
-            # np.save(join(self.sim_folder, 'lateral_elec_y_%s.npy' % self.cell_name), lateral_electrode.y)
-            # np.save(join(self.sim_folder, 'lateral_elec_z_%s.npy' % self.cell_name), lateral_electrode.z)
-            #
             np.save(join(self.sim_folder, 'center_elec_x_%s.npy' % self.cell_name), center_electrode.x)
             np.save(join(self.sim_folder, 'center_elec_y_%s.npy' % self.cell_name), center_electrode.y)
             np.save(join(self.sim_folder, 'center_elec_z_%s.npy' % self.cell_name), center_electrode.z)
@@ -344,9 +325,6 @@ class NeuralSimulation:
         if not at_stallo:
             print "Max vmem STD: ", np.max(np.std(cell.vmem, axis=1))
 
-        # [plt.plot(cell.tvec, cell.vmem[idx, :]) for idx in range(cell.totnsegs)]
-        # plt.plot(cell.tvec, cell.vmem[1, :])
-        # plt.show()
         self.save_neural_sim_single_input_data(cell)
         if self.cell_number < 5:
             self._plot_results(cell)
@@ -354,16 +332,16 @@ class NeuralSimulation:
 
     def run_asymmetry_simulation(self, mu, fraction, distribution, cell_number):
         plt.seed(123 * cell_number)
-        # if os.path.isfile(join(self.sim_folder, 'sig_%s.npy' % sim_name)):
-        #     print "Skipping ", mu, input_sec, distribution, tau_w, weight, 'sig_%s.npy' % sim_name
-        #     return
 
         electrode = LFPy.RecExtElectrode(**self.center_electrode_parameters)
         cell = self._return_cell(mu, distribution)
         cell, syn_apic, syn_basal = self._make_asymmetry_distributed_synaptic_stimuli(cell, fraction)
         cell.simulate(rec_imem=True, rec_vmem=True, electrode=electrode)
-        self.save_neural_sim_single_input_data(cell, electrode, 'asymmetry_%1.2f' % fraction, mu, distribution, cell_number)
-        self._plot_results(cell, electrode, 'asymmetry_%1.2f' % fraction, mu, distribution, cell_number)
+        self.save_neural_sim_single_input_data(cell, electrode,
+                                               'asymmetry_%1.2f' % fraction,
+                                               mu, distribution, cell_number)
+        self._plot_results(cell, electrode, 'asymmetry_%1.2f' % fraction,
+                           mu, distribution, cell_number)
 
     def _make_distributed_synaptic_stimuli(self, cell):
 
@@ -562,10 +540,15 @@ class NeuralSimulation:
         input_pos = ['apic']
         maxpos = 10000
         minpos = 600
-        cell_input_idxs_apic = cell.get_rand_idx_area_norm(section=input_pos, nidx=num_synapses_apic,
+        cell_input_idxs_apic = cell.get_rand_idx_area_norm(section=input_pos,
+                                                           nidx=num_synapses_apic,
                                                       z_min=minpos, z_max=maxpos)
-        spike_trains_apic = LFPy.inputgenerators.stationary_poisson(num_synapses_apic, 5, cell.tstartms, cell.tstopms)
-        synapses_apic = self.set_input_spiketrain(cell, cell_input_idxs_apic, spike_trains_apic, synapse_params)
+        spike_trains_apic = LFPy.inputgenerators.stationary_poisson(num_synapses_apic,
+                                                                    5, cell.tstartms,
+                                                                    cell.tstopms)
+        synapses_apic = self.set_input_spiketrain(cell, cell_input_idxs_apic,
+                                                  spike_trains_apic,
+                                                  synapse_params)
 
         num_synapses_basal = 1000 - num_synapses_apic
         input_pos = ['apic', 'dend']
@@ -576,14 +559,20 @@ class NeuralSimulation:
             print num_synapses_basal, num_synapses_apic
             raise RuntimeError("Does not sum to 1000")
 
-        cell_input_idxs_basal = cell.get_rand_idx_area_norm(section=input_pos, nidx=num_synapses_basal,
-                                                      z_min=minpos, z_max=maxpos)
-        spike_trains_basal = LFPy.inputgenerators.stationary_poisson(num_synapses_basal, 5, cell.tstartms, cell.tstopms)
-        synapses_basal = self.set_input_spiketrain(cell, cell_input_idxs_basal, spike_trains_basal, synapse_params)
+        cell_input_idxs_basal = cell.get_rand_idx_area_norm(section=input_pos,
+                                                            nidx=num_synapses_basal,
+                                                            z_min=minpos,
+                                                            z_max=maxpos)
+        spike_trains_basal = LFPy.inputgenerators.stationary_poisson(
+            num_synapses_basal, 5, cell.tstartms, cell.tstopms)
+        synapses_basal = self.set_input_spiketrain(cell, cell_input_idxs_basal,
+                                                   spike_trains_basal,
+                                                   synapse_params)
 
         return cell, synapses_apic, synapses_basal
 
-    def set_input_spiketrain(self, cell, cell_input_idxs, spike_trains, synapse_params):
+    def set_input_spiketrain(self, cell, cell_input_idxs,
+                             spike_trains, synapse_params):
         synapse_list = []
         for number, comp_idx in enumerate(cell_input_idxs):
             synapse_params.update({'idx': int(comp_idx)})
@@ -792,19 +781,6 @@ if __name__ == '__main__':
     # from param_dicts import stick_population_params as param_dict
     from param_dicts import generic_population_params as param_dict
 
-
-    # param_dict.update({'input_region': 'distal_tuft',
-    #                    'correlation': 0.0,
-    #                    'conductance_type': 'Ih',
-    #                    'holding_potential': -80.,
-    #                    'cell_number': 0})
-    # param_dict.update({'input_region': 'top',
-    #                    'correlation': 0.0,
-    #                    'distribution': "increase",
-    #                    'conductance_type': 'generic',
-    #                    'mu': None,
-    #                    'holding_potential': -80.,
-    #                    'cell_number': 0})
     param_dict.update({'input_region': 'distal_tuft',
                        'correlation': 0.0,
                        'distribution': "linear_increase",
