@@ -6,16 +6,16 @@ if 'DISPLAY' not in os.environ:
     at_stallo = True
 else:
     at_stallo = False
-from .plotting_convention import *
+from plotting_convention import *
 import pylab as plt
 import numpy as np
 import os
 import sys
 from os.path import join
-from .suppress_print import suppress_stdout_stderr
+from suppress_print import suppress_stdout_stderr
 with suppress_stdout_stderr():
     import LFPy
-from .NeuralSimulation import NeuralSimulation
+from NeuralSimulation import NeuralSimulation
 
 
 def initialize_population(param_dict):
@@ -46,23 +46,16 @@ def initialize_population(param_dict):
     firing_rate = param_dict['input_firing_rate']
     num_trains = int(num_synapses/0.01)
     all_spiketimes = {}
-    input_method = LFPy.inputgenerators.stationary_poisson
+    # input_method = LFPy.inputgenerators.stationary_poisson
+    input_method = LFPy.inputgenerators.get_activation_times_from_distribution
+
     for idx in range(num_trains):
-        all_spiketimes[idx] = input_method(1, firing_rate, -param_dict['cut_off'], param_dict['end_t'])[0]
+        # all_spiketimes[idx] = input_method(1, firing_rate, -param_dict['cut_off'], param_dict['end_t'])[0]
+        all_spiketimes[idx] = input_method(1, -param_dict['cut_off'],
+                                   param_dict['end_t'],
+                                   rvs_args=dict(loc=0., scale=1000. / firing_rate))[0]
     np.save(join(param_dict['root_folder'], param_dict['save_folder'],
                          'all_spike_trains_%s.npy' % param_dict['name']), all_spiketimes)
-
-    print("Initializing inhibitory input spike trains")
-    plt.seed(1234)
-    num_synapses = param_dict['num_inhibitory_synapses']
-    firing_rate = param_dict['inhibitory_input_firing_rate']
-    num_trains = int(num_synapses/0.01)
-    all_spiketimes = {}
-    input_method = LFPy.inputgenerators.stationary_poisson
-    for idx in range(num_trains):
-        all_spiketimes[idx] = input_method(1, firing_rate, -param_dict['cut_off'], param_dict['end_t'])[0]
-    np.save(join(param_dict['root_folder'], param_dict['save_folder'],
-                         'all_inhibitory_spike_trains_%s.npy' % param_dict['name']), all_spiketimes)
 
 
 def plot_population(param_dict):
@@ -83,69 +76,8 @@ def plot_population(param_dict):
         plt.scatter(all_spiketimes[idx], np.ones(len(all_spiketimes[idx])) * idx, color='r',
                     edgecolors='none', s=4)
 
-    if os.path.isfile(join(param_dict['root_folder'], param_dict['save_folder'],
-                         'all_inhibitory_spike_trains_%s.npy' % param_dict['name'])):
-        all_spiketimes_in = np.load(join(param_dict['root_folder'], param_dict['save_folder'],
-                             'all_inhibitory_spike_trains_%s.npy' % param_dict['name'])).item()
-    for idx in range(200):
-        plt.scatter(all_spiketimes_in[idx], np.ones(len(all_spiketimes_in[idx])) * idx + 200,
-                    edgecolors='none', s=4, color='b')
     plt.savefig(join(param_dict['root_folder'], param_dict['save_folder'],
                      'population_%s.png' % param_dict['name']))
-
-def sum_one_population(param_dict, num_cells, num_tsteps):
-
-    param_dict.update({'cell_number': 0})
-    ns = NeuralSimulation(**param_dict)
-    filename = join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
-                 (ns.population_sim_name, 637))
-    if os.path.isfile(filename):
-        return
-
-    x_y_z_rot = np.load(os.path.join(param_dict['root_folder'], param_dict['save_folder'],
-                             'x_y_z_rot_%s.npy' % param_dict['name']))
-    summed_center_sig = np.zeros((len(param_dict['center_electrode_parameters']['x']), num_tsteps))
-    summed_center_sig_half_density = np.zeros((len(param_dict['center_electrode_parameters']['x']), num_tsteps))
-
-    ns = None
-
-    r = None
-    for cell_number in range(num_cells):
-        param_dict.update({'cell_number': cell_number})
-
-        r = np.sqrt(x_y_z_rot[cell_number, 0]**2 + x_y_z_rot[cell_number, 1]**2)
-        ns = NeuralSimulation(**param_dict)
-        sim_name = ns.sim_name
-        center_lfp = 1000 * np.load(join(ns.sim_folder, 'center_sig_%s.npy' % sim_name))  # uV
-
-        if not summed_center_sig.shape == center_lfp.shape:
-            print("Reshaping LFP time signal", center_lfp.shape)
-            summed_center_sig = np.zeros(center_lfp.shape)
-
-        summed_center_sig += center_lfp
-        if not cell_number % 2:
-            summed_center_sig_half_density += center_lfp
-
-    np.save(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
-                 (ns.population_sim_name, r)), summed_center_sig)
-    np.save(join(ns.sim_folder, 'summed_center_signal_half_density_%s_%dum.npy' %
-                 (ns.population_sim_name, r)), summed_center_sig_half_density)
-
-
-def count_cell_number_for_size(param_dict, num_cells):
-
-    x_y_z_rot = np.load(os.path.join(param_dict['root_folder'], param_dict['save_folder'],
-                             'x_y_z_rot_%s.npy' % param_dict['name']))
-
-    num_used = 0
-    num_used_half_density = 0
-    for cell_number in range(num_cells):
-        param_dict.update({'cell_number': cell_number})
-        r = np.sqrt(x_y_z_rot[cell_number, 0]**2 + x_y_z_rot[cell_number, 1]**2)
-        num_used += 1
-        if not cell_number % 2:
-            num_used_half_density += 1
-        print(num_used, num_used_half_density, r)
 
 
 def sum_and_remove(param_dict, num_cells, remove=False):
@@ -423,20 +355,28 @@ def PopulationMPIclassic(param_dict):
 
 if __name__ == '__main__':
 
-    conductance = 'stick_generic'
-    from .param_dicts import stick_population_params as param_dict
+    # Choose one of the following:
+    sim_name = 'stick_generic'  # Figure 8CD
+    # sim_name = 'hay_generic'      # Figure 4, 6, 7
+    # sim_name = 'hay_classic'      # Figure 1, 2, 3
+    # sim_name = 'hbp_classic'      # Figure 8AB
 
-    # conductance = 'generic'
-    # from param_dicts import generic_population_params as param_dict
-
-    # conductance = 'classic'
-    # from param_dicts import classic_population_params as param_dict
+    if sim_name == "stick_generic":
+        from param_dicts import stick_population_params as param_dict
+    elif sim_name == "hay_generic":
+        from param_dicts import generic_population_params as param_dict
+    elif sim_name == "hay_classic":
+        from param_dicts import classic_population_params as param_dict
+    elif sim_name == "hbp_classic":
+        from param_dicts import hbp_population_params as param_dict
+    else:
+        raise RuntimeError("Unrecognized conductance")
 
     if len(sys.argv) >= 3:
         cell_number = int(sys.argv[3])
         input_region = sys.argv[1]
         correlation = float(sys.argv[2])
-        if conductance == 'generic' or conductance == 'stick_generic':
+        if 'generic' in sim_name:
             distribution = sys.argv[4]
             if sys.argv[5] == "None":
                 mu = None
@@ -463,7 +403,7 @@ if __name__ == '__main__':
         initialize_population(param_dict)
         plot_population(param_dict)
     elif len(sys.argv) == 2 and sys.argv[1] == 'MPI':
-        if conductance == 'generic' or conductance == 'stick_generic':
+        if 'generic' in sim_name:
             PopulationMPIgeneric(param_dict)
         else:
             PopulationMPIclassic(param_dict)

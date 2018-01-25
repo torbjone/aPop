@@ -218,7 +218,7 @@ class NeuralSimulation:
                 # neuron.load_mechanisms(join(self.param_dict['model_folder'], 'mod'))
                 from hbp_cells import return_cell
             cell_folder = join(self.param_dict['model_folder'], 'models', self.cell_name)
-            cell = return_cell(cell_folder, self.end_t, self.timeres_NEURON, -self.cut_off)
+            cell = return_cell(cell_folder, self.end_t, self.dt, -self.cut_off)
             if self.conductance_type == "Ih_frozen":
                 self.make_Ih_frozen(cell)
             self.remove_active_mechanisms(remove_lists[self.conductance_type])
@@ -325,19 +325,6 @@ class NeuralSimulation:
             self._plot_results(cell)
 
 
-    def run_asymmetry_simulation(self, mu, fraction, distribution, cell_number):
-        plt.seed(123 * cell_number)
-
-        electrode = LFPy.RecExtElectrode(**self.center_electrode_parameters)
-        cell = self._return_cell(mu, distribution)
-        cell, syn_apic, syn_basal = self._make_asymmetry_distributed_synaptic_stimuli(cell, fraction)
-        cell.simulate(rec_imem=True, rec_vmem=True, electrode=electrode)
-        self.save_neural_sim_single_input_data(cell, electrode,
-                                               'asymmetry_%1.2f' % fraction,
-                                               mu, distribution, cell_number)
-        self._plot_results(cell, electrode, 'asymmetry_%1.2f' % fraction,
-                           mu, distribution, cell_number)
-
     def _make_distributed_synaptic_stimuli(self, cell):
 
         syntype = 'ExpSynI' if not 'syntype' in self.param_dict else self.param_dict['syntype']
@@ -351,15 +338,6 @@ class NeuralSimulation:
             'record_current': False,
             # 'color': 'r',
         }
-        if 'inhibitory_syn_weight' in self.param_dict:
-            inhibitory_synapse_params = {
-                'e': 0.,                   # reversal potential (not used for ExpSynI)
-                'syntype': syntype,       # synapse type
-                'tau': self.param_dict['syn_tau'],                # syn. time constant
-                'weight': self.param_dict['inhibitory_syn_weight'],            # syn. weight
-                'record_current': False,
-                # 'color': 'b',
-            }
 
         if self.input_region == 'distal_tuft':
             input_pos = ['apic']
@@ -377,19 +355,6 @@ class NeuralSimulation:
             input_pos = ['dend', "soma"]
             maxpos = 10000
             minpos = -10000
-        elif self.input_region == 'perisomatic_inhibition':
-            inhibitory_input_pos = ['dend', "soma"]
-            inhibitory_maxpos = 10000
-            inhibitory_minpos = -10000
-
-        elif self.input_region == 'balanced':
-            inhibitory_input_pos = ['dend', "soma"]
-            inhibitory_maxpos = 10000
-            inhibitory_minpos = -10000
-
-            excitatory_input_pos = ['apic', 'dend', "soma"]
-            excitatory_maxpos = 10000
-            excitatory_minpos = -10000
 
         elif self.input_region == 'top':
             input_pos = ['dend', "soma"]
@@ -422,105 +387,26 @@ class NeuralSimulation:
                                                                z_min=minpos_homo, z_max=maxpos_homo)
             cell_input_idxs = np.r_[cell_input_idxs_homo, cell_input_idxs_tuft]
 
-        elif self.input_region == 'balanced':
-
-            cell_input_idxs_in = cell.get_rand_idx_area_norm(section=inhibitory_input_pos,
-                                                             nidx=self.param_dict['num_inhibitory_synapses'],
-                                                             z_min=inhibitory_minpos,
-                                                             z_max=inhibitory_maxpos)
-
-            cell_input_idxs_ex = cell.get_rand_idx_area_norm(section=excitatory_input_pos,
-                                                             nidx=self.param_dict['num_synapses'],
-                                                             z_min=excitatory_minpos,
-                                                             z_max=excitatory_maxpos)
-        elif self.input_region == 'perisomatic_inhibition':
-
-            cell_input_idxs_in = cell.get_rand_idx_area_norm(section=inhibitory_input_pos,
-                                                             nidx=self.param_dict['num_inhibitory_synapses'],
-                                                             z_min=inhibitory_minpos,
-                                                             z_max=inhibitory_maxpos)
-
         else:
             cell_input_idxs = cell.get_rand_idx_area_norm(section=input_pos,
-                                                          nidx=num_synapses, z_min=minpos, z_max=maxpos)
+                                                          nidx=num_synapses,
+                                                          z_min=minpos,
+                                                          z_max=maxpos)
 
         if self.correlation < 1e-6:
-            if self.input_region == 'balanced':
-                spike_trains_in = LFPy.inputgenerators.stationary_poisson(
-                    self.param_dict['num_inhibitory_synapses'], self.param_dict['inhibitory_input_firing_rate'],
-                    cell.tstartms, cell.tstopms)
-                spike_trains_ex = LFPy.inputgenerators.stationary_poisson(
-                    self.param_dict['num_synapses'], self.param_dict['input_firing_rate'],
-                    cell.tstartms, cell.tstopms)
-
-                synapses_ex = self.set_input_spiketrain(cell, cell_input_idxs_ex,
-                                                        spike_trains_ex, synapse_params)
-                synapses_in = self.set_input_spiketrain(cell, cell_input_idxs_in,
-                                                        spike_trains_in, inhibitory_synapse_params)
-
-                synapses = synapses_ex + synapses_in
-            elif self.input_region == 'perisomatic_inhibition':
-                spike_trains_in = LFPy.inputgenerators.stationary_poisson(
-                    self.param_dict['num_inhibitory_synapses'], self.param_dict['inhibitory_input_firing_rate'],
-                    cell.tstartms, cell.tstopms)
-
-
-                synapses_in = self.set_input_spiketrain(cell, cell_input_idxs_in,
-                                                        spike_trains_in, inhibitory_synapse_params)
-
-                synapses = synapses_in
-            else:
-                # spike_trains = LFPy.inputgenerators.stationary_poisson(num_synapses,
-                #                                                    firing_rate, cell.tstartms, cell.tstopms)
-                spike_trains = LFPy.inputgenerators.get_activation_times_from_distribution(
-                    n=num_synapses, tstart=cell.tstart, tstop=cell.tstop,
-                    rvs_args=dict(loc=0., scale=1000. / firing_rate))
-
-                synapses = self.set_input_spiketrain(cell, cell_input_idxs, spike_trains, synapse_params)
+            spike_trains = LFPy.inputgenerators.get_activation_times_from_distribution(
+                n=num_synapses, tstart=cell.tstart, tstop=cell.tstop,
+                rvs_args=dict(loc=0., scale=1000. / firing_rate))
+            synapses = self.set_input_spiketrain(cell, cell_input_idxs, spike_trains, synapse_params)
 
         else:
-            if self.input_region == 'balanced':
-                all_spiketimes_ex = np.load(join(self.param_dict['root_folder'], self.param_dict['save_folder'],
-                                 'all_spike_trains_%s.npy' % self.param_dict['name'])).item()
-                all_spiketimes_in = np.load(join(self.param_dict['root_folder'], self.param_dict['save_folder'],
-                                 'all_inhibitory_spike_trains_%s.npy' % self.param_dict['name'])).item()
-                spike_train_idxs_ex = np.random.choice(np.arange(int(num_synapses/self.correlation)),
-                                                    num_synapses, replace=False)
+            all_spiketimes = np.load(join(self.param_dict['root_folder'], self.param_dict['save_folder'],
+                             'all_spike_trains_%s.npy' % self.param_dict['name'])).item()
 
-                spike_train_idxs_in = np.random.choice(
-                    np.arange(int(self.param_dict['num_inhibitory_synapses']/self.correlation)),
-                    self.param_dict['num_inhibitory_synapses'], replace=False)
-
-                spike_trains_ex = [all_spiketimes_ex[idx] for idx in spike_train_idxs_ex]
-                spike_trains_in = [all_spiketimes_in[idx] for idx in spike_train_idxs_in]
-
-                synapses_ex = self.set_input_spiketrain(cell, cell_input_idxs_ex,
-                                                        spike_trains_ex, synapse_params)
-                synapses_in = self.set_input_spiketrain(cell, cell_input_idxs_in,
-                                                        spike_trains_in, inhibitory_synapse_params)
-                synapses = synapses_ex + synapses_in
-            elif self.input_region == 'perisomatic_inhibition':
-
-                all_spiketimes_in = np.load(join(self.param_dict['root_folder'], self.param_dict['save_folder'],
-                                 'all_inhibitory_spike_trains_%s.npy' % self.param_dict['name'])).item()
-
-                spike_train_idxs_in = np.random.choice(
-                    np.arange(int(self.param_dict['num_inhibitory_synapses']/self.correlation)),
-                    self.param_dict['num_inhibitory_synapses'], replace=False)
-
-                spike_trains_in = [all_spiketimes_in[idx] for idx in spike_train_idxs_in]
-
-                synapses_in = self.set_input_spiketrain(cell, cell_input_idxs_in,
-                                                        spike_trains_in, inhibitory_synapse_params)
-                synapses = synapses_in
-            else:
-                all_spiketimes = np.load(join(self.param_dict['root_folder'], self.param_dict['save_folder'],
-                                 'all_spike_trains_%s.npy' % self.param_dict['name'])).item()
-
-                spike_train_idxs = np.random.choice(np.arange(int(num_synapses/self.correlation)),
-                                                    num_synapses, replace=False)
-                spike_trains = [all_spiketimes[idx] for idx in spike_train_idxs]
-                synapses = self.set_input_spiketrain(cell, cell_input_idxs, spike_trains, synapse_params)
+            spike_train_idxs = np.random.choice(np.arange(int(num_synapses/self.correlation)),
+                                                num_synapses, replace=False)
+            spike_trains = [all_spiketimes[idx] for idx in spike_train_idxs]
+            synapses = self.set_input_spiketrain(cell, cell_input_idxs, spike_trains, synapse_params)
 
         return cell, synapses
 
@@ -586,25 +472,6 @@ class NeuralSimulation:
             synapse_list.append(s)
         return synapse_list
 
-    def _return_elec_subplot_number_with_distance(self, elec_number):
-        """ Return the subplot number for the distance study
-        """
-        num_elec_cols = len(set(self.elec_x_lateral))
-        num_elec_rows = len(set(self.elec_z_lateral))
-        elec_idxs = np.arange(len(self.elec_x_lateral)).reshape(num_elec_rows, num_elec_cols)
-        row, col = np.array(np.where(elec_idxs == elec_number))[:, 0]
-        num_plot_cols = num_elec_cols + 3
-        plot_number = row * num_plot_cols + col + 4
-        return plot_number
-
-    def _return_elec_row_col(self, elec_number):
-        """ Return the subplot number for the distance study
-        """
-        num_elec_cols = len(set(self.elec_x_lateral))
-        num_elec_rows = len(set(self.elec_z_lateral))
-        elec_idxs = np.arange(len(self.elec_x_lateral)).reshape(num_elec_rows, num_elec_cols)
-        row, col = np.array(np.where(elec_idxs == elec_number))[:, 0]
-        return row, col
 
     def plot_cell_to_ax(self, cell, ax):
         [ax.plot([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]],
@@ -671,108 +538,6 @@ class NeuralSimulation:
         fig.suptitle(self.sim_name)
 
         fig.savefig(join(self.figure_folder, '%s.png' % self.sim_name))
-
-    def plot_LFP_with_distance(self, fraction):
-        print("plotting ")
-        plt.seed(123*self.cell_number)
-
-        cell = self._return_cell()
-        cell, syn_apic, syn_basal = self._make_asymmetry_distributed_synaptic_stimuli(cell, fraction)
-        cell.imem = np.load(join(self.sim_folder, 'imem_%s.npy' % self.sim_name))
-        cell.vmem = np.load(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name))
-        plt.close('all')
-        fig = plt.figure(figsize=[18, 9])
-        fig.subplots_adjust(right=0.97, left=0.05)
-        apic_clr = 'orange'
-        soma_clr = 'olive'
-        middle_clr = 'm'
-        soma_idx = 0
-        apic_idx = np.argmin(np.abs(cell.zmid - 1000))
-        middle_idx = np.argmin(np.abs(cell.zmid - 500))
-
-        plot_psd = True
-        if plot_psd:
-            scale = 'log'
-            v_x_apic, [v_y_apic] = tools.return_freq_and_psd_welch(cell.vmem[apic_idx], self.welch_dict)
-            v_x_middle, [v_y_middle] = tools.return_freq_and_psd_welch(cell.vmem[middle_idx], self.welch_dict)
-            v_x_soma, [v_y_soma] = tools.return_freq_and_psd_welch(cell.vmem[soma_idx], self.welch_dict)
-            i_x_apic, [i_y_apic] = tools.return_freq_and_psd_welch(cell.imem[apic_idx], self.welch_dict)
-            i_x_middle, [i_y_middle] = tools.return_freq_and_psd_welch(cell.imem[middle_idx], self.welch_dict)
-            i_x_soma, [i_y_soma] = tools.return_freq_and_psd_welch(cell.imem[soma_idx], self.welch_dict)
-        else:
-            scale ='linear'
-            v_x_apic, v_y_apic = cell.tvec, cell.vmem[apic_idx]
-            v_x_middle, v_y_middle = cell.tvec, cell.vmem[middle_idx]
-            v_x_soma, v_y_soma = cell.tvec, cell.vmem[soma_idx]
-            i_x_apic, i_y_apic = cell.tvec, cell.imem[apic_idx]
-            i_x_middle, i_y_middle = cell.tvec, cell.imem[middle_idx]
-            i_x_soma, i_y_soma = cell.tvec, cell.imem[soma_idx]
-        ylim= [1e-5, 1]
-        ax_top = fig.add_subplot(3, 5, 4, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
-        ax_top_n = fig.add_subplot(3, 5, 5, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
-        ax_mid = fig.add_subplot(3, 5, 9, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
-        ax_mid_n = fig.add_subplot(3, 5, 10, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
-        ax_bottom = fig.add_subplot(3, 5, 14, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
-        ax_bottom_n = fig.add_subplot(3, 5, 15, xlim=[1, self.max_freq], xscale=scale, yscale=scale)
-        cell_ax = fig.add_subplot(1, 5, 3, aspect=1, frameon=False, xticks=[], yticks=[])
-        self.plot_cell_to_ax(cell, cell_ax)
-
-        all_elec_ax = [ax_top, ax_mid, ax_bottom]
-        all_elec_n_ax = [ax_top_n, ax_mid_n, ax_bottom_n]
-
-        apic_title = '%1.2f (%1.2f) mV' % (np.mean(cell.vmem[apic_idx]), np.std(cell.vmem[apic_idx]))
-        middle_title = '%1.2f (%1.2f) mV' % (np.mean(cell.vmem[middle_idx]), np.std(cell.vmem[middle_idx]))
-        soma_title = '%1.2f (%1.2f) mV' % (np.mean(cell.vmem[soma_idx]), np.std(cell.vmem[soma_idx]))
-
-        ax_v_apic = fig.add_subplot(3, 5, 1, xlim=[1, self.max_freq], ylabel='mV$^2$/Hz',
-                                    title=apic_title, xscale=scale, yscale=scale)
-        ax_v_middle = fig.add_subplot(3, 5, 6, xlim=[1, self.max_freq], ylabel='mV$^2$/Hz',
-                                      title=middle_title, xscale=scale, yscale=scale)
-        ax_v_soma = fig.add_subplot(3, 5, 11, xlim=[1, self.max_freq], ylabel='mV$^2$/Hz',
-                                    title=soma_title, xscale=scale, yscale=scale)
-
-        ax_i_apic = fig.add_subplot(3, 5, 2, xlim=[1, self.max_freq], ylabel='nA$^2$/Hz', xscale=scale, yscale=scale)
-        ax_i_middle = fig.add_subplot(3, 5, 7, xlim=[1, self.max_freq], ylabel='nA$^2$/Hz', xscale=scale, yscale=scale)
-        ax_i_soma = fig.add_subplot(3, 5, 12, xlim=[1, self.max_freq], ylabel='nA$^2$/Hz', xscale=scale, yscale=scale)
-
-        ax_v_apic.loglog(v_x_apic, v_y_apic, c=apic_clr)
-        ax_v_middle.loglog(v_x_middle, v_y_middle, c=middle_clr)
-        ax_v_soma.loglog(v_x_soma, v_y_soma, c=soma_clr)
-
-        ax_i_apic.loglog(i_x_apic, i_y_apic, c=apic_clr)
-        ax_i_middle.loglog(i_x_middle, i_y_middle, c=middle_clr)
-        ax_i_soma.loglog(i_x_soma, i_y_soma, c=soma_clr)
-
-        cell_ax.plot(cell.xmid[apic_idx], cell.zmid[apic_idx], 'D', ms=10, c=apic_clr)
-        cell_ax.plot(cell.xmid[middle_idx], cell.zmid[middle_idx], 'D', ms=10, c=middle_clr)
-        cell_ax.plot(cell.xmid[soma_idx], cell.zmid[soma_idx], 'D', ms=10, c=soma_clr)
-
-        fig.suptitle(self.sim_name)
-        LFP = 1000 * np.load(join(self.sim_folder, 'sig_%s.npy' % self.sim_name))[:, :]
-
-        freqs, sig_psd = tools.return_freq_and_psd_welch(LFP, self.welch_dict)
-
-        cutoff_dist = 1000
-        dist_clr = lambda dist: plt.cm.Greys(np.log(dist) / np.log(cutoff_dist))
-
-        for elec in range(len(self.elec_z_lateral)):
-            if self.elec_x_lateral[elec] > cutoff_dist:
-                continue
-            clr = dist_clr(self.elec_x_lateral[elec])
-            cell_ax.plot(self.elec_x_lateral[elec], self.elec_z_lateral[elec], 'o', c=clr)
-
-            row, col = self._return_elec_row_col(elec)
-            all_elec_ax[row].loglog(freqs, sig_psd[elec, :], color=clr, lw=1)
-            all_elec_n_ax[row].loglog(freqs, sig_psd[elec, :] / np.max(sig_psd[elec, :]), color=clr, lw=1)
-
-        [ax.grid(True) for ax in all_elec_ax + all_elec_n_ax +
-         [ax_i_apic, ax_i_middle, ax_i_soma, ax_v_apic, ax_v_middle, ax_v_soma]]
-
-        for ax in all_elec_ax + all_elec_n_ax + [ax_i_apic, ax_i_middle, ax_i_soma, ax_v_apic, ax_v_middle, ax_v_soma]:
-            max_exponent = np.ceil(np.log10(np.max([np.max(l.get_ydata()) for l in ax.get_lines()])))
-            ax.set_ylim([10**(max_exponent - 4), 10**max_exponent])
-
-        fig.savefig(join(self.figure_folder, 'LFP_%s.png' % self.sim_name))
 
 
 if __name__ == '__main__':
