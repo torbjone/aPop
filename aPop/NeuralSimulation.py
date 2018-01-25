@@ -1,4 +1,4 @@
-from __future__ import division
+
 import os
 import sys
 from os.path import join
@@ -8,12 +8,12 @@ if not 'DISPLAY' in os.environ:
     at_stallo = True
 else:
     at_stallo = False
-from plotting_convention import mark_subplots, simplify_axes, LogNorm
+from .plotting_convention import mark_subplots, simplify_axes, LogNorm
 import numpy as np
 import pylab as plt
 import neuron
 import LFPy
-import tools
+from . import tools
 h = neuron.h
 
 
@@ -140,9 +140,9 @@ class NeuralSimulation:
                                "CaDynamics_E2", "Ca_LVAst", "Ca"]
                         }
 
-        if 'i_QA' not in neuron.h.__dict__.keys():
-            print "",
-            from suppress_print import suppress_stdout_stderr
+        if 'i_QA' not in list(neuron.h.__dict__.keys()):
+            print("", end=' ')
+            from .suppress_print import suppress_stdout_stderr
             with suppress_stdout_stderr():
                 neuron.load_mechanisms(join(self.neuron_models))
         cell = None
@@ -175,7 +175,7 @@ class NeuralSimulation:
                 cell = LFPy.Cell(**cell_params)
             else:
                 sys.path.append(join(self.neuron_models, 'hay'))
-                from suppress_print import suppress_stdout_stderr
+                from .suppress_print import suppress_stdout_stderr
                 with suppress_stdout_stderr():
                     neuron.load_mechanisms(join(self.neuron_models, 'hay', 'mod'))
 
@@ -216,7 +216,7 @@ class NeuralSimulation:
                                "CaDynamics_E2", "Ca_LVAst", "Ca"]}
 
             sys.path.append(self.param_dict['model_folder'])
-            from suppress_print import suppress_stdout_stderr
+            from .suppress_print import suppress_stdout_stderr
             with suppress_stdout_stderr():
                 # neuron.load_mechanisms(join(self.param_dict['model_folder'], 'mod'))
                 from hbp_cells import return_cell
@@ -304,7 +304,7 @@ class NeuralSimulation:
 
         if os.path.isfile(join(self.sim_folder, 'center_sig_%s.npy' % self.sim_name)) or \
            os.path.isfile(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name)):
-            print "Skipping ", self.sim_name
+            print("Skipping ", self.sim_name)
             return
 
         plt.seed(123 * self.cell_number)
@@ -323,7 +323,7 @@ class NeuralSimulation:
         rec_vmem = False if at_stallo else True
         cell.simulate(rec_imem=True, rec_vmem=rec_vmem)
         if not at_stallo:
-            print "Max vmem STD: ", np.max(np.std(cell.vmem, axis=1))
+            print("Max vmem STD: ", np.max(np.std(cell.vmem, axis=1)))
 
         self.save_neural_sim_single_input_data(cell)
         if self.cell_number < 5:
@@ -412,7 +412,7 @@ class NeuralSimulation:
             maxpos_homo = 10000
             minpos_homo = -10000
             dual_fraction = float(self.input_region[4:])
-            print "Dual fraction: ", dual_fraction
+            print("Dual fraction: ", dual_fraction)
         else:
             raise RuntimeError("Use other input section")
 
@@ -556,7 +556,7 @@ class NeuralSimulation:
         minpos = -10000
 
         if num_synapses_apic + num_synapses_basal != 1000:
-            print num_synapses_basal, num_synapses_apic
+            print(num_synapses_basal, num_synapses_apic)
             raise RuntimeError("Does not sum to 1000")
 
         cell_input_idxs_basal = cell.get_rand_idx_area_norm(section=input_pos,
@@ -610,7 +610,7 @@ class NeuralSimulation:
     def plot_cell_to_ax(self, cell, ax):
         [ax.plot([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]],
                  lw=1.5, color='0.5', zorder=0, alpha=1)
-            for idx in xrange(len(cell.xmid))]
+            for idx in range(len(cell.xmid))]
 
         # [ax.plot(cell.xmid[idx], cell.zmid[idx], 'g.', ms=4) for idx in cell.synidx]
         for syn in cell.synapses:
@@ -674,7 +674,7 @@ class NeuralSimulation:
         fig.savefig(join(self.figure_folder, '%s.png' % self.sim_name))
 
     def plot_LFP_with_distance(self, fraction):
-        print "plotting "
+        print("plotting ")
         plt.seed(123*self.cell_number)
 
         cell = self._return_cell()
@@ -756,7 +756,7 @@ class NeuralSimulation:
         cutoff_dist = 1000
         dist_clr = lambda dist: plt.cm.Greys(np.log(dist) / np.log(cutoff_dist))
 
-        for elec in xrange(len(self.elec_z_lateral)):
+        for elec in range(len(self.elec_z_lateral)):
             if self.elec_x_lateral[elec] > cutoff_dist:
                 continue
             clr = dist_clr(self.elec_x_lateral[elec])
@@ -779,7 +779,7 @@ class NeuralSimulation:
 if __name__ == '__main__':
     # from param_dicts import classic_population_params as param_dict
     # from param_dicts import stick_population_params as param_dict
-    from param_dicts import generic_population_params as param_dict
+    from .param_dicts import generic_population_params as param_dict
 
     param_dict.update({'input_region': 'distal_tuft',
                        'correlation': 0.0,

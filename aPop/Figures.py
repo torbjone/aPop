@@ -1,19 +1,19 @@
-from __future__ import division
+
 import os
 import matplotlib
 # matplotlib.use('Agg', warn=False)
 
-from plotting_convention import *
+from .plotting_convention import *
 import pylab as plt
 import numpy as np
 import os
 import sys
 from os.path import join
-from suppress_print import suppress_stdout_stderr
+from .suppress_print import suppress_stdout_stderr
 with suppress_stdout_stderr():
     import LFPy
-from NeuralSimulation import NeuralSimulation
-import tools
+from .NeuralSimulation import NeuralSimulation
+from . import tools
 import scipy.fftpack as sf
 import matplotlib
 
@@ -93,7 +93,7 @@ def plot_3d_rot_pop(param_dict):
     # print all_vmems
     vmin = np.min(all_vmems)
     vmax = np.max(all_vmems)
-    print vmin, vmax
+    print(vmin, vmax)
     # cmaps = [plt.cm.Greys_r, plt.cm.Blues_r, plt.cm.BuGn_r, plt.cm.BuPu_r, plt.cm.GnBu_r,
     #          plt.cm.Greens_r, plt.cm.Oranges_r, plt.cm.OrRd_r,
     #          plt.cm.PuBu_r, plt.cm.PuBuGn_r, plt.cm.PuRd_r, plt.cm.Purples_r, plt.cm.RdPu_r,
@@ -132,7 +132,7 @@ def plot_3d_rot_pop(param_dict):
         cmap = np.random.choice(cmaps)
         cell_cmaps.append(cmap)
         lines.append([])
-        for idx in xrange(len(all_xend[cell_number])):
+        for idx in range(len(all_xend[cell_number])):
             l = None
             if idx == 0:
                 l, = ax.plot([x_y_z_rot[cell_idx][0]], [x_y_z_rot[cell_idx][1]],
@@ -157,13 +157,13 @@ def plot_3d_rot_pop(param_dict):
             dist = np.sqrt((x - R * np.cos(np.deg2rad(angle)))**2 +
                            (y - R * np.sin(np.deg2rad(angle)))**2)
             cmap = cell_cmaps[cell_number]
-            for idx in xrange(len(all_xend[cell_number])):
+            for idx in range(len(all_xend[cell_number])):
                 lines[cell_number][idx].set_color(vmem_clr(all_vmems[cell_number][idx, t_idx], cmap))
                 lines[cell_number][idx].set_zorder(1./dist)
 
         ax.auto_scale_xyz([-450, 450], [-450, 450], [00, 900])
 
-        print angle
+        print(angle)
         ax.view_init(0, angle)
 
         plt.draw()
@@ -240,9 +240,9 @@ def plot_asymetric_conductance_space_average_movie(param_dict):
     maxlog = int(np.ceil(np.log10(vmax)))
     minlog = int(np.ceil(np.log10(-vmin)))
 
-    tick_locations = ([-(10**d) for d in xrange(minlog, -logthresh-1, -1)]
+    tick_locations = ([-(10**d) for d in range(minlog, -logthresh-1, -1)]
                     + [0.0]
-                    + [(10**d) for d in xrange(-logthresh, maxlog+1)])
+                    + [(10**d) for d in range(-logthresh, maxlog+1)])
 
     plt.close('all')
     morph_line_dict = {'solid_capstyle': 'butt',
@@ -266,7 +266,7 @@ def plot_asymetric_conductance_space_average_movie(param_dict):
 
     l_1 = []
     l_2 = []
-    for idx in xrange(len(cell.xmid)):
+    for idx in range(len(cell.xmid)):
         # l_1.append(ax_lfp_1_single.plot([cell.xstart[idx], cell.xend[idx]],
         #                                 [cell.zstart[idx], cell.zend[idx]], **morph_line_dict)[0])
         ax_lfp_1.plot([cell.xstart[idx], cell.xend[idx]],
@@ -303,17 +303,17 @@ def plot_asymetric_conductance_space_average_movie(param_dict):
                          'hay_%04d.png' % (num_cells)))
     sys.exit()
     for num_cells in np.arange(2, tot_num_cells):
-        print num_cells
+        print(num_cells)
         name.set_text("Number of cells: %d" % num_cells)
         param_dict_1['cell_number'] = num_cells - 1
         param_dict_2['cell_number'] = num_cells - 1
         sig_amp_1, cell = return_lfp_amp(param_dict_1, electrode_parameters, x, x_y_z_rot[num_cells - 1])
         sig_amp_2, cell = return_lfp_amp(param_dict_2, electrode_parameters, x, x_y_z_rot[num_cells - 1])
 
-        for idx in xrange(len(cell.xmid)):
+        for idx in range(len(cell.xmid)):
             ax_lfp_1.plot([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]], **morph_line_dict)
             ax_lfp_2.plot([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]], **morph_line_dict)
-        for idx in xrange(len(cell.xmid)):
+        for idx in range(len(cell.xmid)):
             l_1[idx].set_data([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]])
             l_2[idx].set_data([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]])
 
@@ -381,7 +381,7 @@ def plot_hbp_illustration(param_dict):
     cell_cmap = lambda idx: plt.cm.Blues(0.5 + 0.5 * np.random.random())
 
     c = cell_cmap(0)
-    for idx in xrange(len(cell.xmid)):
+    for idx in range(len(cell.xmid)):
         ax_lfp_1.plot([cell.xstart[idx], cell.xend[idx]],
                       [cell.zstart[idx], cell.zend[idx]], lw=cell.diam[idx], c=c, **morph_line_dict)
     img_dict = {'origin': 'lower',
@@ -403,12 +403,12 @@ def plot_hbp_illustration(param_dict):
     # fig.savefig(join(param_dict['root_folder'], 'hbp_fig', 'hay_%04d_.pdf' % (num_cells)))
     # sys.exit()
     for num_cells in np.arange(2, tot_num_cells):
-        print num_cells
+        print(num_cells)
         # name.set_text("Number of cells: %d" % num_cells)
         param_dict_1['cell_number'] = num_cells - 1
         sig_amp_1, cell = return_lfp_amp(param_dict_1, electrode_parameters, x, x_y_z_rot[num_cells - 1])
         c = cell_cmap(num_cells)
-        for idx in xrange(len(cell.xmid)):
+        for idx in range(len(cell.xmid)):
             ax_lfp_1.plot([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]], lw=cell.diam[idx],
                           c=c, **morph_line_dict)
 
@@ -473,15 +473,15 @@ def plot_asymetric_conductance_time_average_movie(param_dict):
 
     logthresh = 1
     color_lim = np.max(np.abs(1e6 * electrode.LFP)) / 10
-    print color_lim
+    print(color_lim)
     vmax = color_lim
     vmin = -color_lim
     maxlog = int(np.ceil(np.log10(vmax)))
     minlog = int(np.ceil(np.log10(-vmin)))
 
-    tick_locations = ([-(10**d) for d in xrange(minlog, -logthresh-1, -1)]
+    tick_locations = ([-(10**d) for d in range(minlog, -logthresh-1, -1)]
                     + [0.0]
-                    + [(10**d) for d in xrange(-logthresh, maxlog+1)])
+                    + [(10**d) for d in range(-logthresh, maxlog+1)])
 
     plt.close('all')
     fig = plt.figure(figsize=[12, 6])
@@ -495,11 +495,11 @@ def plot_asymetric_conductance_time_average_movie(param_dict):
 
     [ax_lfp_1.plot([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]], '-',
                  solid_capstyle='butt', ms=6, lw=cell.diam[idx], color='k', zorder=1)
-     for idx in xrange(len(cell.xmid))]
+     for idx in range(len(cell.xmid))]
 
     [ax_lfp_1_mean.plot([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]], '-',
                  solid_capstyle='butt', ms=6, lw=cell.diam[idx], color='k', zorder=1)
-     for idx in xrange(len(cell.xmid))]
+     for idx in range(len(cell.xmid))]
 
 
     ax_lfp_2 = fig.add_subplot(223, ylim=[np.min(elec_z), np.max(elec_z)], xlim=[np.min(elec_x), np.max(elec_x)],
@@ -511,11 +511,11 @@ def plot_asymetric_conductance_time_average_movie(param_dict):
 
     [ax_lfp_2.plot([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]], '-',
                  solid_capstyle='butt', ms=6, lw=cell.diam[idx], color='k', zorder=1)
-     for idx in xrange(len(cell.xmid))]
+     for idx in range(len(cell.xmid))]
 
     [ax_lfp_2_mean.plot([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]], '-',
                  solid_capstyle='butt', ms=6, lw=cell.diam[idx], color='k', zorder=1)
-     for idx in xrange(len(cell.xmid))]
+     for idx in range(len(cell.xmid))]
 
     time_idx = 0
 
@@ -541,7 +541,7 @@ def plot_asymetric_conductance_time_average_movie(param_dict):
     fig.savefig(join(param_dict['root_folder'], 'asym_conductance_anim',
                          'hay_%04d.png' % (time_idx)))
     for time_idx in np.arange(0, len(cell.tvec), 5)[1:]:
-        print time_idx
+        print(time_idx)
         img_lfp_1.set_data(sig_amp_1[:, :, time_idx])
         img_lfp_1_mean.set_data(np.average(sig_amp_1[:, :, :time_idx], axis=-1))
 
@@ -590,13 +590,13 @@ def plot_cell_population(param_dict):
         ns = NeuralSimulation(**param_dict)
         cell = ns._return_cell(x_y_z_rot[cell_number])
         # if cell_number % 100 == 0:
-        print "Plotting ", cell_number
+        print("Plotting ", cell_number)
         c = np.random.randint(0, num_cells)
         x = cell.xmid[0]
         y = cell.ymid[0]
         dist = 1. / np.sqrt((x - R * np.cos(np.deg2rad(0)))**2 +
                        (y - R * np.sin(np.deg2rad(0)))**2)
-        for idx in xrange(len(cell.xend)):
+        for idx in range(len(cell.xend)):
             if idx == 0:
                ax.plot([cell.xmid[idx]], [cell.ymid[idx]], [cell.zmid[idx]], 'o', ms=6, mec='none',
                          c=cell_clr(c), zorder=dist, rasterized=True)
@@ -724,7 +724,7 @@ def plot_all_soma_sigs():
                     # lfp = np.load(join(folder, '%s.npy' % name))[:, :]
                     # print name, lfp.shape
                     freq, psd = tools.return_freq_and_psd_welch(lfp, ns.welch_dict)
-                    print input_region, distribution, correlation, mu, np.max(psd), psd.shape
+                    print(input_region, distribution, correlation, mu, np.max(psd), psd.shape)
                     # plt.close("all")
                     psd_dict[mu] = psd
 
@@ -773,7 +773,7 @@ def plot_all_soma_sigs():
 
 def plot_figure_8_hbp():
 
-    from param_dicts import hbp_population_params as param_dict
+    from .param_dicts import hbp_population_params as param_dict
 
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     pop_size = 999
@@ -852,7 +852,7 @@ def plot_figure_8_hbp():
                 # lfp = np.load(join(folder, '%s.npy' % name))[:, :]
                 # print name, lfp.shape
                 freq, psd = tools.return_freq_and_psd_welch(lfp, ns.welch_dict)
-                print input_region, correlation, conductance_type, np.max(psd), psd.shape
+                print(input_region, correlation, conductance_type, np.max(psd), psd.shape)
                 # plt.close("all")
                 psd_dict[conductance_type] = psd
 
@@ -918,7 +918,7 @@ def plot_figure_8_hbp():
 
 def plot_figure_8_stick():
 
-    from param_dicts import stick_population_params as param_dict
+    from .param_dicts import stick_population_params as param_dict
 
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     pop_size = 999
@@ -1009,7 +1009,7 @@ def plot_figure_8_stick():
                 # lfp = np.load(join(folder, '%s.npy' % name))[:, :]
                 # print name, lfp.shape
                 freq, psd = tools.return_freq_and_psd_welch(lfp, ns.welch_dict)
-                print input_region, correlation, conductance_type, np.max(psd), psd.shape
+                print(input_region, correlation, conductance_type, np.max(psd), psd.shape)
                 # plt.close("all")
                 psd_dict[conductance_type] = psd
 
@@ -1063,7 +1063,7 @@ def plot_figure_8_stick():
 
 def plot_figure_4():
 
-    from param_dicts import generic_population_params as param_dict
+    from .param_dicts import generic_population_params as param_dict
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     pop_size = 999
 
@@ -1241,7 +1241,7 @@ def plot_figure_4():
 
                     else:
                         psd = psd_dict[mu] / psd_dict[0.0]
-                        print input_region, distribution, correlation, mu, psd[0][1], np.max(psd[0][1:]), np.min(psd[0][1:])
+                        print(input_region, distribution, correlation, mu, psd[0][1], np.max(psd[0][1:]), np.min(psd[0][1:]))
                         l, = ax.loglog((freq[f_idx_min:f_idx_max]),
                                      (psd[0][f_idx_min:f_idx_max]),
                                      c=qa_clr_dict[mu], lw=3, clip_on=True,
@@ -1371,7 +1371,7 @@ def plot_all_soma_sigs_classic(param_dict):
     for i, input_region in enumerate(input_regions):
         for d, holding_potential in enumerate(holding_potentials):
             for c, correlation in enumerate(correlations):
-                print input_region, holding_potential, correlation
+                print(input_region, holding_potential, correlation)
                 plot_number = i * num_plot_cols + c + 1
                 lines = []
                 line_names = []
@@ -1421,7 +1421,7 @@ def plot_all_soma_sigs_classic(param_dict):
 def plot_all_size_dependencies():
 
 
-    from param_dicts import generic_population_params as param_dict
+    from .param_dicts import generic_population_params as param_dict
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     pop_sizes = param_dict['population_radii'][param_dict['population_radii'] <= 500]
 
@@ -1467,7 +1467,7 @@ def plot_all_size_dependencies():
     for i, input_region in enumerate(input_regions):
         for d, distribution in enumerate(distributions):
             for c, correlation in enumerate(correlations):
-                print input_region, distribution, correlation
+                print(input_region, distribution, correlation)
                 plot_number = i * (num_plot_cols) + d * (1 + len(distributions)) + c + 2
 
                 ax = fig.add_subplot(num_plot_rows, num_plot_cols, plot_number, **psd_ax_dict)
@@ -1530,7 +1530,7 @@ def plot_population_density_effect(param_dict):
 
     for input_region in param_dict['input_regions']:
         for distribution in param_dict['distributions']:
-            print input_region, distribution
+            print(input_region, distribution)
             param_dict.update({'input_region': input_region,
                                'cell_number': 0,
                                'distribution': distribution,
@@ -1618,7 +1618,7 @@ def plot_population_density_effect(param_dict):
 
 
 def plot_figure_7():
-    from param_dicts import generic_population_params as param_dict
+    from .param_dicts import generic_population_params as param_dict
 
     conductance_names = {-0.5: 'passive+regenerative',
                          0.0: 'passive+frozen',
@@ -1652,7 +1652,7 @@ def plot_figure_7():
     mus = [None, 2.0]
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     cell_nums = [len(np.where(rs <= size)[0]) for size in pop_sizes]
-    print cell_nums
+    print(cell_nums)
 
     elec_soma = np.argmin(np.abs(param_dict["center_electrode_parameters"]["z"] - 0))
     # elec_apic = np.argmin(np.abs(param_dict["center_electrode_parameters"]["z"] - 1000))
@@ -1660,7 +1660,7 @@ def plot_figure_7():
     # pop_numbers = [17, 89, 2000]
     for input_region in input_regions:
         for distribution in param_dict['distributions']:
-            print input_region, distribution
+            print(input_region, distribution)
             param_dict.update({'input_region': input_region,
                                'cell_number': 0,
                                'distribution': distribution,
@@ -1793,7 +1793,7 @@ def plot_figure_7():
 
                     psd = psd_dict_half_density[name] #/ psd_dict[name_pop_size]
                     # print psd[0]
-                    print correlation, mu, np.average(psd[0, 1:200] / psd_dict[name_pop_size][0, 1:200])
+                    print(correlation, mu, np.average(psd[0, 1:200] / psd_dict[name_pop_size][0, 1:200]))
 
                     l, = ax.loglog(freq, (psd[0]), solid_capstyle="round",
                                      c=qa_clr_dict[mu], lw=3)
@@ -1910,7 +1910,7 @@ def plot_depth_resolved(param_dict):
                     try:
                         lfp = np.load(join(folder, '%s.npy' % name))[:, :]
                     except:
-                        print name
+                        print(name)
                         continue
                     # freq, psd = tools.return_freq_and_psd(ns.timeres_python/1000., lfp)
                     freq, psd = tools.return_freq_and_psd_welch(lfp, ns.welch_dict)
@@ -2014,14 +2014,14 @@ def plot_all_dipoles_classic(param_dict):
                         try:
                             lfp = np.load(join(folder, '%s.npy' % name))[:, :]
                         except:
-                            print name
+                            print(name)
                             continue
                         mean = np.average(lfp, axis=1)
                         std = np.std(lfp, axis=1)
                         ax.fill_betweenx(np.arange(20), mean - std, mean + std,
                                          color=conductance_clr_dict[mu], alpha=0.4, clip_on=False)
                         l, = ax.plot(mean, np.arange(20), c=conductance_clr_dict[mu], lw=2, clip_on=False)
-                        print mean, std
+                        print(mean, std)
                         lines.append(l)
                         line_names.append(conductance_names[mu])
 
@@ -2109,14 +2109,14 @@ def plot_all_dipoles(param_dict):
                         try:
                             lfp = np.load(join(folder, '%s.npy' % name))[:, :]
                         except:
-                            print name
+                            print(name)
                             continue
                         mean = np.average(lfp, axis=1)
                         std = np.std(lfp, axis=1)
                         ax.fill_betweenx(np.arange(20), mean - std, mean + std,
                                          color=conductance_clr_dict[mu], alpha=0.4, clip_on=False)
                         ax.plot(mean, np.arange(20), c=conductance_clr_dict[mu], lw=2, clip_on=False)
-                    print correlation, np.max(np.abs(np.average(lfp, axis=1)))
+                    print(correlation, np.max(np.abs(np.average(lfp, axis=1))))
 
                     # lines.append(l)
                     # line_names.append(input_region)
@@ -2134,7 +2134,7 @@ def plot_all_dipoles(param_dict):
 
 def plot_figure_6():
 
-    from param_dicts import generic_population_params as param_dict
+    from .param_dicts import generic_population_params as param_dict
     input_region_clr = {'distal_tuft': '#ff5555',
                         'homogeneous': 'lightgreen'}
     input_region_name = {"distal_tuft": "Distal tuft",
@@ -2604,7 +2604,7 @@ def plot_figure_2_generic(param_dict):
 
 def plot_figure_2():
 
-    from param_dicts import classic_population_params as param_dict
+    from .param_dicts import classic_population_params as param_dict
     input_regions = ["distal_tuft", "basal"]
     correlations = [0.0, 0.01, 0.1, 1.0]#param_dict['correlations']
 
@@ -2682,7 +2682,7 @@ def plot_figure_2():
                     f_idx_max = np.argmin(np.abs(freq - param_dict['max_freq']))
                     f_idx_min = np.argmin(np.abs(freq - 1.))
 
-                    print input_region, elec, correlation, conductance_type, np.max(psd[0][f_idx_min:]) / psd[0][f_idx_min], psd[0][f_idx_min]
+                    print(input_region, elec, correlation, conductance_type, np.max(psd[0][f_idx_min:]) / psd[0][f_idx_min], psd[0][f_idx_min])
 
                     l, = ax_.loglog(freq[f_idx_min:f_idx_max],
                                       (psd[0][f_idx_min:f_idx_max]),
@@ -2721,7 +2721,7 @@ def plot_figure_2():
 
 def plot_figure_3():
 
-    from param_dicts import classic_population_params as param_dict
+    from .param_dicts import classic_population_params as param_dict
     input_region = "homogeneous"
     conductance_types = ["Ih", "Ih_frozen", "passive"]
     correlations = [0.0, 0.01, 0.1, 1.0]#param_dict['correlations']
@@ -3304,7 +3304,7 @@ def plot_figure_1_single_cell_LFP_2(param_dict):
 
 def plot_figure_1_single_cell():
 
-    from param_dicts import classic_population_params as param_dict
+    from .param_dicts import classic_population_params as param_dict
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     holding_potential = -70
     param_dict["holding_potential"] = holding_potential
@@ -3398,7 +3398,7 @@ def plot_figure_1_single_cell():
 
 
 def plot_figure_asymmetric_population_LFP():
-    from param_dicts import asymmetric_population_params as param_dict
+    from .param_dicts import asymmetric_population_params as param_dict
 
     conductance_names = {-0.5: 'regenerative',
                          0.0: 'passive-frozen',
@@ -3474,7 +3474,7 @@ def plot_figure_asymmetric_population_LFP():
 
 
 def plot_figure_1_population():
-    from param_dicts import classic_population_params as param_dict
+    from .param_dicts import classic_population_params as param_dict
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     pop_size = 999
 
@@ -3601,7 +3601,7 @@ def plot_figure_1_population():
 
 
 def plot_figure_1_single_cell_LFP(param_dict):
-    print "Single cell LFP"
+    print("Single cell LFP")
     conductance_names = {#-0.5: 'regenerative',
                          0.0: 'passive-frozen',
                          2.0: 'restorative'}
@@ -3718,7 +3718,7 @@ def plot_figure_1_single_cell_LFP(param_dict):
 
 
 def plot_figure_1_single_cell_difference(param_dict):
-    print "Single cell LFP difference"
+    print("Single cell LFP difference")
     conductance_names = {-0.5: 'regenerative',
                          0.0: 'passive-frozen',
                          2.0: 'restorative'}
@@ -3758,7 +3758,7 @@ def plot_figure_1_single_cell_difference(param_dict):
                        }
     for mu in [-0.5, 0.0, 2.0]:
 
-        print mu
+        print(mu)
         param_dict_1['mu'] = mu
         ns_1 = NeuralSimulation(**param_dict_1)
         name_res = 'lateral_sig_%s' % ns_1.sim_name
@@ -3766,7 +3766,7 @@ def plot_figure_1_single_cell_difference(param_dict):
         freq, psd_tuft_res = tools.return_freq_and_psd_welch(lfp, welch_dict)
         # freq, psd_tuft_res = tools.return_freq_and_psd(ns_1.timeres_NEURON / 1000., lfp)
         lfp_1[mu] = psd_tuft_res
-        print mu
+        print(mu)
         param_dict_2['mu'] = mu
         ns_2 = NeuralSimulation(**param_dict_2)
         name_res = 'lateral_sig_%s' % ns_2.sim_name

@@ -1,7 +1,7 @@
-from __future__ import division
+
 import os
 from os.path import join
-from suppress_print import suppress_stdout_stderr
+from .suppress_print import suppress_stdout_stderr
 with suppress_stdout_stderr():
      import neuron
 if 'DISPLAY' not in os.environ:
@@ -232,7 +232,7 @@ asymmetry_params = {'input_type': 'distributed_asymmetry',
                             }
 
 if __name__ == '__main__':
-    from NeuralSimulation import NeuralSimulation
+    from .NeuralSimulation import NeuralSimulation
     generic_population_params.update({'input_region': 'distal_tuft',
                                       'mu': 0.0, 'correlation': 0.0,
                                       'cell_number': 0})

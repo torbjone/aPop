@@ -86,6 +86,6 @@ def color_axes(axes, clr):
     for ax in axes:
         ax.tick_params(axis='x', colors=clr)
         ax.tick_params(axis='y', colors=clr)
-        for spine in ax.spines.values():
+        for spine in list(ax.spines.values()):
             spine.set_edgecolor(clr)
 

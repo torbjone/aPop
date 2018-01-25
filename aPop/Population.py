@@ -1,4 +1,4 @@
-from __future__ import division
+
 import os
 if 'DISPLAY' not in os.environ:
     import matplotlib
@@ -6,21 +6,21 @@ if 'DISPLAY' not in os.environ:
     at_stallo = True
 else:
     at_stallo = False
-from plotting_convention import *
+from .plotting_convention import *
 import pylab as plt
 import numpy as np
 import os
 import sys
 from os.path import join
-from suppress_print import suppress_stdout_stderr
+from .suppress_print import suppress_stdout_stderr
 with suppress_stdout_stderr():
     import LFPy
-from NeuralSimulation import NeuralSimulation
+from .NeuralSimulation import NeuralSimulation
 
 
 def initialize_population(param_dict):
 
-    print "Initializing cell positions and rotations ..."
+    print("Initializing cell positions and rotations ...")
     x_y_z_rot = np.zeros((param_dict['num_cells'], 4))
     for cell_number in range(param_dict['num_cells']):
         plt.seed(123 * cell_number)
@@ -40,33 +40,33 @@ def initialize_population(param_dict):
     np.save(join(param_dict['root_folder'], param_dict['save_folder'],
                  'x_y_z_rot_%s.npy' % param_dict['name']), x_y_z_rot)
 
-    print "Initializing input spike trains"
+    print("Initializing input spike trains")
     plt.seed(123)
     num_synapses = param_dict['num_synapses']
     firing_rate = param_dict['input_firing_rate']
     num_trains = int(num_synapses/0.01)
     all_spiketimes = {}
     input_method = LFPy.inputgenerators.stationary_poisson
-    for idx in xrange(num_trains):
+    for idx in range(num_trains):
         all_spiketimes[idx] = input_method(1, firing_rate, -param_dict['cut_off'], param_dict['end_t'])[0]
     np.save(join(param_dict['root_folder'], param_dict['save_folder'],
                          'all_spike_trains_%s.npy' % param_dict['name']), all_spiketimes)
 
-    print "Initializing inhibitory input spike trains"
+    print("Initializing inhibitory input spike trains")
     plt.seed(1234)
     num_synapses = param_dict['num_inhibitory_synapses']
     firing_rate = param_dict['inhibitory_input_firing_rate']
     num_trains = int(num_synapses/0.01)
     all_spiketimes = {}
     input_method = LFPy.inputgenerators.stationary_poisson
-    for idx in xrange(num_trains):
+    for idx in range(num_trains):
         all_spiketimes[idx] = input_method(1, firing_rate, -param_dict['cut_off'], param_dict['end_t'])[0]
     np.save(join(param_dict['root_folder'], param_dict['save_folder'],
                          'all_inhibitory_spike_trains_%s.npy' % param_dict['name']), all_spiketimes)
 
 
 def plot_population(param_dict):
-    print "Plotting population"
+    print("Plotting population")
     x_y_z_rot = np.load(join(param_dict['root_folder'], param_dict['save_folder'],
                          'x_y_z_rot_%s.npy' % param_dict['name']))
 
@@ -110,7 +110,7 @@ def sum_one_population(param_dict, num_cells, num_tsteps):
     ns = None
 
     r = None
-    for cell_number in xrange(num_cells):
+    for cell_number in range(num_cells):
         param_dict.update({'cell_number': cell_number})
 
         r = np.sqrt(x_y_z_rot[cell_number, 0]**2 + x_y_z_rot[cell_number, 1]**2)
@@ -119,7 +119,7 @@ def sum_one_population(param_dict, num_cells, num_tsteps):
         center_lfp = 1000 * np.load(join(ns.sim_folder, 'center_sig_%s.npy' % sim_name))  # uV
 
         if not summed_center_sig.shape == center_lfp.shape:
-            print "Reshaping LFP time signal", center_lfp.shape
+            print("Reshaping LFP time signal", center_lfp.shape)
             summed_center_sig = np.zeros(center_lfp.shape)
 
         summed_center_sig += center_lfp
@@ -139,17 +139,17 @@ def count_cell_number_for_size(param_dict, num_cells):
 
     num_used = 0
     num_used_half_density = 0
-    for cell_number in xrange(num_cells):
+    for cell_number in range(num_cells):
         param_dict.update({'cell_number': cell_number})
         r = np.sqrt(x_y_z_rot[cell_number, 0]**2 + x_y_z_rot[cell_number, 1]**2)
         num_used += 1
         if not cell_number % 2:
             num_used_half_density += 1
-        print num_used, num_used_half_density, r
+        print(num_used, num_used_half_density, r)
 
 
 def sum_and_remove(param_dict, num_cells, remove=False):
-    print "summing LFP and removing single LFP files"
+    print("summing LFP and removing single LFP files")
     import time
     num_tsteps = int(round(param_dict['end_t']/param_dict['timeres_python'] + 1))
 
@@ -165,7 +165,7 @@ def sum_and_remove(param_dict, num_cells, remove=False):
 
     ns = None
     r = None
-    for cell_number in xrange(0, num_cells):
+    for cell_number in range(0, num_cells):
         param_dict.update({'cell_number': cell_number})
         r = np.sqrt(x_y_z_rot[cell_number, 0]**2 + x_y_z_rot[cell_number, 1]**2)
         ns = NeuralSimulation(**param_dict)
@@ -178,10 +178,10 @@ def sum_and_remove(param_dict, num_cells, remove=False):
                 center_lfp = 1000 * np.load(join(ns.sim_folder, 'center_sig_%s.npy' % sim_name))  # uV
                 loaded = True
             except IOError:
-                print "Could not load ", cell_number, join(ns.sim_folder, 'center_sig_%s.npy' % sim_name), time.time() - t0
+                print("Could not load ", cell_number, join(ns.sim_folder, 'center_sig_%s.npy' % sim_name), time.time() - t0)
                 time.sleep(5)
             if time.time() - t0 > 60 * 60:
-                print "waited 60 minute for %s. Can wait no longer" % sim_name
+                print("waited 60 minute for %s. Can wait no longer" % sim_name)
                 return False
 
         # if not summed_center_sig.shape == center_lfp.shape:
@@ -207,7 +207,7 @@ def sum_and_remove(param_dict, num_cells, remove=False):
         param_dict.update({'cell_number': 0})
         ns = NeuralSimulation(**param_dict)
         sig_name = join(ns.sim_folder, 'center_sig_%s_*.npy' % ns.population_sim_name)
-        print "Remove files %s" % sig_name
+        print("Remove files %s" % sig_name)
         os.system("rm %s" % sig_name)
     return True
 
@@ -234,12 +234,12 @@ def PopulationMPIgeneric(param_dict):
     num_workers = size - 1
 
     if size == 1:
-        print "Can't do MPI with one core!"
+        print("Can't do MPI with one core!")
         sys.exit()
 
     if rank == 0:
 
-        print("\033[95m Master starting with %d workers\033[0m" % num_workers)
+        print(("\033[95m Master starting with %d workers\033[0m" % num_workers))
         task = 0
         num_cells = 10000 if at_stallo else 2
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['mus']) *
@@ -257,7 +257,7 @@ def PopulationMPIgeneric(param_dict):
 
                         if os.path.isfile(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
                             (ns.population_sim_name, 999))):
-                            print "SKIPPING POPULATION ", ns.population_sim_name
+                            print("SKIPPING POPULATION ", ns.population_sim_name)
                             continue
 
                         for cell_idx in range(0, num_cells):
@@ -275,13 +275,13 @@ def PopulationMPIgeneric(param_dict):
                                     pass
                                     # print "\033[95m Worker %d completed task %d/%d\033[0m" % (source, task, num_tasks)
                                 elif tag == tags.ERROR:
-                                    print "\033[91mMaster detected ERROR at node %d. Aborting...\033[0m" % source
+                                    print("\033[91mMaster detected ERROR at node %d. Aborting...\033[0m" % source)
                                     for worker in range(1, num_workers + 1):
                                         comm.send([None, None, None, None, None], dest=worker, tag=tags.EXIT)
                                     sys.exit()
                         success = sum_and_remove(param_dict, num_cells, True)
                         if not success:
-                            print "Failed to sum. Exiting"
+                            print("Failed to sum. Exiting")
                             for worker in range(1, num_workers + 1):
                                 comm.send([None, None, None, None, None], dest=worker, tag=tags.EXIT)
                                 sys.exit()
@@ -301,18 +301,18 @@ def PopulationMPIgeneric(param_dict):
             tag = status.Get_tag()
             if tag == tags.START:
                 # Do the work here
-                print "\033[93m%d put to work on %s %s %s %1.2f cell %d\033[0m" % (rank, input_region,
-                                                                                distribution, str(mu), correlation, cell_idx)
+                print("\033[93m%d put to work on %s %s %s %1.2f cell %d\033[0m" % (rank, input_region,
+                                                                                distribution, str(mu), correlation, cell_idx))
                 try:
                     os.system("python %s %s %1.2f %d %s %s" % (sys.argv[0], input_region, correlation, cell_idx,
                                                                   distribution, str(mu)))
                 except:
-                    print "\033[91mNode %d exiting with ERROR\033[0m" % rank
+                    print("\033[91mNode %d exiting with ERROR\033[0m" % rank)
                     comm.send(None, dest=0, tag=tags.ERROR)
                     sys.exit()
                 comm.send(None, dest=0, tag=tags.DONE)
             elif tag == tags.EXIT:
-                print "\033[93m%d exiting\033[0m" % rank
+                print("\033[93m%d exiting\033[0m" % rank)
                 break
         comm.send(None, dest=0, tag=tags.EXIT)
 
@@ -340,12 +340,12 @@ def PopulationMPIclassic(param_dict):
     num_workers = size - 1
 
     if size == 1:
-        print "Can't do MPI with one core!"
+        print("Can't do MPI with one core!")
         sys.exit()
 
     if rank == 0:
 
-        print("\033[95m Master starting with %d workers\033[0m" % num_workers)
+        print(("\033[95m Master starting with %d workers\033[0m" % num_workers))
         task = 0
         num_cells = 10000 if at_stallo else 2
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['holding_potentials']) *
@@ -363,7 +363,7 @@ def PopulationMPIclassic(param_dict):
                         ns = NeuralSimulation(**param_dict)
                         if os.path.isfile(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
                             (ns.population_sim_name, 999))):
-                            print "SKIPPING POPULATION ", ns.population_sim_name
+                            print("SKIPPING POPULATION ", ns.population_sim_name)
                             continue
 
                         for cell_idx in range(0, num_cells):
@@ -375,18 +375,18 @@ def PopulationMPIclassic(param_dict):
                                 tag = status.Get_tag()
                                 if tag == tags.READY:
                                     comm.send([input_region, conductance_type, holding_potential, correlation, cell_idx], dest=source, tag=tags.START)
-                                    print "\033[95m Sending task %d/%d to worker %d\033[0m" % (task, num_tasks, source)
+                                    print("\033[95m Sending task %d/%d to worker %d\033[0m" % (task, num_tasks, source))
                                     sent = True
                                 elif tag == tags.DONE:
-                                    print "\033[95m Worker %d completed task %d/%d\033[0m" % (source, task, num_tasks)
+                                    print("\033[95m Worker %d completed task %d/%d\033[0m" % (source, task, num_tasks))
                                 elif tag == tags.ERROR:
-                                    print "\033[91mMaster detected ERROR at node %d. Aborting...\033[0m" % source
+                                    print("\033[91mMaster detected ERROR at node %d. Aborting...\033[0m" % source)
                                     for worker in range(1, num_workers + 1):
                                         comm.send([None, None, None, None, None], dest=worker, tag=tags.EXIT)
                                     sys.exit()
                         success = sum_and_remove(param_dict, num_cells, True)
                         if not success:
-                            print "Failed to sum. Exiting"
+                            print("Failed to sum. Exiting")
                             for worker in range(1, num_workers + 1):
                                 comm.send([None, None, None, None, None], dest=worker, tag=tags.EXIT)
                                 sys.exit()
@@ -405,18 +405,18 @@ def PopulationMPIclassic(param_dict):
             tag = status.Get_tag()
             if tag == tags.START:
                 # Do the work here
-                print "\033[93m%d put to work on %s %s %s %1.2f cell %d\033[0m" % (rank, input_region,
-                                                                                conductance_type, str(holding_potential), correlation, cell_idx)
+                print("\033[93m%d put to work on %s %s %s %1.2f cell %d\033[0m" % (rank, input_region,
+                                                                                conductance_type, str(holding_potential), correlation, cell_idx))
                 try:
                     os.system("python %s %s %1.2f %d %s %s" % (sys.argv[0], input_region, correlation, cell_idx,
                                                                   conductance_type, str(holding_potential)))
                 except:
-                    print "\033[91mNode %d exiting with ERROR\033[0m" % rank
+                    print("\033[91mNode %d exiting with ERROR\033[0m" % rank)
                     comm.send(None, dest=0, tag=tags.ERROR)
                     sys.exit()
                 comm.send(None, dest=0, tag=tags.DONE)
             elif tag == tags.EXIT:
-                print "\033[93m%d exiting\033[0m" % rank
+                print("\033[93m%d exiting\033[0m" % rank)
                 break
         comm.send(None, dest=0, tag=tags.EXIT)
 
@@ -424,7 +424,7 @@ def PopulationMPIclassic(param_dict):
 if __name__ == '__main__':
 
     conductance = 'stick_generic'
-    from param_dicts import stick_population_params as param_dict
+    from .param_dicts import stick_population_params as param_dict
 
     # conductance = 'generic'
     # from param_dicts import generic_population_params as param_dict

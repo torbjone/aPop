@@ -52,7 +52,7 @@ def return_freq_and_psd_welch(sig, welch_dict):
         raise RuntimeError("Not compatible with given array shape!")
     psd = []
     freqs = None
-    for idx in xrange(sig.shape[0]):
+    for idx in range(sig.shape[0]):
         yvec_w, freqs = ml.psd(sig[idx, :], **welch_dict)
         psd.append(yvec_w)
     return freqs, np.array(psd)
