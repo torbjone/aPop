@@ -8,12 +8,12 @@ if not 'DISPLAY' in os.environ:
     at_stallo = True
 else:
     at_stallo = False
-from .plotting_convention import mark_subplots, simplify_axes, LogNorm
+from plotting_convention import mark_subplots, simplify_axes, LogNorm
 import numpy as np
 import pylab as plt
 import neuron
 import LFPy
-from . import tools
+import tools
 h = neuron.h
 
 
@@ -54,7 +54,7 @@ class NeuralSimulation:
             os.mkdir(self.sim_folder)
 
         self.divide_into_welch = 8.
-        self.welch_dict = {'Fs': 1000 / self.timeres_python,
+        self.welch_dict = {'Fs': 1000 / self.dt,
                            'NFFT': int(self.num_tsteps/self.divide_into_welch),
                            'noverlap': int(self.num_tsteps/self.divide_into_welch/2.),
                            'window': plt.window_hanning,
@@ -78,12 +78,11 @@ class NeuralSimulation:
         return sim_name
 
     def _set_input_params(self):
-        self.timeres_NEURON = self.param_dict['timeres_NEURON']
-        self.timeres_python = self.param_dict['timeres_python']
+        self.dt = self.param_dict['dt']
         self.cut_off = self.param_dict['cut_off']
         self.end_t = self.param_dict['end_t']
         self.max_freq = self.param_dict['max_freqs'] if 'max_freqs' in self.param_dict else 500
-        self.num_tsteps = round(self.end_t/self.timeres_python + 1)
+        self.num_tsteps = round(self.end_t/self.dt + 1)
 
     def remove_active_mechanisms(self, remove_list):
         mt = h.MechanismType(0)
@@ -141,10 +140,10 @@ class NeuralSimulation:
                         }
 
         if 'i_QA' not in list(neuron.h.__dict__.keys()):
-            print("", end=' ')
-            from .suppress_print import suppress_stdout_stderr
-            with suppress_stdout_stderr():
-                neuron.load_mechanisms(join(self.neuron_models))
+            # print("", end='')
+            # from suppress_print import suppress_stdout_stderr
+            # with suppress_stdout_stderr():
+            neuron.load_mechanisms(join(self.neuron_models))
         cell = None
         if self.cell_name == 'hay':
             if self.conductance_type == 'generic':
@@ -157,10 +156,9 @@ class NeuralSimulation:
                     'passive': False,           # switch on passive mechs
                     'nsegs_method': 'lambda_f',  # method for setting number of segments,
                     'lambda_f': 100,           # segments are isopotential at this frequency
-                    'timeres_NEURON': self.timeres_NEURON,   # dt of LFP and NEURON simulation.
-                    'timeres_python': self.timeres_python,
-                    'tstartms': -self.cut_off,          # start time, recorders start at t=0
-                    'tstopms': self.end_t,
+                    'dt': self.dt,
+                    'tstart': -self.cut_off,          # start time, recorders start at t=0
+                    'tstop': self.end_t,
                     'custom_code': [join(self.neuron_models, 'hay', 'custom_codes.hoc')],
                     'custom_fun': [active_declarations],  # will execute this function
                     'custom_fun_args': [{'conductance_type': self.conductance_type,
@@ -186,10 +184,9 @@ class NeuralSimulation:
                     'passive': False,           # switch on passive mechs
                     'nsegs_method': 'lambda_f',  # method for setting number of segments,
                     'lambda_f': 100,           # segments are isopotential at this frequency
-                    'timeres_NEURON': self.timeres_NEURON,   # dt of LFP and NEURON simulation.
-                    'timeres_python': self.timeres_python,
-                    'tstartms': -self.cut_off,          # start time, recorders start at t=0
-                    'tstopms': self.end_t,
+                    'dt': self.dt,   # dt of LFP and NEURON simulation.
+                    'tstart': -self.cut_off,          # start time, recorders start at t=0
+                    'tstop': self.end_t,
                     'custom_code': [join(self.neuron_models, 'hay', 'custom_codes.hoc'),
                                     join(self.neuron_models, 'hay', 'biophys3.hoc')],
                     # 'custom_fun': [active_declarations],  # will execute this function
@@ -240,10 +237,9 @@ class NeuralSimulation:
                 'v_init': self.holding_potential,
                 'passive': False,
                 'nsegs_method': None,
-                'timeres_NEURON': self.timeres_NEURON,   # dt of LFP and NEURON simulation.
-                'timeres_python': self.timeres_python,
-                'tstartms': -self.cut_off,          # start time, recorders start at t=0
-                'tstopms': self.end_t,
+                'dt': self.dt,
+                'tstart': -self.cut_off,          # start time, recorders start at t=0
+                'tstop': self.end_t,
                 'custom_fun': [active_declarations],
                 'custom_fun_args': args,
             }
@@ -252,9 +248,9 @@ class NeuralSimulation:
             raise NotImplementedError("Cell name is not recognized")
         if cell_x_y_z_rotation is not None:
             cell.set_rotation(z=cell_x_y_z_rotation[3])
-            cell.set_pos(xpos=cell_x_y_z_rotation[0],
-                         ypos=cell_x_y_z_rotation[1],
-                         zpos=cell_x_y_z_rotation[2])
+            cell.set_pos(x=cell_x_y_z_rotation[0],
+                         y=cell_x_y_z_rotation[1],
+                         z=cell_x_y_z_rotation[2])
         return cell
 
     def save_neural_sim_single_input_data(self, cell):
@@ -301,7 +297,6 @@ class NeuralSimulation:
                          (self.cell_name, self.param_dict['conductance_type'])), cell.diam)
 
     def run_distributed_synaptic_simulation(self):
-
         if os.path.isfile(join(self.sim_folder, 'center_sig_%s.npy' % self.sim_name)) or \
            os.path.isfile(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name)):
             print("Skipping ", self.sim_name)
@@ -354,7 +349,7 @@ class NeuralSimulation:
             'tau': self.param_dict['syn_tau'],                # syn. time constant
             'weight': self.param_dict['syn_weight'],            # syn. weight
             'record_current': False,
-            'color': 'r',
+            # 'color': 'r',
         }
         if 'inhibitory_syn_weight' in self.param_dict:
             inhibitory_synapse_params = {
@@ -363,7 +358,7 @@ class NeuralSimulation:
                 'tau': self.param_dict['syn_tau'],                # syn. time constant
                 'weight': self.param_dict['inhibitory_syn_weight'],            # syn. weight
                 'record_current': False,
-                'color': 'b',
+                # 'color': 'b',
             }
 
         if self.input_region == 'distal_tuft':
@@ -475,8 +470,12 @@ class NeuralSimulation:
 
                 synapses = synapses_in
             else:
-                spike_trains = LFPy.inputgenerators.stationary_poisson(num_synapses,
-                                                                   firing_rate, cell.tstartms, cell.tstopms)
+                # spike_trains = LFPy.inputgenerators.stationary_poisson(num_synapses,
+                #                                                    firing_rate, cell.tstartms, cell.tstopms)
+                spike_trains = LFPy.inputgenerators.get_activation_times_from_distribution(
+                    n=num_synapses, tstart=cell.tstart, tstop=cell.tstop,
+                    rvs_args=dict(loc=0., scale=1000. / firing_rate))
+
                 synapses = self.set_input_spiketrain(cell, cell_input_idxs, spike_trains, synapse_params)
 
         else:
@@ -614,7 +613,7 @@ class NeuralSimulation:
 
         # [ax.plot(cell.xmid[idx], cell.zmid[idx], 'g.', ms=4) for idx in cell.synidx]
         for syn in cell.synapses:
-            ax.plot(cell.xmid[syn.idx], cell.zmid[syn.idx], syn.color, marker='.', ms=4)
+            ax.plot(cell.xmid[syn.idx], cell.zmid[syn.idx], marker='.', ms=4)
 
     def _plot_results(self, cell):
 
@@ -777,15 +776,16 @@ class NeuralSimulation:
 
 
 if __name__ == '__main__':
+
     # from param_dicts import classic_population_params as param_dict
     # from param_dicts import stick_population_params as param_dict
-    from .param_dicts import generic_population_params as param_dict
+    from param_dicts import generic_population_params as param_dict
 
     param_dict.update({'input_region': 'distal_tuft',
                        'correlation': 0.0,
                        'distribution': "linear_increase",
                        'conductance_type': 'generic',
-                       'mu': 0.0,
+                       'mu': -0.5,
                        'holding_potential': -80.,
                        'cell_number': 0})
     ns = NeuralSimulation(**param_dict)

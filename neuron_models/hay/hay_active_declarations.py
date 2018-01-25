@@ -79,10 +79,10 @@ def biophys_generic(**kwargs):
         # mBeta = 0.001 * 193. * np.exp(v / 33.1)
         tau = 50 #1/(mAlpha + mBeta)
         if '0.1' in kwargs['tau_w']:
-            print "1/10th of auto"
+            print("1/10th of auto")
             tau_w = tau * 0.1
         elif '10' in kwargs['tau_w']:
-            print "10-fold of auto"
+            print("10-fold of auto")
             tau_w = tau * 10
         else:
             tau_w = tau

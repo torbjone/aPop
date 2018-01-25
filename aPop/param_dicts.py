@@ -1,7 +1,7 @@
 
 import os
 from os.path import join
-from .suppress_print import suppress_stdout_stderr
+from suppress_print import suppress_stdout_stderr
 with suppress_stdout_stderr():
      import neuron
 if 'DISPLAY' not in os.environ:
@@ -23,7 +23,7 @@ center_elec_params = {
         'x': center_elec_x,
         'y': center_elec_y,
         'z': center_elec_z,
-        'method': "som_as_point",
+        'method': "soma_as_point",
 }
 
 stick_center_electrode_parameters = center_elec_params.copy()
@@ -44,9 +44,8 @@ population_radii = np.arange(dr, population_radius + dr, dr)
 layer_5_thickness = 200  # From Markram (2015): Thickness L1-L5: 1382 um. Hay cell height: 1169 um. 1382 - 1169 = 213 um
 generic_population_params = {'input_type': 'distributed_delta',
                              'name': 'generic_population',
-                             'timeres_NEURON': dt,
+                             'dt': dt,
                              'cell_name': 'hay',
-                             'timeres_python': dt,
                              'population_scale': scale,  # 10 means full population
                              'num_cells': num_cells,
                              'population_radius': population_radius,
@@ -82,9 +81,8 @@ generic_population_params = {'input_type': 'distributed_delta',
 
 asymmetric_population_params = {'input_type': 'distributed_delta',
                              'name': 'asymetric_generic_population',
-                             'timeres_NEURON': dt,
                              'cell_name': 'hay',
-                             'timeres_python': dt,
+                             'dt': dt,
                              'population_scale': scale,  # 10 means full population
                              'num_cells': num_cells,
                              'population_radius': population_radius,
@@ -115,8 +113,7 @@ asymmetric_population_params = {'input_type': 'distributed_delta',
 classic_population_params = {'input_type': 'distributed_delta',
                              'name': 'classic_population',
                              'cell_name': 'hay',
-                             'timeres_NEURON': dt,
-                             'timeres_python': dt,
+                             'dt': dt,
                              'population_scale': scale,  # 10 means full population
                              'num_cells': num_cells,
                              'population_radius': population_radius,
@@ -152,8 +149,8 @@ hbp_population_params = {'input_type': 'distributed_delta',
                          # 'cell_name': 'L4_BP_bAC217_1',
                              'cell_name': 'L5_TTPC2_cADpyr232_2',
                              'model_folder': join('..', '..', 'hbp_cell_models'),
-                             'timeres_NEURON': dt,
-                             'timeres_python': dt,
+                             'dt': dt,
+
                          'population_scale': scale,  # 10 means full population
                              'num_cells': num_cells,
                          'population_radius': population_radius,
@@ -185,9 +182,8 @@ hbp_population_params = {'input_type': 'distributed_delta',
 
 stick_population_params = {'input_type': 'distributed_delta',
                              'name': 'stick_population',
-                             'timeres_NEURON': dt,
                              'cell_name': 'infinite_neurite',
-                             'timeres_python': dt,
+                             'dt': dt,
                              'population_scale': scale,  # 10 means full population
                              'num_cells': num_cells,
                              'population_radius': population_radius,
@@ -218,8 +214,7 @@ stick_population_params = {'input_type': 'distributed_delta',
                              }
 
 asymmetry_params = {'input_type': 'distributed_asymmetry',
-                            'timeres_NEURON': dt,
-                            'timeres_python': dt,
+                            'dt': dt,
                             'cut_off': cut_off,
                             'end_t': end_T,
                             'syn_tau': 0.1,
