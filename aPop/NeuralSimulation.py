@@ -173,9 +173,9 @@ class NeuralSimulation:
                 cell = LFPy.Cell(**cell_params)
             else:
                 sys.path.append(join(self.neuron_models, 'hay'))
-                from .suppress_print import suppress_stdout_stderr
-                with suppress_stdout_stderr():
-                    neuron.load_mechanisms(join(self.neuron_models, 'hay', 'mod'))
+                # from .suppress_print import suppress_stdout_stderr
+                # with suppress_stdout_stderr():
+                neuron.load_mechanisms(join(self.neuron_models, 'hay', 'mod'))
 
                 # from hay_active_declarations import active_declarations
                 cell_params = {
@@ -213,10 +213,10 @@ class NeuralSimulation:
                                "CaDynamics_E2", "Ca_LVAst", "Ca"]}
 
             sys.path.append(self.param_dict['model_folder'])
-            from .suppress_print import suppress_stdout_stderr
-            with suppress_stdout_stderr():
+            # from .suppress_print import suppress_stdout_stderr
+            # with suppress_stdout_stderr():
                 # neuron.load_mechanisms(join(self.param_dict['model_folder'], 'mod'))
-                from hbp_cells import return_cell
+            from hbp_cells import return_cell
             cell_folder = join(self.param_dict['model_folder'], 'models', self.cell_name)
             cell = return_cell(cell_folder, self.end_t, self.dt, -self.cut_off)
             if self.conductance_type == "Ih_frozen":
@@ -244,13 +244,63 @@ class NeuralSimulation:
                 'custom_fun_args': args,
             }
             cell = LFPy.Cell(**cell_params)
+
+        elif self.cell_name == 'multimorph':
+
+            morph_top_folder = join(self.neuron_models, "neuron_nmo")
+            sys.path.append(morph_top_folder)
+            from active_declarations import active_declarations
+
+            fldrs = [f for f in os.listdir(morph_top_folder) if os.path.isdir(join(morph_top_folder, f))
+                     and not f.startswith("__")]
+            print(fldrs)
+            all_morphs = []
+            for f in fldrs:
+                files = os.listdir(join(morph_top_folder, f, "CNG version"))
+                morphs = [join(morph_top_folder, f,  "CNG version", mof) for mof in files if mof.endswith("swc")]
+                all_morphs.extend(morphs)
+
+            # morph = np.random.choice(all_morphs)
+            morph = all_morphs[np.random.randint(0, len(all_morphs) - 1)]
+            print(morph)
+            cell_params = {
+                'morphology': morph,
+                'v_init': self.holding_potential,
+                'passive': False,           # switch on passive mechs
+                'nsegs_method': 'lambda_f',  # method for setting number of segments,
+                'lambda_f': 100,           # segments are isopotential at this frequency
+                'dt': self.dt,
+                'tstart': -self.cut_off,          # start time, recorders start at t=0
+                'tstop': self.end_t,
+                'pt3d': True,
+                'custom_code': [join(morph_top_folder, 'custom_codes.hoc')],
+                'custom_fun': [active_declarations],  # will execute this function
+                'custom_fun_args': [{'conductance_type': self.conductance_type,
+                                     'mu_factor': self.mu,
+                                     'g_pas': 0.00005,#0.0002, # / 5,
+                                     'distribution': self.distribution,
+                                     'tau_w': 'auto',
+                                     'avrg_w_bar': 0.00005, # Half of "original"!!!
+                                     'hold_potential': self.holding_potential}]
+            }
+            try:
+                cell = LFPy.Cell(**cell_params)
+            except:
+                cell_params['custom_code'] = []
+                cell = LFPy.Cell(**cell_params)
+
+            from rotation_lastis import find_major_axes, alignCellToAxes
+            axes = find_major_axes(cell)
+            alignCellToAxes(cell, axes[2], axes[1])
+
         else:
             raise NotImplementedError("Cell name is not recognized")
         if cell_x_y_z_rotation is not None:
             cell.set_rotation(z=cell_x_y_z_rotation[3])
+            zpos = 1200 - np.max(cell.zend) if self.cell_name == 'multimorph' else cell_x_y_z_rotation[2]
             cell.set_pos(x=cell_x_y_z_rotation[0],
                          y=cell_x_y_z_rotation[1],
-                         z=cell_x_y_z_rotation[2])
+                         z=zpos)
         return cell
 
     def save_neural_sim_single_input_data(self, cell):
@@ -297,20 +347,15 @@ class NeuralSimulation:
                          (self.cell_name, self.param_dict['conductance_type'])), cell.diam)
 
     def run_distributed_synaptic_simulation(self):
-        if os.path.isfile(join(self.sim_folder, 'center_sig_%s.npy' % self.sim_name)) or \
-           os.path.isfile(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name)):
-            print("Skipping ", self.sim_name)
-            return
+        # if os.path.isfile(join(self.sim_folder, 'center_sig_%s.npy' % self.sim_name)) or \
+        #    os.path.isfile(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name)):
+        #     print("Skipping ", self.sim_name)
+        #     return
 
         plt.seed(123 * self.cell_number)
-        if 'shape_function' in self.name:
-            x_y_z_rot = np.array([0, 0, 0, 2*np.pi*np.random.random()])
-        elif 'population' in self.name:
-            x_y_z_rot = np.load(os.path.join(self.param_dict['root_folder'],
-                                             self.param_dict['save_folder'],
-                             'x_y_z_rot_%s.npy' % self.param_dict['name']))[self.cell_number]
-        else:
-            raise RuntimeError("Something wrong with simulation set-up!")
+        x_y_z_rot = np.load(join(self.param_dict['root_folder'],
+                                 self.param_dict['save_folder'],
+                         'x_y_z_rot_%s.npy' % self.param_dict['name']))[self.cell_number]
 
         cell = self._return_cell(x_y_z_rot)
         cell, syn = self._make_distributed_synaptic_stimuli(cell)
@@ -381,10 +426,14 @@ class NeuralSimulation:
         if 'dual' in self.input_region:
             num_synapses_tuft = int(num_synapses * dual_fraction)
             num_synapses_homo = num_synapses - num_synapses_tuft
-            cell_input_idxs_tuft = cell.get_rand_idx_area_norm(section=input_pos_tuft, nidx=num_synapses_tuft,
-                                                               z_min=minpos_tuft, z_max=maxpos_tuft)
-            cell_input_idxs_homo = cell.get_rand_idx_area_norm(section=input_pos_homo, nidx=num_synapses_homo,
-                                                               z_min=minpos_homo, z_max=maxpos_homo)
+            cell_input_idxs_tuft = cell.get_rand_idx_area_norm(section=input_pos_tuft,
+                                                               nidx=num_synapses_tuft,
+                                                               z_min=minpos_tuft,
+                                                               z_max=maxpos_tuft)
+            cell_input_idxs_homo = cell.get_rand_idx_area_norm(section=input_pos_homo,
+                                                               nidx=num_synapses_homo,
+                                                               z_min=minpos_homo,
+                                                               z_max=maxpos_homo)
             cell_input_idxs = np.r_[cell_input_idxs_homo, cell_input_idxs_tuft]
 
         else:
@@ -480,7 +529,7 @@ class NeuralSimulation:
 
         # [ax.plot(cell.xmid[idx], cell.zmid[idx], 'g.', ms=4) for idx in cell.synidx]
         for syn in cell.synapses:
-            ax.plot(cell.xmid[syn.idx], cell.zmid[syn.idx], marker='.', ms=4)
+            ax.plot(cell.xmid[syn.idx], cell.zmid[syn.idx], marker='.', ms=4, c='r')
 
     def _plot_results(self, cell):
 
@@ -532,9 +581,11 @@ class NeuralSimulation:
 
         vmax = 10**np.ceil(np.log10(np.max(psd)))
         im_dict = {'cmap': 'hot', 'norm': LogNorm(), 'vmin': vmax/1e4, 'vmax': vmax}
-        img = ax_center.pcolormesh(freq, center_electrode.z, psd, **im_dict)
-        cbar = plt.colorbar(img, ax=ax_center)
-
+        try:
+            img = ax_center.pcolormesh(freq, center_electrode.z, psd, **im_dict)
+            cbar = plt.colorbar(img, ax=ax_center)
+        except:
+            pass
         fig.suptitle(self.sim_name)
 
         fig.savefig(join(self.figure_folder, '%s.png' % self.sim_name))
@@ -544,13 +595,14 @@ if __name__ == '__main__':
 
     # from param_dicts import classic_population_params as param_dict
     # from param_dicts import stick_population_params as param_dict
-    from param_dicts import generic_population_params as param_dict
+    # from param_dicts import generic_population_params as param_dict
+    from param_dicts import multimorph_population_params as param_dict
 
     param_dict.update({'input_region': 'distal_tuft',
                        'correlation': 0.0,
                        'distribution': "linear_increase",
                        'conductance_type': 'generic',
-                       'mu': -0.5,
+                       'mu': 2.0,
                        'holding_potential': -80.,
                        'cell_number': 0})
     ns = NeuralSimulation(**param_dict)

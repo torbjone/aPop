@@ -10,34 +10,6 @@ import neuron
 nrn = neuron.h
 import LFPy
 
-# def make_cell_uniform(Vrest=-80):
-#
-#
-#     neuron.h.t = 0
-#     neuron.h.finitialize(Vrest)
-#     neuron.h.fcurrent()
-#     for sec in neuron.h.allsec():
-#         for seg in sec:
-#             seg.e_pas = seg.v
-#             if neuron.h.ismembrane("na_ion"):
-#                 seg.e_pas += seg.ina/seg.g_pas
-#             if neuron.h.ismembrane("k_ion"):
-#                 seg.e_pas += seg.ik/seg.g_pas
-#             if neuron.h.ismembrane("ca_ion"):
-#                 seg.e_pas = seg.e_pas + seg.ica/seg.g_pas
-#             if neuron.h.ismembrane("Ih"):
-#                 seg.e_pas += seg.ihcn_Ih/seg.g_pas
-#             if neuron.h.ismembrane("Ih_z"):
-#                 seg.e_pas += seg.ih_Ih_z/seg.g_pas
-#             if neuron.h.ismembrane("Ih_frozen"):
-#                 seg.e_pas += seg.ihcn_Ih_frozen/seg.g_pas
-#             if neuron.h.ismembrane("Ih_linearized_mod"):
-#                 seg.e_pas += seg.ihcn_Ih_linearized_mod/seg.g_pas
-#             if neuron.h.ismembrane("Ih_linearized_v2"):
-#                 seg.e_pas += seg.ihcn_Ih_linearized_v2/seg.g_pas
-#             if neuron.h.ismembrane("Ih_linearized_v2_frozen"):
-#                 seg.e_pas += seg.ihcn_Ih_linearized_v2_frozen/seg.g_pas
-
 
 def _get_longest_distance():
 

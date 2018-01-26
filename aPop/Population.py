@@ -1,4 +1,6 @@
 
+print("HERE")
+
 import os
 if 'DISPLAY' not in os.environ:
     import matplotlib
@@ -12,9 +14,9 @@ import numpy as np
 import os
 import sys
 from os.path import join
-from suppress_print import suppress_stdout_stderr
-with suppress_stdout_stderr():
-    import LFPy
+# from suppress_print import suppress_stdout_stderr
+# with suppress_stdout_stderr():
+import LFPy
 from NeuralSimulation import NeuralSimulation
 
 
@@ -83,7 +85,7 @@ def plot_population(param_dict):
 def sum_and_remove(param_dict, num_cells, remove=False):
     print("summing LFP and removing single LFP files")
     import time
-    num_tsteps = int(round(param_dict['end_t']/param_dict['timeres_python'] + 1))
+    num_tsteps = int(round(param_dict['end_t']/param_dict['dt'] + 1))
 
     # param_dict.update({'cell_number': 0})
     # filename = join(ns.sim_folder, 'summed_center_signal_%s_%dum_.npy' %
@@ -149,7 +151,6 @@ def PopulationMPIgeneric(param_dict):
         mpirun -np 4 python example_mpi.py
     """
     from mpi4py import MPI
-
     class Tags:
         def __init__(self):
             self.READY = 0
@@ -173,7 +174,7 @@ def PopulationMPIgeneric(param_dict):
 
         print(("\033[95m Master starting with %d workers\033[0m" % num_workers))
         task = 0
-        num_cells = 10000 if at_stallo else 2
+        num_cells = 1000 if at_stallo else 2
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['mus']) *
                      len(param_dict['distributions']) * len(param_dict['correlations']) * (num_cells))
         for input_region in param_dict['input_regions']:
@@ -354,12 +355,12 @@ def PopulationMPIclassic(param_dict):
 
 
 if __name__ == '__main__':
-
     # Choose one of the following:
-    sim_name = 'stick_generic'  # Figure 8CD
-    # sim_name = 'hay_generic'      # Figure 4, 6, 7
-    # sim_name = 'hay_classic'      # Figure 1, 2, 3
-    # sim_name = 'hbp_classic'      # Figure 8AB
+    # sim_name = 'stick_generic'  # Figure 8CD
+    # sim_name = 'hay_generic'    # Figure 4, 6, 7
+    # sim_name = 'hay_classic'    # Figure 1, 2, 3
+    # sim_name = 'hbp_classic'    # Figure 8AB
+    sim_name = 'generic_multimorph'     # Control simulation
 
     if sim_name == "stick_generic":
         from param_dicts import stick_population_params as param_dict
@@ -369,6 +370,8 @@ if __name__ == '__main__':
         from param_dicts import classic_population_params as param_dict
     elif sim_name == "hbp_classic":
         from param_dicts import hbp_population_params as param_dict
+    elif sim_name == "generic_multimorph":
+        from param_dicts import multimorph_population_params as param_dict
     else:
         raise RuntimeError("Unrecognized conductance")
 
