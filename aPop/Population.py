@@ -1,6 +1,4 @@
 
-print("HERE")
-
 import os
 if 'DISPLAY' not in os.environ:
     import matplotlib
@@ -250,6 +248,33 @@ def PopulationMPIgeneric(param_dict):
         comm.send(None, dest=0, tag=tags.EXIT)
 
 
+def generic_sum(param_dict):
+
+
+    num_cells = 1001 if at_stallo else 2
+
+    for input_region in param_dict['input_regions']:
+        param_dict['input_region'] = input_region
+        for distribution in param_dict['distributions']:
+            param_dict['distribution'] = distribution
+            for mu in param_dict['mus']:
+                param_dict['mu'] = mu
+                for correlation in param_dict['correlations']:
+                    param_dict["correlation"] = correlation
+                    param_dict.update({'cell_number': 0})
+                    ns = NeuralSimulation(**param_dict)
+
+                    if os.path.isfile(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
+                        (ns.population_sim_name, 999))):
+                        print("SKIPPING POPULATION ", ns.population_sim_name)
+                        continue
+
+                    try:
+                        success = sum_and_remove(param_dict, num_cells, True)
+                    except:
+                        print("Failed on", input_region, distribution, mu, correlation)
+
+
 
 def PopulationMPIclassic(param_dict):
     """ Run with
@@ -374,6 +399,10 @@ if __name__ == '__main__':
         from param_dicts import multimorph_population_params as param_dict
     else:
         raise RuntimeError("Unrecognized conductance")
+
+
+    generic_sum(param_dict)
+    sys.exit()
 
     if len(sys.argv) >= 3:
         cell_number = int(sys.argv[3])
