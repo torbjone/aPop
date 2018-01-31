@@ -3,17 +3,14 @@ import os
 import matplotlib
 # matplotlib.use('Agg', warn=False)
 
-from .plotting_convention import *
+from plotting_convention import *
 import pylab as plt
 import numpy as np
 import os
 import sys
 from os.path import join
-from .suppress_print import suppress_stdout_stderr
-with suppress_stdout_stderr():
-    import LFPy
-from .NeuralSimulation import NeuralSimulation
-from . import tools
+from NeuralSimulation import NeuralSimulation
+import tools
 import scipy.fftpack as sf
 import matplotlib
 
@@ -21,7 +18,7 @@ import matplotlib
 def plot_decomposed_dipole():
     sim_folder = join('..', 'stick_population', 'simulations')
 
-    mu = -0.5
+    mu = 0.0
     i_i_t = 1000*np.load(join(sim_folder, 'center_sig_stick_population_infinite_neurite_homogeneous_generic_increase_%1.1f_0.00_00000_top.npy' % mu))
     i_i_b = 1000*np.load(join(sim_folder, 'center_sig_stick_population_infinite_neurite_homogeneous_generic_increase_%1.1f_0.00_00000_bottom.npy' % mu))
     i_i = 1000*np.load(join(sim_folder, 'center_sig_stick_population_infinite_neurite_homogeneous_generic_increase_%1.1f_0.00_00000.npy' % mu))
@@ -46,7 +43,7 @@ def plot_decomposed_dipole():
     ax_i.plot(np.average(i_i_b, axis=1), np.arange(20), 'orange')
     ax_i.plot(np.average(i_i, axis=1), np.arange(20), 'k', lw=2)
     ax_i.plot(np.average(i_i_t + i_i_b, axis=1), np.arange(20), '--', c='gray', lw=2)
-    plt.savefig('dipole_decomposed_%1.1f.png' % mu)
+    plt.savefig('dipole_decomposed_%1.1f_review_control.png' % mu)
 
 
 def plot_3d_rot_pop(param_dict):
@@ -913,6 +910,172 @@ def plot_figure_8_hbp():
     mark_subplots([ax_morph_1, ax_morph_2], ypos=1.4, xpos=-0.2)
     plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_8_hbp_{}.png'.format(pop_size)))
     plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_8_hbp_{}.pdf'.format(pop_size)), dpi=300)
+    plt.close('all')
+
+
+def plot_figure_control_multimorph():
+
+    from param_dicts import multimorph_population_params as param_dict_mm
+    from param_dicts import generic_population_params as param_dict_ge
+
+    folder_mm = join(param_dict_mm['root_folder'], param_dict_mm['save_folder'], 'simulations')
+    folder_ge = join(param_dict_ge['root_folder'], param_dict_ge['save_folder'], 'simulations')
+    pop_size = 323
+
+    param_dict_mm.update({
+                       'cell_number': 0,
+                      })
+    param_dict_ge.update({
+                       'cell_number': 0,
+                      })
+
+
+    elec_z = param_dict_mm['center_electrode_parameters']['z']
+    elec_x = param_dict_mm['center_electrode_parameters']['x']
+
+    soma_elec = np.argmin(np.abs(elec_z - 0) + np.abs(elec_x - 0)) #+ np.abs(elec_x - 0))
+    apic_elec = np.argmin(np.abs(elec_z - 1000) + np.abs(elec_x - 0)) #+ np.abs(elec_x - 0))
+
+    correlations = [0, 1.0]#param_dict['correlations']
+    input_regions = ['distal_tuft', 'homogeneous']
+    mus = [None, 2.0]
+
+    param_dict_mm['distribution'] = 'linear_increase'
+    param_dict_ge['distribution'] = 'linear_increase'
+
+    plt.close('all')
+    fig = plt.figure(figsize=(5, 7))
+    fig.subplots_adjust(right=0.98, wspace=0.1, hspace=0.6,
+                        left=0.095, top=0.93, bottom=0.17)
+
+    psd_ax_dict = {'ylim': [1e-7, 1e-1], #[1e-1, 1e1],#
+                    'yscale': 'log',
+                    'xscale': 'log',
+                    'xlim': [1, 500],
+                   #'xlabel': 'Frequency (Hz)',
+                   'xticklabels': ['1', '10', '100'],
+                   'xticks': [1e0, 10, 100],
+                    }
+    num_plot_cols = 3
+    num_plot_rows = 2
+
+    ax_morph_1 = fig.add_axes([0.05, 0.55, 0.17, 0.3], title="Distal tuft\ninput",
+                              frameon=False, xticks=[], yticks=[])
+    ax_morph_2 = fig.add_axes([0.05, 0.13, 0.17, 0.3], title="Uniform\ninput",
+                              frameon=False, xticks=[], yticks=[])
+
+    dist_image = plt.imread(join(param_dict_mm['root_folder'], 'figures',
+                                 "schematic_pop", 'linear_increase_distal_tuft_single_elec.png'))
+
+    uniform_image = plt.imread(join(param_dict_mm['root_folder'], 'figures',
+                                 "schematic_pop", 'linear_increase_homogeneous_single_elec.png'))
+
+    ax_morph_1.imshow(dist_image)
+    ax_morph_2.imshow(uniform_image)
+
+    lines = None
+    line_names = None
+    for i, input_region in enumerate(input_regions):
+        param_dict_mm['input_region'] = input_region
+        param_dict_ge['input_region'] = input_region
+
+        for c, correlation in enumerate(correlations):
+            param_dict_mm['correlation'] = correlation
+            param_dict_ge['correlation'] = correlation
+            plot_number = i * num_plot_cols + c + 2
+            lines = []
+            line_names = []
+
+            ax = fig.add_subplot(num_plot_rows, num_plot_cols, plot_number, **psd_ax_dict)
+            ax.set_title('c=%d' % correlation)
+
+            psd_dict_mm = {}
+            psd_dict_ge = {}
+            freq = None
+            for mu in mus:
+                param_dict_mm['mu'] = mu
+                param_dict_ge['mu'] = mu
+                ns_mm = NeuralSimulation(**param_dict_mm)
+                ns_ge = NeuralSimulation(**param_dict_ge)
+                name_mm = 'summed_center_signal_%s_%dum' % (ns_mm.population_sim_name, pop_size)
+                name_ge = 'summed_center_signal_%s_%dum' % (ns_ge.population_sim_name, pop_size)
+                # try:
+                lfp_mm = np.load(join(folder_mm, '%s.npy' % name_mm))[[soma_elec, apic_elec], :]
+                lfp_ge = np.load(join(folder_ge, '%s.npy' % name_ge))[[soma_elec, apic_elec], :]
+                # except:
+                #     print name
+                #     continue
+
+                # lfp = np.load(join(folder, '%s.npy' % name))[:, :]
+                # print name, lfp.shape
+                freq, psd_mm = tools.return_freq_and_psd_welch(lfp_mm, ns_mm.welch_dict)
+                freq, psd_ge = tools.return_freq_and_psd_welch(lfp_ge, ns_ge.welch_dict)
+                print(input_region, correlation, mu, np.max(psd_mm), psd_mm.shape)
+                # plt.close("all")
+                psd_dict_mm[mu] = psd_mm
+                psd_dict_ge[mu] = psd_ge
+
+            for mu in mus:
+                param_dict_mm['mu'] = mu
+                param_dict_ge['mu'] = mu
+
+                # try:
+                psd_mm = psd_dict_mm[mu] #/ psd_dict[0.0]
+                psd_ge = psd_dict_ge[mu] #/ psd_dict[0.0]
+                # except:
+                #     continue
+                f_idx_max = np.argmin(np.abs(freq - param_dict_mm['max_freq']))
+                f_idx_min = np.argmin(np.abs(freq - 1.))
+
+                l_ge, = ax.loglog(freq[f_idx_min:f_idx_max], (psd_ge[0][f_idx_min:f_idx_max]),
+                             c=conductance_clr_dict[mu], lw=3, clip_on=True, solid_capstyle='round')
+                l_mm, = ax.loglog(freq[f_idx_min:f_idx_max], (psd_mm[0][f_idx_min:f_idx_max]), '--',
+                             c=conductance_clr_dict_mm[mu], lw=3, clip_on=True, solid_capstyle='round')
+                # ax.plot(freq[f_idx_min:f_idx_max], np.log10(psd[1][f_idx_min:f_idx_max]), '--',
+                #              c=conductance_clr_dict[conductance_type], lw=1.5, clip_on=True, solid_capstyle='butt')
+
+                lines.append(l_mm)
+                lines.append(l_ge)
+                line_names.append(conductance_names[mu] + " (177 morphologies)")
+                line_names.append(conductance_names[mu] + " (1 morphology)")
+                # line_names.append(conductance_names_ge[mu])
+                # img = ax.pcolormesh(freq[1:freq_idx], z, psd[:, 1:freq_idx], **im_dict)
+                if i==0 and c == 0:
+                    ax.set_xlabel('frequency (Hz)', labelpad=-0)
+                    ax.set_ylabel('LFP-PSD\nlog$_{10}$($\mu$V$^2$/Hz)', labelpad=0)
+                #     c_ax = fig.add_axes([0.37, 0.2, 0.005, 0.17])
+                #     cbar = plt.colorbar(img, cax=c_ax, label='$\mu$V$^2$/Hz')
+                # plt.axis('auto')
+                # plt.colorbar(img)
+                # l, = ax.loglog(freq, psd[0], c=input_region_clr[input_region], lw=3)
+                # lines.append(l)
+                # line_names.append(input_region)
+
+
+            locmaj = matplotlib.ticker.LogLocator(base=10, numticks=8)
+            ax.yaxis.set_major_locator(locmaj)
+            ax.yaxis.set_minor_locator(matplotlib.ticker.LogLocator())
+            ax.yaxis.set_major_formatter(matplotlib.ticker.LogFormatterExponent())
+            # ax.set_yticks(ax.get_yticks()[1:-2][::2])
+
+            locmin = matplotlib.ticker.LogLocator(base=10.0, numticks=8, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
+            ax.yaxis.set_minor_locator(locmin)
+            ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+
+            ax.set_xticklabels(["", "1", "10", "100"])
+            # if c == 0:
+            # ax.set_yticks(ax.get_yticks()[1:-2][::2])
+            if not c==0:
+                ax.set_yticklabels([])
+            ax.grid(True)
+
+    fig.legend(lines, line_names, loc='lower center',
+               frameon=False, ncol=1, fontsize=9)
+    simplify_axes(fig.axes)
+
+    mark_subplots([ax_morph_1, ax_morph_2], ypos=1.4, xpos=-0.2)
+    plt.savefig(join(param_dict_mm['root_folder'], 'figures', 'Figure_control_multimorph_{}.png'.format(pop_size)))
+    plt.savefig(join(param_dict_mm['root_folder'], 'figures', 'Figure_control_multimorph_{}.pdf'.format(pop_size)), dpi=300)
     plt.close('all')
 
 
@@ -2604,7 +2767,7 @@ def plot_figure_2_generic(param_dict):
 
 def plot_figure_2():
 
-    from .param_dicts import classic_population_params as param_dict
+    from param_dicts import classic_population_params as param_dict
     input_regions = ["distal_tuft", "basal"]
     correlations = [0.0, 0.01, 0.1, 1.0]#param_dict['correlations']
 
@@ -2619,6 +2782,9 @@ def plot_figure_2():
     param_dict["holding_potential"] = holding_potential
 
     plt.close('all')
+
+
+
     fig = plt.figure(figsize=(10, 10))
     fig.subplots_adjust(right=0.95, wspace=0.1, hspace=0.1,
                         left=0.23, top=0.95, bottom=0.1)
@@ -2644,6 +2810,8 @@ def plot_figure_2():
     num_plot_rows = 5
     elec_soma = np.argmin(np.abs(param_dict["center_electrode_parameters"]["z"] - 0))
     elec_apic = np.argmin(np.abs(param_dict["center_electrode_parameters"]["z"] - 1000))
+
+    q_values = np.zeros((len(input_regions), 2, len(conductance_types), len(correlations)))
 
     for ir, input_region in enumerate(input_regions):
         param_dict["input_region"] = input_region
@@ -2673,7 +2841,7 @@ def plot_figure_2():
                     freq, psd = tools.return_freq_and_psd_welch(lfp[elec], ns.welch_dict)
                     psd_dict[conductance_type] = psd
 
-                for conductance_type in conductance_types:
+                for num_cond, conductance_type in enumerate(conductance_types):
                     param_dict['conductance_type'] = conductance_type
 
                     psd = psd_dict[conductance_type] #/ psd_dict["passive"]
@@ -2682,8 +2850,9 @@ def plot_figure_2():
                     f_idx_max = np.argmin(np.abs(freq - param_dict['max_freq']))
                     f_idx_min = np.argmin(np.abs(freq - 1.))
 
-                    print(input_region, elec, correlation, conductance_type, np.max(psd[0][f_idx_min:]) / psd[0][f_idx_min], psd[0][f_idx_min])
-
+                    q_value = np.max(psd[0][f_idx_min:]) / psd[0][f_idx_min]
+                    print(input_region, elec, correlation, conductance_type, q_value, psd[0][f_idx_min])
+                    q_values[ir, idx, num_cond, c] = q_value
                     l, = ax_.loglog(freq[f_idx_min:f_idx_max],
                                       (psd[0][f_idx_min:f_idx_max]),
                                       c=conductance_clr_dict[conductance_type],
@@ -2700,8 +2869,6 @@ def plot_figure_2():
                     ax_.yaxis.set_minor_locator(locmin)
                     ax_.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
 
-
-
                     if idx == 1:
                         ax_.set_xticklabels(['', '1', '10', '100'])
                     else:
@@ -2713,11 +2880,24 @@ def plot_figure_2():
     simplify_axes(fig.axes)
     mark_subplots([ax_morph_1, ax_morph_3], ypos=0.99, xpos=0.1)
     plt.savefig(join(param_dict['root_folder'], 'figures',
-                     'Figure_2_classic_%d_%dmV.png' % (pop_size, holding_potential)))
+                     'Figure_2_classic_%d_%dmV_.png' % (pop_size, holding_potential)))
     plt.savefig(join(param_dict['root_folder'], 'figures',
-                     'Figure_2_classic_%d_%dmV.pdf' % (pop_size, holding_potential)), dpi=300)
+                     'Figure_2_classic_%d_%dmV_.pdf' % (pop_size, holding_potential)), dpi=300)
+    # plt.show()
     plt.close('all')
-
+    input_region_name = {""}
+    fig2 = plt.figure()
+    for ir, input_region in enumerate(input_regions):
+        for idx, elec in enumerate([elec_apic, elec_soma]):
+            elec_name = ["apic region", "somatic region"]
+            ax_q = fig2.add_subplot(4,1, ir*2 + idx + 1, ylabel="Q-value", xlabel="Correlation (c)",
+                                    title="Elec:{}\nInput:{}".format(elec_name[idx], input_region), ylim=[0, 12],
+                                    xticks = [0, 1, 2, 3], xticklabels=[0.0, 0.01, 0.1, 1.0])
+            for num_cond, conductance_type in enumerate(conductance_types):
+                ax_q.plot(np.arange(4), q_values[ir, idx, num_cond, :],
+                          c=conductance_clr_dict[conductance_type])
+    simplify_axes(fig2.axes)
+    plt.show()
 
 def plot_figure_3():
 
@@ -3844,13 +4024,14 @@ def plot_figure_1_single_cell_difference(param_dict):
 
 if __name__ == '__main__':
 
-    plot_figure_1_single_cell()
-    plot_figure_1_population()
-    plot_figure_2()
-    plot_figure_3()
-    plot_figure_4()
-    plot_figure_6()
-    plot_figure_7()
-    plot_figure_8_hbp()
-    plot_figure_8_stick()
-
+    # plot_figure_1_single_cell()
+    # plot_figure_1_population()
+    # plot_figure_2()
+    # plot_figure_3()
+    # plot_figure_4()
+    # plot_figure_6()
+    # plot_figure_7()
+    # plot_figure_8_hbp()
+    # plot_figure_8_stick()
+    plot_figure_control_multimorph()
+    # plot_decomposed_dipole()

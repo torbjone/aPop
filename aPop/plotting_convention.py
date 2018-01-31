@@ -39,11 +39,21 @@ conductance_clr_dict = {'active': 'r',
                'passive': 'k',
                'Ih': 'b',
                 'Ih_frozen': 'c',
+                None: "k",
                 -0.5: reg_color,
                0.0: pas_color,
                2.0: res_color,
                         }
 
+conductance_clr_dict_mm = {'active': 'r',
+               'passive': 'k',
+               'Ih': 'b',
+                'Ih_frozen': 'c',
+                None: "0.5",
+                -0.5: reg_color,
+               0.0: pas_color,
+               2.0: 'lightblue',
+                        }
 
 conductance_names = {-0.5: 'passive+regenerative',
                      0.0: 'passive+frozen',
@@ -53,8 +63,6 @@ conductance_names = {-0.5: 'passive+regenerative',
                      'passive': 'passive',
                      'Ih': 'passive + I$_h$',
                      'Ih_frozen': 'passive + frozen I$_h$',
-
-
                      }
 def mark_subplots(axes, letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ', xpos=-0.12, ypos=1.15):
 

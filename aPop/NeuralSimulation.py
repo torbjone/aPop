@@ -247,13 +247,12 @@ class NeuralSimulation:
 
         elif self.cell_name == 'multimorph':
 
-            morph_top_folder = join(self.neuron_models, "neuron_nmo")
+            morph_top_folder = join(self.neuron_models, "neuron_nmo_adult")
             sys.path.append(morph_top_folder)
             from active_declarations import active_declarations
 
             fldrs = [f for f in os.listdir(morph_top_folder) if os.path.isdir(join(morph_top_folder, f))
                      and not f.startswith("__")]
-            print(fldrs)
             all_morphs = []
             for f in fldrs:
                 files = os.listdir(join(morph_top_folder, f, "CNG version"))
@@ -262,7 +261,7 @@ class NeuralSimulation:
 
             # morph = np.random.choice(all_morphs)
             morph = all_morphs[np.random.randint(0, len(all_morphs) - 1)]
-            print(morph)
+
             cell_params = {
                 'morphology': morph,
                 'v_init': self.holding_potential,
@@ -273,7 +272,7 @@ class NeuralSimulation:
                 'tstart': -self.cut_off,          # start time, recorders start at t=0
                 'tstop': self.end_t,
                 'pt3d': True,
-                'custom_code': [join(morph_top_folder, 'custom_codes.hoc')],
+                #'custom_code': [join(morph_top_folder, 'custom_codes.hoc')],
                 'custom_fun': [active_declarations],  # will execute this function
                 'custom_fun_args': [{'conductance_type': self.conductance_type,
                                      'mu_factor': self.mu,
@@ -283,11 +282,11 @@ class NeuralSimulation:
                                      'avrg_w_bar': 0.00005, # Half of "original"!!!
                                      'hold_potential': self.holding_potential}]
             }
-            try:
-                cell = LFPy.Cell(**cell_params)
-            except:
-                cell_params['custom_code'] = []
-                cell = LFPy.Cell(**cell_params)
+            # try:
+            cell = LFPy.Cell(**cell_params)
+            # except:
+            #     cell_params['custom_code'] = []
+            #     cell = LFPy.Cell(**cell_params)
 
             from rotation_lastis import find_major_axes, alignCellToAxes
             axes = find_major_axes(cell)
@@ -347,10 +346,10 @@ class NeuralSimulation:
                          (self.cell_name, self.param_dict['conductance_type'])), cell.diam)
 
     def run_distributed_synaptic_simulation(self):
-        # if os.path.isfile(join(self.sim_folder, 'center_sig_%s.npy' % self.sim_name)) or \
-        #    os.path.isfile(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name)):
-        #     print("Skipping ", self.sim_name)
-        #     return
+        if os.path.isfile(join(self.sim_folder, 'center_sig_%s.npy' % self.sim_name)) or \
+           os.path.isfile(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name)):
+            print("Skipping ", self.sim_name)
+            return
 
         plt.seed(123 * self.cell_number)
         x_y_z_rot = np.load(join(self.param_dict['root_folder'],
@@ -598,13 +597,13 @@ if __name__ == '__main__':
     # from param_dicts import generic_population_params as param_dict
     from param_dicts import multimorph_population_params as param_dict
 
-    param_dict.update({'input_region': 'distal_tuft',
-                       'correlation': 0.0,
+    param_dict.update({'input_region': sys.argv[1],
+                       'correlation': float(sys.argv[2]),
                        'distribution': "linear_increase",
                        'conductance_type': 'generic',
-                       'mu': 2.0,
+                       'mu': None if sys.argv[3] == "None" else float(sys.argv[3]),
                        'holding_potential': -80.,
-                       'cell_number': 0})
+                       'cell_number': int(sys.argv[4])})
     ns = NeuralSimulation(**param_dict)
     ns.run_distributed_synaptic_simulation()
 
