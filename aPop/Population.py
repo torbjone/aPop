@@ -12,14 +12,20 @@ import numpy as np
 import os
 import sys
 from os.path import join
-# from suppress_print import suppress_stdout_stderr
-# with suppress_stdout_stderr():
+
 import LFPy
 from NeuralSimulation import NeuralSimulation
 
 
 def initialize_population(param_dict):
-
+    """
+    Initialize cell population based on parameters from param_dict.
+    Cells are randomly distributed within a disc of thickness
+    param_dict['layer_5_thickness'], and radius param_dict['population_radius'].
+    Each cell gets a random rotation around the z-axis.
+    The pool of presynaptic spiketrains for the correlated population simulations
+    are also made.
+    """
     print("Initializing cell positions and rotations ...")
     x_y_z_rot = np.zeros((param_dict['num_cells'], 4))
     for cell_number in range(param_dict['num_cells']):
@@ -46,11 +52,9 @@ def initialize_population(param_dict):
     firing_rate = param_dict['input_firing_rate']
     num_trains = int(num_synapses/0.01)
     all_spiketimes = {}
-    # input_method = LFPy.inputgenerators.stationary_poisson
     input_method = LFPy.inputgenerators.get_activation_times_from_distribution
 
     for idx in range(num_trains):
-        # all_spiketimes[idx] = input_method(1, firing_rate, -param_dict['cut_off'], param_dict['end_t'])[0]
         all_spiketimes[idx] = input_method(1, -param_dict['cut_off'],
                                    param_dict['end_t'],
                                    rvs_args=dict(loc=0., scale=1000. / firing_rate))[0]
@@ -112,13 +116,10 @@ def sum_and_remove(param_dict, num_cells, remove=False):
             except IOError:
                 print("Could not load ", cell_number, join(ns.sim_folder, 'center_sig_%s.npy' % sim_name), time.time() - t0)
                 time.sleep(5)
-            if time.time() - t0 > 60 * 60:
-                print("waited 60 minute for %s. Can wait no longer" % sim_name)
+            if time.time() - t0 > 60:
+                print("waited 60 seconds for %s. Can wait no longer" % sim_name)
                 return False
 
-        # if not summed_center_sig.shape == center_lfp.shape:
-        #     print "Reshaping LFP time signal", center_lfp.shape
-        #     summed_center_sig = np.zeros(center_lfp.shape)
         summed_center_sig += center_lfp
 
         if not cell_number % 2:
@@ -251,7 +252,7 @@ def PopulationMPIgeneric(param_dict):
 def generic_sum(param_dict):
 
 
-    num_cells = 1001 if at_stallo else 2
+    num_cells = 4001 if at_stallo else 2
 
     for input_region in param_dict['input_regions']:
         param_dict['input_region'] = input_region
@@ -270,7 +271,7 @@ def generic_sum(param_dict):
                         continue
 
                     try:
-                        success = sum_and_remove(param_dict, num_cells, True)
+                        success = sum_and_remove(param_dict, num_cells, False)
                     except:
                         print("Failed on", input_region, distribution, mu, correlation)
 
@@ -400,7 +401,13 @@ if __name__ == '__main__':
     else:
         raise RuntimeError("Unrecognized conductance")
 
-
+    param_dict.update({'input_region': sys.argv[1],
+                       'correlation': float(sys.argv[2]),
+                       'distribution': "linear_increase",
+                       'conductance_type': 'generic',
+                       'mu': None if sys.argv[3] == "None" else float(sys.argv[3]),
+                       'holding_potential': -80.,
+                       'cell_number': 0})
     generic_sum(param_dict)
     sys.exit()
 
@@ -430,7 +437,7 @@ if __name__ == '__main__':
                                'correlation': correlation,
                                })
         ns = NeuralSimulation(**param_dict)
-        ns.run_distributed_synaptic_simulation()
+        ns.run_single_simulation()
     elif len(sys.argv) == 2 and sys.argv[1] == 'initialize':
         initialize_population(param_dict)
         plot_population(param_dict)

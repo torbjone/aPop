@@ -18,6 +18,11 @@ h = neuron.h
 
 
 class NeuralSimulation:
+    """
+    Main class for the neural simulation. It makes the synaptic inputs,
+    sets up the cell models.
+
+    """
     def __init__(self, **kwargs):
         self.input_type = kwargs['input_type']
         self.input_region = kwargs['input_region']
@@ -106,7 +111,9 @@ class NeuralSimulation:
                 i += 1
 
     def make_cell_uniform(self, Vrest=-80):
-
+        """
+        Adjusts e_pas to enforce a uniform resting membrane potential at Vrest
+        """
         neuron.h.t = 0
         neuron.h.finitialize(Vrest)
         neuron.h.fcurrent()
@@ -124,8 +131,13 @@ class NeuralSimulation:
                 if neuron.h.ismembrane("Ih_frozen"):
                     seg.e_pas += seg.ihcn_Ih_frozen/seg.g_pas
 
-    def _return_cell(self, cell_x_y_z_rotation=None):
-
+    def return_cell(self, cell_x_y_z_rotation=None):
+        """
+        Returns the cell model, based on the population parameters already
+        supplied to the class.
+        :param cell_x_y_z_rotation: contains array with position and rotation
+        :return: LFPy cell object
+        """
         remove_lists = {'active': [],
                         'passive': ["Nap_Et2", "NaTa_t", "NaTs2_t", "SKv3_1",
                                     "SK_E2", "K_Tst", "K_Pst", "Im", "Ih",
@@ -140,14 +152,11 @@ class NeuralSimulation:
                         }
 
         if 'i_QA' not in list(neuron.h.__dict__.keys()):
-            # print("", end='')
-            # from suppress_print import suppress_stdout_stderr
-            # with suppress_stdout_stderr():
+
             neuron.load_mechanisms(join(self.neuron_models))
         cell = None
         if self.cell_name == 'hay':
             if self.conductance_type == 'generic':
-                # print "Loading Hay"
                 sys.path.append(join(self.neuron_models, 'hay'))
                 from hay_active_declarations import active_declarations
                 cell_params = {
@@ -173,11 +182,8 @@ class NeuralSimulation:
                 cell = LFPy.Cell(**cell_params)
             else:
                 sys.path.append(join(self.neuron_models, 'hay'))
-                # from .suppress_print import suppress_stdout_stderr
-                # with suppress_stdout_stderr():
                 neuron.load_mechanisms(join(self.neuron_models, 'hay', 'mod'))
 
-                # from hay_active_declarations import active_declarations
                 cell_params = {
                     'morphology': join(self.neuron_models, 'hay', 'cell1.hoc'),
                     'v_init': self.holding_potential if self.holding_potential is not None else -70,
@@ -189,9 +195,6 @@ class NeuralSimulation:
                     'tstop': self.end_t,
                     'custom_code': [join(self.neuron_models, 'hay', 'custom_codes.hoc'),
                                     join(self.neuron_models, 'hay', 'biophys3.hoc')],
-                    # 'custom_fun': [active_declarations],  # will execute this function
-                    # 'custom_fun_args': [{'conductance_type': "active",
-                    #                      'hold_potential': self.holding_potential}]
                 }
 
                 cell = LFPy.Cell(**cell_params)
@@ -213,9 +216,7 @@ class NeuralSimulation:
                                "CaDynamics_E2", "Ca_LVAst", "Ca"]}
 
             sys.path.append(self.param_dict['model_folder'])
-            # from .suppress_print import suppress_stdout_stderr
-            # with suppress_stdout_stderr():
-                # neuron.load_mechanisms(join(self.param_dict['model_folder'], 'mod'))
+
             from hbp_cells import return_cell
             cell_folder = join(self.param_dict['model_folder'], 'models', self.cell_name)
             cell = return_cell(cell_folder, self.end_t, self.dt, -self.cut_off)
@@ -259,7 +260,6 @@ class NeuralSimulation:
                 morphs = [join(morph_top_folder, f,  "CNG version", mof) for mof in files if mof.endswith("swc")]
                 all_morphs.extend(morphs)
 
-            # morph = np.random.choice(all_morphs)
             morph = all_morphs[np.random.randint(0, len(all_morphs) - 1)]
 
             cell_params = {
@@ -288,6 +288,7 @@ class NeuralSimulation:
             #     cell_params['custom_code'] = []
             #     cell = LFPy.Cell(**cell_params)
 
+            # Rotate cell so the apical dendrite lies along the z-axis
             from rotation_lastis import find_major_axes, alignCellToAxes
             axes = find_major_axes(cell)
             alignCellToAxes(cell, axes[2], axes[1])
@@ -345,7 +346,11 @@ class NeuralSimulation:
             np.save(join(self.sim_folder, 'diam_%s_%s.npy' %
                          (self.cell_name, self.param_dict['conductance_type'])), cell.diam)
 
-    def run_distributed_synaptic_simulation(self):
+    def run_single_simulation(self):
+        """
+        Main function to run single-cell simulation
+        :return:
+        """
         if os.path.isfile(join(self.sim_folder, 'center_sig_%s.npy' % self.sim_name)) or \
            os.path.isfile(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name)):
             print("Skipping ", self.sim_name)
@@ -356,8 +361,8 @@ class NeuralSimulation:
                                  self.param_dict['save_folder'],
                          'x_y_z_rot_%s.npy' % self.param_dict['name']))[self.cell_number]
 
-        cell = self._return_cell(x_y_z_rot)
-        cell, syn = self._make_distributed_synaptic_stimuli(cell)
+        cell = self.return_cell(x_y_z_rot)
+        cell, syn = self._make_synaptic_stimuli(cell)
 
         rec_vmem = False if at_stallo else True
         cell.simulate(rec_imem=True, rec_vmem=rec_vmem)
@@ -368,8 +373,7 @@ class NeuralSimulation:
         if self.cell_number < 5 or (self.cell_number % 50) == 0:
             self._plot_results(cell)
 
-
-    def _make_distributed_synaptic_stimuli(self, cell):
+    def _make_synaptic_stimuli(self, cell):
 
         syntype = 'ExpSynI' if not 'syntype' in self.param_dict else self.param_dict['syntype']
 
@@ -380,7 +384,6 @@ class NeuralSimulation:
             'tau': self.param_dict['syn_tau'],                # syn. time constant
             'weight': self.param_dict['syn_weight'],            # syn. weight
             'record_current': False,
-            # 'color': 'r',
         }
 
         if self.input_region == 'distal_tuft':
@@ -458,52 +461,6 @@ class NeuralSimulation:
 
         return cell, synapses
 
-    def _make_asymmetry_distributed_synaptic_stimuli(self, cell, fraction):
-
-        # Define synapse parameters
-        synapse_params = {
-            'e': 0.,                   # reversal potential
-            'syntype': 'ExpSyn',       # synapse type
-            'tau': self.param_dict['syn_tau'],                # syn. time constant
-            'weight': self.param_dict['syn_weight'],            # syn. weight
-            'record_current': False,
-        }
-
-        num_synapses_apic = int(1000 * fraction)
-        input_pos = ['apic']
-        maxpos = 10000
-        minpos = 600
-        cell_input_idxs_apic = cell.get_rand_idx_area_norm(section=input_pos,
-                                                           nidx=num_synapses_apic,
-                                                      z_min=minpos, z_max=maxpos)
-        spike_trains_apic = LFPy.inputgenerators.stationary_poisson(num_synapses_apic,
-                                                                    5, cell.tstartms,
-                                                                    cell.tstopms)
-        synapses_apic = self.set_input_spiketrain(cell, cell_input_idxs_apic,
-                                                  spike_trains_apic,
-                                                  synapse_params)
-
-        num_synapses_basal = 1000 - num_synapses_apic
-        input_pos = ['apic', 'dend']
-        maxpos = 600
-        minpos = -10000
-
-        if num_synapses_apic + num_synapses_basal != 1000:
-            print(num_synapses_basal, num_synapses_apic)
-            raise RuntimeError("Does not sum to 1000")
-
-        cell_input_idxs_basal = cell.get_rand_idx_area_norm(section=input_pos,
-                                                            nidx=num_synapses_basal,
-                                                            z_min=minpos,
-                                                            z_max=maxpos)
-        spike_trains_basal = LFPy.inputgenerators.stationary_poisson(
-            num_synapses_basal, 5, cell.tstartms, cell.tstopms)
-        synapses_basal = self.set_input_spiketrain(cell, cell_input_idxs_basal,
-                                                   spike_trains_basal,
-                                                   synapse_params)
-
-        return cell, synapses_apic, synapses_basal
-
     def set_input_spiketrain(self, cell, cell_input_idxs,
                              spike_trains, synapse_params):
         synapse_list = []
@@ -519,7 +476,6 @@ class NeuralSimulation:
             s.set_spike_times(spike_trains[number])
             synapse_list.append(s)
         return synapse_list
-
 
     def plot_cell_to_ax(self, cell, ax):
         [ax.plot([cell.xstart[idx], cell.xend[idx]], [cell.zstart[idx], cell.zend[idx]],
@@ -605,5 +561,5 @@ if __name__ == '__main__':
                        'holding_potential': -80.,
                        'cell_number': int(sys.argv[4])})
     ns = NeuralSimulation(**param_dict)
-    ns.run_distributed_synaptic_simulation()
+    ns.run_single_simulation()
 
