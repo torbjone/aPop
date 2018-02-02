@@ -78,7 +78,6 @@ def biophys_generic(**kwargs):
                 seg.mu_QA = 0
         return
 
-
     total_area = _get_total_area()
     total_w_conductance = kwargs['avrg_w_bar'] * total_area
     max_dist = _get_longest_distance()
@@ -228,11 +227,6 @@ def biophys_Ih_linearized(**kwargs):
     for sec in neuron.h.axon:
         sec.g_pas = 0.0000325
 
-    # if 'hold_potential' in kwargs and kwargs['hold_potential'] is not None:
-    #     make_cell_uniform(Vrest=kwargs['hold_potential'])
-
-
-
     print("Linearized Ih inserted.")
 
 def biophys_Ih(**kwargs):
@@ -267,6 +261,7 @@ def biophys_Ih(**kwargs):
     #     make_cell_uniform(Vrest=kwargs['hold_potential'])
     print("Single Ih inserted.")
 
+
 def biophys_Ih_frozen(**kwargs):
 
     Vrest = kwargs['hold_potential'] if 'hold_potential' in kwargs else -70
@@ -295,11 +290,7 @@ def biophys_Ih_frozen(**kwargs):
     for sec in neuron.h.axon:
         sec.g_pas = 0.0000325
 
-    # if 'hold_potential' in kwargs and kwargs['hold_potential'] is not None:
-    #     make_cell_uniform(Vrest=kwargs['hold_potential'])
-
     print("Single frozen Ih inserted.")
-
 
 
 
@@ -687,9 +678,34 @@ def test_ca_initiation():
     # plt.savefig('ca_initiation_init.png')
     plt.show()
 
+
+def plot_cell():
+
+    neuron.load_mechanisms('mod')
+
+    cell_params = {
+                    'morphology': join('cell1.hoc'),
+                    'v_init': -70,
+                    'passive': False,           # switch on passive mechs
+                    'nsegs_method': 'lambda_f',  # method for setting number of segments,
+                    'lambda_f': 100,           # segments are isopotential at this frequency
+                    'dt': 2**-2,   # dt of LFP and NEURON simulation.
+                    'tstart': 0,          # start time, recorders start at t=0
+                    'tstop': 10,
+                    'custom_code': [join('custom_codes.hoc'),
+                                    join('biophys3.hoc')],
+                    }
+
+    cell = LFPy.Cell(**cell_params)
+    for idx in range(cell.totnsegs):
+        plt.plot([cell.xstart[idx], cell.xend[idx]],
+                 [cell.zstart[idx], cell.zend[idx]], lw=2)
+    plt.show()
+
 if __name__ == '__main__':
     # test_steady_state()
-    plot_gh()
+    # plot_gh()
+    plot_cell()
     #simulate_synaptic_input(0, -65, 'active')
     # plt.savefig('Ca_initiation_testing.png')
     # test_ca_initiation()

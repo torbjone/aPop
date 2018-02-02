@@ -110,6 +110,76 @@ class NeuralSimulation:
                     seg.g_pas += seg.gIh_Ih
                 i += 1
 
+    def return_gIhbar_at_distance(self, cell, dist):
+
+        gIhbar = np.zeros(cell.totnsegs)
+        all_dist = np.zeros(cell.totnsegs)
+        h.distance(0, 0.5)
+        comp = 0
+        for sec in neuron.h.allsec():
+            for seg in sec:
+                try:
+                    gIhbar[comp] = seg.gIhbar_Ih
+                except:
+                    gIhbar[comp] = 0
+                all_dist[comp] = h.distance(seg.x)
+                comp += 1
+        return gIhbar[np.argmin(np.abs(all_dist - dist))]
+
+    def make_Ih_plateau(self, cell, plateau_distance, plot=False):
+
+        plateau_value = self.return_gIhbar_at_distance(cell, plateau_distance)
+        orig_gIhbar = np.zeros(cell.totnsegs)
+        dist = np.zeros(cell.totnsegs)
+        h.distance(0, 0.5)
+        comp = 0
+        for sec in neuron.h.allsec():
+            for seg in sec:
+                try:
+                    orig_gIhbar[comp] = seg.gIhbar_Ih
+                except:
+                    orig_gIhbar[comp] = 0
+                dist[comp] = h.distance(seg.x)
+                comp += 1
+
+        h.distance(0, 0.5)
+        for sec in neuron.h.allsec():
+            for seg in sec:
+                if h.distance(seg.x) >= plateau_distance:
+                    try:
+                        seg.gIhbar_Ih = plateau_value
+                    except:
+                        pass
+
+        plateau_gIhbar = np.zeros(cell.totnsegs)
+        dist = np.zeros(cell.totnsegs)
+        h.distance(0, 0.5)
+        comp = 0
+        for sec in neuron.h.allsec():
+            for seg in sec:
+                try:
+                    plateau_gIhbar[comp] = seg.gIhbar_Ih
+                except:
+                    plateau_gIhbar[comp] = 0
+                dist[comp] = h.distance(seg.x)
+                comp += 1
+
+        if plot:
+            fig = plt.figure()
+            fig.subplots_adjust(left=0.15, bottom=0.15)
+
+            ax = fig.add_subplot(111, xlabel="Distance ($\mu$m)",
+                                 ylabel="S/cm$^2$",
+                                 title="Plateau value: {} S/cm$^2$".format(plateau_value))
+            l1, = plt.plot(dist, orig_gIhbar, 'k.')
+            l2, = plt.plot(dist, plateau_gIhbar, 'r.')
+            simplify_axes(ax)
+            plt.legend([l1, l2], ["Original peak Ih conductance",
+                                  "Plateau peak Ih conductance"], frameon=False)
+            plt.savefig("Ih_plateau_{}um.png".format(plateau_distance))
+            plt.savefig("Ih_plateau_{}um.pdf".format(plateau_distance))
+            plt.close("all")
+
     def make_cell_uniform(self, Vrest=-80):
         """
         Adjusts e_pas to enforce a uniform resting membrane potential at Vrest
@@ -145,14 +215,15 @@ class NeuralSimulation:
                         'Ih': ["Nap_Et2", "NaTa_t", "NaTs2_t", "SKv3_1",
                                "SK_E2", "K_Tst", "K_Pst", "Im",
                                "CaDynamics_E2", "Ca_LVAst", "Ca"],
-
+                        'Ih_plateau': ["Nap_Et2", "NaTa_t", "NaTs2_t", "SKv3_1",
+                               "SK_E2", "K_Tst", "K_Pst", "Im",
+                               "CaDynamics_E2", "Ca_LVAst", "Ca"],
                         'Ih_frozen': ["Nap_Et2", "NaTa_t", "NaTs2_t", "SKv3_1",
                                "SK_E2", "K_Tst", "K_Pst", "Im", "Ih",
                                "CaDynamics_E2", "Ca_LVAst", "Ca"]
                         }
 
         if 'i_QA' not in list(neuron.h.__dict__.keys()):
-
             neuron.load_mechanisms(join(self.neuron_models))
         cell = None
         if self.cell_name == 'hay':
@@ -200,6 +271,8 @@ class NeuralSimulation:
                 cell = LFPy.Cell(**cell_params)
                 if self.conductance_type == "Ih_frozen":
                     self.make_Ih_frozen(cell)
+                if self.conductance_type == "Ih_plateau":
+                    self.make_Ih_plateau(cell, 600)
                 self.remove_active_mechanisms(remove_lists[self.conductance_type])
                 self.make_cell_uniform(self.holding_potential)
 
@@ -349,7 +422,7 @@ class NeuralSimulation:
     def run_single_simulation(self):
         """
         Main function to run single-cell simulation
-        :return:
+
         """
         if os.path.isfile(join(self.sim_folder, 'center_sig_%s.npy' % self.sim_name)) or \
            os.path.isfile(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name)):
