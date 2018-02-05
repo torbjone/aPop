@@ -525,7 +525,7 @@ class NeuralSimulation:
 
         else:
             all_spiketimes = np.load(join(self.param_dict['root_folder'], self.param_dict['save_folder'],
-                             'all_spike_trains_%s.npy' % self.param_dict['name'])).item()
+                             'all_spike_trains_%s.npy' % self.param_dict['name']), encoding = 'latin1').item()
 
             spike_train_idxs = np.random.choice(np.arange(int(num_synapses/self.correlation)),
                                                 num_synapses, replace=False)
