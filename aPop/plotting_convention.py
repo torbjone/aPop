@@ -35,35 +35,39 @@ qa_clr_dict = {-0.5: reg_color,
                0.0: pas_color,
                2.0: res_color}
 
-conductance_clr_dict = {'active': 'r',
+cond_clr = {'active': 'r',
                'passive': 'k',
                'Ih': 'b',
                 'Ih_frozen': 'c',
-                None: "k",
-                -0.5: reg_color,
-               0.0: pas_color,
-               2.0: res_color,
-                        }
+            'Ih_plateau': 'orange',
+            None: "k",
+            -0.5: reg_color,
+            0.0: pas_color,
+            2.0: res_color,
+            }
 
-conductance_clr_dict_mm = {'active': 'r',
+cond_clr_mm = {'active': 'r',
                'passive': 'k',
                'Ih': 'b',
                 'Ih_frozen': 'c',
-                None: "0.5",
-                -0.5: reg_color,
+
+
+               None: "0.5",
+               -0.5: reg_color,
                0.0: pas_color,
                2.0: 'lightblue',
-                        }
+               }
 
-conductance_names = {-0.5: 'passive+regenerative',
-                     0.0: 'passive+frozen',
-                     2.0: 'passive+restorative',
-                     None: "passive",
+cond_names = {-0.5: 'passive+regenerative',
+              0.0: 'passive+frozen',
+              2.0: 'passive+restorative',
+              None: "passive",
                      'active': 'active',
                      'passive': 'passive',
                      'Ih': 'passive + I$_h$',
                      'Ih_frozen': 'passive + frozen I$_h$',
-                     }
+                    'Ih_plateau': 'passive + I$_h$ with plateau',
+              }
 def mark_subplots(axes, letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ', xpos=-0.12, ypos=1.15):
 
     if not type(axes) is list:

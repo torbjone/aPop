@@ -44,7 +44,8 @@ print(fldrs)
 all_morphs = []
 for f in fldrs:
     files = os.listdir(join(morph_top_folder, f, "CNG version"))
-    morphs = [join(morph_top_folder, f,  "CNG version", mof) for mof in files if mof.endswith("swc")]
+    morphs = [join(morph_top_folder, f,  "CNG version", mof) for mof in files if mof.endswith("swc")
+              or mof.endswith("hoc")]
     all_morphs.extend(morphs)
     # all_morphs.append()
 

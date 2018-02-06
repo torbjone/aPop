@@ -279,7 +279,7 @@ def PopulationMPIclassic(param_dict):
 
         print(("\033[95m Master starting with %d workers\033[0m" % num_workers))
         task = 0
-        num_cells = 10000 if at_stallo else 2
+        num_cells = 500 if at_stallo else 2
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['holding_potentials']) *
                      len(param_dict['conductance_types']) * len(param_dict['correlations']) * (num_cells))
 
@@ -357,9 +357,9 @@ if __name__ == '__main__':
     # Choose one of the following:
     # sim_name = 'stick_generic'  # Figure 8CD
     # sim_name = 'hay_generic'    # Figure 4, 6, 7
-    # sim_name = 'hay_classic'    # Figure 1, 2, 3
+    sim_name = 'hay_classic'    # Figure 1, 2, 3
     # sim_name = 'hbp_classic'    # Figure 8AB
-    sim_name = 'generic_multimorph'     # Control simulation
+    # sim_name = 'generic_multimorph'     # Control simulation
 
     if sim_name == "stick_generic":
         from param_dicts import stick_population_params as param_dict
@@ -373,16 +373,6 @@ if __name__ == '__main__':
         from param_dicts import multimorph_population_params as param_dict
     else:
         raise RuntimeError("Unrecognized conductance")
-
-    param_dict.update({'input_region': sys.argv[1],
-                       'correlation': float(sys.argv[2]),
-                       'distribution': "linear_increase",
-                       'conductance_type': 'generic',
-                       'mu': None if sys.argv[3] == "None" else float(sys.argv[3]),
-                       'holding_potential': -80.,
-                       'cell_number': 0})
-    generic_sum(param_dict)
-    sys.exit()
 
     if len(sys.argv) >= 3:
         cell_number = int(sys.argv[3])

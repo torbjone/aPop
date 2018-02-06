@@ -16,7 +16,7 @@
 // 08.06.2012 ehagen@umb.no
 
 objref this
-
+create axon[2]
 
 proc geom_nseg() {local nSec, L1, L2, D1, D2, nSeg1, nSeg2
   soma area(.5) // make sure diam reflects 3d points

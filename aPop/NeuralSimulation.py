@@ -129,18 +129,19 @@ class NeuralSimulation:
     def make_Ih_plateau(self, cell, plateau_distance, plot=False):
 
         plateau_value = self.return_gIhbar_at_distance(cell, plateau_distance)
-        orig_gIhbar = np.zeros(cell.totnsegs)
-        dist = np.zeros(cell.totnsegs)
+        orig_gIhbar = []
+        dist = []
         h.distance(0, 0.5)
-        comp = 0
         for sec in neuron.h.allsec():
             for seg in sec:
+                if not "apic" in sec.name():
+                    continue
                 try:
-                    orig_gIhbar[comp] = seg.gIhbar_Ih
+                    orig_gIhbar.append(seg.gIhbar_Ih)
                 except:
-                    orig_gIhbar[comp] = 0
-                dist[comp] = h.distance(seg.x)
-                comp += 1
+                    orig_gIhbar.append(0)
+                dist.append(h.distance(seg.x))
+
 
         h.distance(0, 0.5)
         for sec in neuron.h.allsec():
@@ -151,28 +152,46 @@ class NeuralSimulation:
                     except:
                         pass
 
-        plateau_gIhbar = np.zeros(cell.totnsegs)
-        dist = np.zeros(cell.totnsegs)
+        plateau_gIhbar = []
+        dist = []
         h.distance(0, 0.5)
-        comp = 0
         for sec in neuron.h.allsec():
             for seg in sec:
+                if not "apic" in sec.name():
+                    continue
                 try:
-                    plateau_gIhbar[comp] = seg.gIhbar_Ih
+                    plateau_gIhbar.append(seg.gIhbar_Ih)
                 except:
-                    plateau_gIhbar[comp] = 0
-                dist[comp] = h.distance(seg.x)
-                comp += 1
+                    plateau_gIhbar.append(0)
+                dist.append(h.distance(seg.x))
 
         if plot:
+
+            dist_norm = np.array(dist / np.max(dist))
+            fit = 0.0002 * (-0.8696 + 2.0870*np.exp(3.6161*(np.sort(dist_norm)-0.0)))
+            fit_plateau = 0.0002 * (-0.8696 + 2.0870*np.exp(3.6161*(np.sort(dist_norm)-0.0)))
+            fit_plateau[np.where(np.sort(dist) > plateau_distance)] = plateau_value
+
+            harnett_plateau_value = 0.00566
             fig = plt.figure()
             fig.subplots_adjust(left=0.15, bottom=0.15)
 
             ax = fig.add_subplot(111, xlabel="Distance ($\mu$m)",
-                                 ylabel="S/cm$^2$",
-                                 title="Plateau value: {} S/cm$^2$".format(plateau_value))
-            l1, = plt.plot(dist, orig_gIhbar, 'k.')
-            l2, = plt.plot(dist, plateau_gIhbar, 'r.')
+                                 ylabel="mS/cm$^2$",
+                                 )
+            l1, = plt.plot(dist, 1000 * np.array(orig_gIhbar), 'k.')
+            l2, = plt.plot(dist, 1000 * np.array(plateau_gIhbar), 'r.')
+            l3, = plt.plot(np.sort(dist), 1000 * np.array(fit), c='gray', ls='-')
+            l4, = plt.plot(np.sort(dist), 1000 * np.array(fit_plateau), c='y', ls='-')
+            ax.axhline(1000 * harnett_plateau_value, ls=':')
+            ax.text(0, 1000 * harnett_plateau_value,
+                "Harnett et al. (2015)\nplateau value = {:1.2f} mS/cm$^2$".format(1000*harnett_plateau_value),
+                    fontsize=9, va="bottom")
+
+            ax.text(1000, 1000 * plateau_value - 0.5,
+                "Plateau value =\n{:1.2f} mS/cm$^2$".format(1000*plateau_value),
+                    fontsize=9, va="top")
+
             simplify_axes(ax)
             plt.legend([l1, l2], ["Original peak Ih conductance",
                                   "Plateau peak Ih conductance"], frameon=False)
@@ -216,6 +235,9 @@ class NeuralSimulation:
                                "SK_E2", "K_Tst", "K_Pst", "Im",
                                "CaDynamics_E2", "Ca_LVAst", "Ca"],
                         'Ih_plateau': ["Nap_Et2", "NaTa_t", "NaTs2_t", "SKv3_1",
+                               "SK_E2", "K_Tst", "K_Pst", "Im",
+                               "CaDynamics_E2", "Ca_LVAst", "Ca"],
+                        'Ih_plateau2': ["Nap_Et2", "NaTa_t", "NaTs2_t", "SKv3_1",
                                "SK_E2", "K_Tst", "K_Pst", "Im",
                                "CaDynamics_E2", "Ca_LVAst", "Ca"],
                         'Ih_frozen': ["Nap_Et2", "NaTa_t", "NaTs2_t", "SKv3_1",
@@ -272,7 +294,9 @@ class NeuralSimulation:
                 if self.conductance_type == "Ih_frozen":
                     self.make_Ih_frozen(cell)
                 if self.conductance_type == "Ih_plateau":
-                    self.make_Ih_plateau(cell, 600)
+                    self.make_Ih_plateau(cell, 600, True)
+                if self.conductance_type == "Ih_plateau2":
+                    self.make_Ih_plateau(cell, 945, True)
                 self.remove_active_mechanisms(remove_lists[self.conductance_type])
                 self.make_cell_uniform(self.holding_potential)
 
@@ -330,11 +354,13 @@ class NeuralSimulation:
             all_morphs = []
             for f in fldrs:
                 files = os.listdir(join(morph_top_folder, f, "CNG version"))
-                morphs = [join(morph_top_folder, f,  "CNG version", mof) for mof in files if mof.endswith("swc")]
+                morphs = [join(morph_top_folder, f,  "CNG version", mof) for mof in files
+                          if mof.endswith("swc") or mof.endswith("hoc")]
                 all_morphs.extend(morphs)
 
             morph = all_morphs[np.random.randint(0, len(all_morphs) - 1)]
-
+            print(param_dict["cell_number"], morph)
+            # sys.exit()
             cell_params = {
                 'morphology': morph,
                 'v_init': self.holding_potential,
@@ -344,8 +370,8 @@ class NeuralSimulation:
                 'dt': self.dt,
                 'tstart': -self.cut_off,          # start time, recorders start at t=0
                 'tstop': self.end_t,
-                'pt3d': True,
-                #'custom_code': [join(morph_top_folder, 'custom_codes.hoc')],
+                'pt3d': False,
+                'custom_code': [join(morph_top_folder, 'custom_codes.hoc')],
                 'custom_fun': [active_declarations],  # will execute this function
                 'custom_fun_args': [{'conductance_type': self.conductance_type,
                                      'mu_factor': self.mu,
@@ -443,8 +469,8 @@ class NeuralSimulation:
             print("Max vmem STD: ", np.max(np.std(cell.vmem, axis=1)))
 
         self.save_neural_sim_single_input_data(cell)
-        if self.cell_number < 5 or (self.cell_number % 50) == 0:
-            self._plot_results(cell)
+        # if self.cell_number < 5 or (self.cell_number % 50) == 0:
+        self._plot_results(cell)
 
     def _make_synaptic_stimuli(self, cell):
 
@@ -623,8 +649,8 @@ if __name__ == '__main__':
 
     # from param_dicts import classic_population_params as param_dict
     # from param_dicts import stick_population_params as param_dict
-    # from param_dicts import generic_population_params as param_dict
-    from param_dicts import multimorph_population_params as param_dict
+    from param_dicts import generic_population_params as param_dict
+    # from param_dicts import multimorph_population_params as param_dict
 
     param_dict.update({'input_region': sys.argv[1],
                        'correlation': float(sys.argv[2]),

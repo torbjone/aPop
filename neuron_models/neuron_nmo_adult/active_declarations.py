@@ -146,3 +146,42 @@ def active_declarations(**kwargs):
 
     exec('biophys_%s(**kwargs)' % kwargs['conductance_type'])
 
+def inspect_cells():
+
+        morph_top_folder = join(".")
+        from aPop.rotation_lastis import find_major_axes, alignCellToAxes
+        fldrs = [f for f in os.listdir(morph_top_folder) if os.path.isdir(join(morph_top_folder, f))
+                 and not f.startswith("__")]
+        all_morphs = []
+        for f in fldrs:
+            files = os.listdir(join(morph_top_folder, f, "CNG version"))
+            morphs = [join(morph_top_folder, f,  "CNG version", mof) for mof in files if mof.endswith("swc")]
+            all_morphs.extend(morphs)
+        zs = []
+        diams = []
+        for m in all_morphs:
+            cell_params = {
+                'morphology': m,
+                'v_init': -70,
+                'passive': True,           # switch on passive mechs
+                'nsegs_method': 'lambda_f',  # method for setting number of segments,
+                'lambda_f': 100,           # segments are isopotential at this frequency
+                'dt': 2**-2,
+                'tstart': 0,          # start time, recorders start at t=0
+                'tstop': 20,
+            }
+            # try:
+            cell = LFPy.Cell(**cell_params)
+
+            axes = find_major_axes(cell)
+            alignCellToAxes(cell, axes[2], axes[1])
+            zs.append(cell.zmid)
+            diams.append(cell.diam)
+
+        for idx in range(len(zs)):
+            plt.plot(zs[idx], diams[idx], '.')
+        plt.show()
+        morph = all_morphs[np.random.randint(0, len(all_morphs) - 1)]
+        print(morph)
+if __name__ == '__main__':
+    inspect_cells()

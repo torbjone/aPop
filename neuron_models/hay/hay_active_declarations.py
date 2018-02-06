@@ -563,25 +563,27 @@ def return_gh(holding_potential):
     # make_syaptic_stimuli(cell, input_idx)
     # cell.simulate(rec_vmem=True, rec_imem=True)
 
-    gIh = np.zeros(cell.totnsegs)
-    gIhbar = np.zeros(cell.totnsegs)
-    gpas = np.zeros(cell.totnsegs)
-    dist = np.zeros(cell.totnsegs)
+    gIh = []
+    gIhbar = []
+    gpas = []
+    dist = []
     nrn.distance()
     comp = 0
     for sec in cell.allseclist:
         for seg in sec:
+            if not "apic" in sec.name():
+                continue
             try:
-                gIh[comp] = seg.gIh_Ih
-                gIhbar[comp] = seg.gIhbar_Ih
+                gIh.append(seg.gIh_Ih)
+                gIhbar.append(seg.gIhbar_Ih)
             except(NameError, AttributeError):
-                gIh[comp] = 0
-                gIhbar[comp] = 0
-            gpas[comp] = seg.g_pas
-            dist[comp] = nrn.distance(seg.x)
+                gIh.append(0)
+                gIhbar.append(0)
+            gpas.append(seg.g_pas)
+            dist.append(nrn.distance(seg.x))
             comp += 1
 
-    return dist, gIh, gIhbar, gpas
+    return np.array(dist), np.array(gIh), np.array(gIhbar), np.array(gpas)
 
 
 def plot_frozen_gh():
@@ -625,6 +627,26 @@ def plot_gh():
     plt.xlabel('Distance from soma [$\mu m$]')
     plt.savefig('Ih_conductance.png')
     plt.show()
+
+def fit_gh():
+    dist, gIh_70, gIhbar, gpas = return_gh(-70)
+
+    dist_norm = dist / np.max(dist)
+    fit = 0.0002 * (-0.8696 + 2.0870*np.exp(3.6161*(np.sort(dist_norm)-0.0)))
+
+    plt.subplot(111)
+
+    plt.plot(dist, 1000 * gIhbar, 'o', c='gray', label='gIh_bar')
+    plt.plot(np.sort(dist), 1000 * fit, '-', c='r', label='gIh_bar')
+    plt.grid(True)
+
+    plt.legend(loc=2)
+    plt.ylabel('Conductance [mS/cm^2]')
+    plt.xlabel('Distance from soma [$\mu m$]')
+    plt.savefig('Ih_conductance_fit.png')
+    plt.show()
+
+
 
 def test_ca_initiation():
 
@@ -702,10 +724,44 @@ def plot_cell():
                  [cell.zstart[idx], cell.zend[idx]], lw=2)
     plt.show()
 
+
+def inspect_cell():
+
+    morph_top_folder = join(".")
+    from aPop.rotation_lastis import find_major_axes, alignCellToAxes
+
+    zs = []
+    diams = []
+
+    cell_params = {
+        'morphology': "cell1.hoc",
+        'v_init': -70,
+        'passive': True,           # switch on passive mechs
+        'nsegs_method': 'lambda_f',  # method for setting number of segments,
+        'lambda_f': 100,           # segments are isopotential at this frequency
+        'dt': 2**-2,
+        'tstart': 0,          # start time, recorders start at t=0
+        'tstop': 20,
+    }
+    # try:
+    cell = LFPy.Cell(**cell_params)
+
+    axes = find_major_axes(cell)
+    alignCellToAxes(cell, axes[2], axes[1])
+    zs.append(cell.zmid)
+    diams.append(cell.diam)
+
+    for idx in range(len(zs)):
+        plt.plot(zs[idx], diams[idx], '.')
+    plt.show()
+
+
 if __name__ == '__main__':
+    # inspect_cell()
     # test_steady_state()
     # plot_gh()
-    plot_cell()
+    fit_gh()
+    # plot_cell()
     #simulate_synaptic_input(0, -65, 'active')
     # plt.savefig('Ca_initiation_testing.png')
     # test_ca_initiation()
