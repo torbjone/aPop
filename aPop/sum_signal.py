@@ -1,10 +1,10 @@
 
 
 
-sim_name = 'hay_classic'     # Control simulation
-
+import sys
 from Population import sum_and_remove
 
+sim_name = 'hay_classic'     # Control simulation
 if sim_name == "stick_generic":
     from param_dicts import stick_population_params as param_dict
 elif sim_name == "hay_generic":
