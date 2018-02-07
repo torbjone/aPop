@@ -15,7 +15,10 @@ from NeuralSimulation import NeuralSimulation
 import tools
 import scipy.fftpack as sf
 import matplotlib
-from matplotlib.ticker import LogLocator, NullFormatter
+from matplotlib.ticker import LogLocator, NullFormatter, LogFormatterExponent
+
+locmin = LogLocator(base=10.0, numticks=8,
+              subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
 
 def plot_decomposed_dipole():
     sim_folder = join('..', 'stick_population', 'simulations')
@@ -393,15 +396,15 @@ def plot_figure_8_hbp():
                 # line_names.append(input_region)
 
 
-            locmaj = matplotlib.ticker.LogLocator(base=10, numticks=8)
+            locmaj = LogLocator(base=10, numticks=8)
             ax.yaxis.set_major_locator(locmaj)
-            ax.yaxis.set_minor_locator(matplotlib.ticker.LogLocator())
-            ax.yaxis.set_major_formatter(matplotlib.ticker.LogFormatterExponent())
+            ax.yaxis.set_minor_locator(LogLocator())
+            ax.yaxis.set_major_formatter(LogFormatterExponent())
             # ax.set_yticks(ax.get_yticks()[1:-2][::2])
 
-            locmin = matplotlib.ticker.LogLocator(base=10.0, numticks=8, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
+            locmin = LogLocator(base=10.0, numticks=8, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
             ax.yaxis.set_minor_locator(locmin)
-            ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+            ax.yaxis.set_minor_formatter(NullFormatter())
 
             ax.set_xticklabels(["", "1", "10", "100"])
             # if c == 0:
@@ -424,6 +427,40 @@ def plot_figure_8_hbp():
     plt.close('all')
 
 
+def plot_Ih_dists_to_ax(ax):
+
+    harnett_plateau_value = 0.00566
+
+    plateau_value_early = 0.00221
+    plateau_distance_early = 610
+
+    plateau_value_late = 0.0057
+    plateau_distance_late = 945
+
+    dist = np.linspace(0, 1291, 500)
+    dist_norm = np.array(dist / np.max(dist))
+    fit = 0.0002 * (-0.8696 + 2.0870*np.exp(3.6161*(dist_norm-0.0)))
+    fit_plateau_early = 0.0002 * (-0.8696 + 2.0870*np.exp(3.6161*(dist_norm-0.0)))
+    fit_plateau_early[np.where(dist > plateau_distance_early)] = plateau_value_early
+
+    fit_plateau_late = 0.0002 * (-0.8696 + 2.0870*np.exp(3.6161*(dist_norm-0.0)))
+    fit_plateau_late[np.where(dist >= plateau_distance_late)] = plateau_value_late
+
+    l1, = plt.plot(dist, 1000 * np.array(fit), c='b', ls='-', lw=3)
+    l2, = plt.plot(dist, 1000 * fit_plateau_early, 'orange', lw=3)
+    l3, = plt.plot(dist, 1000 * fit_plateau_late, 'r-', lw=3)
+    ax.axhline(1000 * harnett_plateau_value, ls=':', color="gray")
+    # ax.text(0, 1000 * harnett_plateau_value,
+    #     "Harnett et al. (2015)\nplateau value = {:1.2f} mS/cm$^2$".format(1000*harnett_plateau_value),
+    #         fontsize=9, va="bottom")
+
+    # ax.text(1000, 1000 * plateau_value - 0.5,
+    #     "Plateau value =\n{:1.2f} mS/cm$^2$".format(1000*plateau_value),
+    #         fontsize=9, va="top")
+
+    simplify_axes(ax)
+
+
 def plot_figure_control_Ih_plateau():
 
     from param_dicts import classic_population_params as param_dict
@@ -431,41 +468,43 @@ def plot_figure_control_Ih_plateau():
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     pop_size = 226
 
-    param_dict.update({
-                       'cell_number': 0,
-                      })
+    param_dict['cell_number'] = 0
 
     elec_z = param_dict['center_electrode_parameters']['z']
     elec_x = param_dict['center_electrode_parameters']['x']
 
-    soma_elec = np.argmin(np.abs(elec_z - 0) + np.abs(elec_x - 0)) #+ np.abs(elec_x - 0))
-    apic_elec = np.argmin(np.abs(elec_z - 1000) + np.abs(elec_x - 0)) #+ np.abs(elec_x - 0))
+    soma_elec = np.argmin(np.abs(elec_z - 0) + np.abs(elec_x - 0))
+    apic_elec = np.argmin(np.abs(elec_z - 1000) + np.abs(elec_x - 0))
 
-    correlations = [0, 1.0]#param_dict['correlations']
+    correlations = [0, 1.0]
     input_regions = ['distal_tuft', 'homogeneous']
-    conductance_types = ["Ih", "Ih_plateau", "passive"]
+    conductance_types = ["Ih", "Ih_plateau", "Ih_plateau2", "passive"]
 
     plt.close('all')
-    fig = plt.figure(figsize=(5, 5))
+    fig = plt.figure(figsize=(7, 5))
     fig.subplots_adjust(right=0.98, wspace=0.1, hspace=0.6,
-                        left=0.095, top=0.83, bottom=0.15)
+                        left=0.095, top=0.9, bottom=0.12)
 
-    psd_ax_dict = {'ylim': [1e-7, 1e-1], #[1e-1, 1e1],#
+    psd_ax_dict = {'ylim': [1e-6, 1e-1],
                     'yscale': 'log',
                     'xscale': 'log',
                     'xlim': [1, 500],
-                   #'xlabel': 'Frequency (Hz)',
                    'xticklabels': ['1', '10', '100'],
                    'xticks': [1e0, 10, 100],
                     }
-    num_plot_cols = 3
+    num_plot_cols = 4
     num_plot_rows = 2
 
-    ax_morph_1 = fig.add_axes([0.05, 0.5, 0.17, 0.3], title="Distal tuft\ninput",
+    ax_morph_1 = fig.add_axes([0.32, 0.55, 0.17, 0.3], title="Distal tuft\ninput",
                               frameon=False, xticks=[], yticks=[])
-    ax_morph_2 = fig.add_axes([0.05, 0.1, 0.17, 0.3], title="Uniform\ninput",
+    ax_morph_2 = fig.add_axes([0.32, 0.07, 0.17, 0.3], title="Uniform\ninput",
                               frameon=False, xticks=[], yticks=[])
 
+    ax_Ih = fig.add_axes([0.1, 0.55, 0.17, 0.3], xlabel="Distance ($\mu$m)",
+                                 ylabel="mS/cm$^2$",
+                            title="Peak I$_h$\nconductance")
+    mark_subplots(ax_Ih, ypos=1.3)
+    plot_Ih_dists_to_ax(ax_Ih)
     dist_image = plt.imread(join(param_dict['root_folder'], 'figures',
                                  "schematic_pop", 'linear_increase_distal_tuft_single_elec.png'))
 
@@ -482,7 +521,7 @@ def plot_figure_control_Ih_plateau():
 
         for c, correlation in enumerate(correlations):
             param_dict['correlation'] = correlation
-            plot_number = i * num_plot_cols + c + 2
+            plot_number = i * num_plot_cols + c + 3
             lines = []
             line_names = []
 
@@ -495,75 +534,49 @@ def plot_figure_control_Ih_plateau():
                 param_dict['conductance_type'] = conductance_type
                 ns = NeuralSimulation(**param_dict)
                 name = 'summed_center_signal_%s_%dum' % (ns.population_sim_name, pop_size)
-                # try:
                 lfp = np.load(join(folder, '%s.npy' % name))[[soma_elec, apic_elec], :]
-                # except:
-                #     print name
-                #     continue
 
-                # lfp = np.load(join(folder, '%s.npy' % name))[:, :]
-                # print name, lfp.shape
                 freq, psd = tools.return_freq_and_psd_welch(lfp, ns.welch_dict)
                 print(input_region, correlation, conductance_type, np.max(psd), psd.shape)
-                # plt.close("all")
                 psd_dict[conductance_type] = psd
 
             for conductance_type in conductance_types:
 
                 param_dict['conductance_type'] = conductance_type
-                # try:
-                psd = psd_dict[conductance_type] #/ psd_dict[0.0]
-                # except:
-                #     continue
+                psd = psd_dict[conductance_type]
                 f_idx_max = np.argmin(np.abs(freq - param_dict['max_freq']))
                 f_idx_min = np.argmin(np.abs(freq - 1.))
                 l, = ax.loglog(freq[f_idx_min:f_idx_max], (psd[0][f_idx_min:f_idx_max]),
                              c=cond_clr[conductance_type], lw=3, clip_on=True, solid_capstyle='round')
-                # ax.plot(freq[f_idx_min:f_idx_max], np.log10(psd[1][f_idx_min:f_idx_max]), '--',
-                #              c=cond_clr[conductance_type], lw=1.5, clip_on=True, solid_capstyle='butt')
 
                 lines.append(l)
                 line_names.append(cond_names[conductance_type])
-                # img = ax.pcolormesh(freq[1:freq_idx], z, psd[:, 1:freq_idx], **im_dict)
-                if i==0 and c == 0:
+                if c == 0:
                     ax.set_xlabel('frequency (Hz)', labelpad=-0)
-                    ax.set_ylabel('LFP-PSD\nlog$_{10}$($\mu$V$^2$/Hz)', labelpad=0)
-                #     c_ax = fig.add_axes([0.37, 0.2, 0.005, 0.17])
-                #     cbar = plt.colorbar(img, cax=c_ax, label='$\mu$V$^2$/Hz')
-                # plt.axis('auto')
-                # plt.colorbar(img)
-                # l, = ax.loglog(freq, psd[0], c=input_region_clr[input_region], lw=3)
-                # lines.append(l)
-                # line_names.append(input_region)
+                    ax.set_ylabel('log LFP-PSD', labelpad=0)
 
-
-            locmaj = matplotlib.ticker.LogLocator(base=10, numticks=8)
+            locmaj = LogLocator(base=10, numticks=8)
             ax.yaxis.set_major_locator(locmaj)
-            ax.yaxis.set_minor_locator(matplotlib.ticker.LogLocator())
-            ax.yaxis.set_major_formatter(matplotlib.ticker.LogFormatterExponent())
-            # ax.set_yticks(ax.get_yticks()[1:-2][::2])
+            ax.yaxis.set_minor_locator(LogLocator())
+            ax.yaxis.set_major_formatter(LogFormatterExponent())
 
-            locmin = matplotlib.ticker.LogLocator(base=10.0, numticks=8, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
             ax.yaxis.set_minor_locator(locmin)
-            ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+            ax.yaxis.set_minor_formatter(NullFormatter())
 
             ax.set_xticklabels(["", "1", "10", "100"])
-            # if c == 0:
-            # ax.set_yticks(ax.get_yticks()[1:-2][::2])
-            if not c==0:
+
+            if not c == 0:
                 ax.set_yticklabels([])
             ax.grid(True)
 
-    fig.legend(lines, line_names, loc='lower center',
-               frameon=False, ncol=3, fontsize=9)
+    fig.legend(lines, line_names, loc=(0.03, 0.1),
+               frameon=False, ncol=1, fontsize=10)
     simplify_axes(fig.axes)
 
-    mark_subplots([ax_morph_1, ax_morph_2], ypos=1.4, xpos=-0.2)
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_control_Ih_plateau_{}.png'.format(pop_size)))
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_control_Ih_plateau_{}.pdf'.format(pop_size)), dpi=300)
+    mark_subplots([ax_morph_1, ax_morph_2], "BC", ypos=1.4, xpos=-0.2)
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_control_Ih_plateau2_{}.png'.format(pop_size)))
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_control_Ih_plateau2_{}.pdf'.format(pop_size)), dpi=300)
     plt.close('all')
-
-
 
 
 def plot_figure_control_multimorph():
@@ -575,45 +588,39 @@ def plot_figure_control_multimorph():
     folder_ge = join(param_dict_ge['root_folder'], param_dict_ge['save_folder'], 'simulations')
     pop_size = 637
 
-    param_dict_mm.update({
-                       'cell_number': 0,
-                      })
-    param_dict_ge.update({
-                       'cell_number': 0,
-                      })
+    param_dict_mm['cell_number'] = 0
+    param_dict_ge['cell_number'] = 0
+    param_dict_mm['distribution'] = 'linear_increase'
+    param_dict_ge['distribution'] = 'linear_increase'
 
     elec_z = param_dict_mm['center_electrode_parameters']['z']
     elec_x = param_dict_mm['center_electrode_parameters']['x']
 
-    soma_elec = np.argmin(np.abs(elec_z - 0) + np.abs(elec_x - 0)) #+ np.abs(elec_x - 0))
-    apic_elec = np.argmin(np.abs(elec_z - 1000) + np.abs(elec_x - 0)) #+ np.abs(elec_x - 0))
+    soma_elec = np.argmin(np.abs(elec_z - 0) + np.abs(elec_x - 0))
+    apic_elec = np.argmin(np.abs(elec_z - 1000) + np.abs(elec_x - 0))
 
-    correlations = [0, 1.0]#param_dict['correlations']
+    correlations = [0, 1.0]
     input_regions = ['distal_tuft', 'homogeneous']
     mus = [None, 2.0]
 
-    param_dict_mm['distribution'] = 'linear_increase'
-    param_dict_ge['distribution'] = 'linear_increase'
 
     plt.close('all')
     fig = plt.figure(figsize=(10, 7))
     fig.subplots_adjust(right=0.98, wspace=0.1, hspace=0.6,
                         left=0.095, top=0.93, bottom=0.17)
 
-    psd_ax_dict = {'ylim': [1e-6, 1e-0], #[1e-1, 1e1],#
+    psd_ax_dict = {'ylim': [1e-6, 1e-0],
                     'yscale': 'log',
                     'xscale': 'log',
                     'xlim': [1, 500],
-                   #'xlabel': 'Frequency (Hz)',
                    'xticklabels': ['1', '10', '100'],
                    'xticks': [1e0, 10, 100],
                     }
 
-    psd_ax_dict_norm = {'ylim': [1e-2, 1e3], #[1e-1, 1e1],#
+    psd_ax_dict_norm = {'ylim': [1e-2, 1e3],
                     'yscale': 'log',
                     'xscale': 'log',
                     'xlim': [1, 500],
-                   #'xlabel': 'Frequency (Hz)',
                    'xticklabels': ['1', '10', '100'],
                    'xticks': [1e0, 10, 100],
                     }
@@ -621,9 +628,9 @@ def plot_figure_control_multimorph():
     num_plot_cols = 6
     num_plot_rows = 2
 
-    ax_morph_1 = fig.add_axes([0.05, 0.55, 0.17, 0.3], title="Distal tuft\ninput",
+    ax_morph_1 = fig.add_axes([0.0, 0.55, 0.17, 0.3], title="Distal tuft\ninput",
                               frameon=False, xticks=[], yticks=[])
-    ax_morph_2 = fig.add_axes([0.05, 0.13, 0.17, 0.3], title="Uniform\ninput",
+    ax_morph_2 = fig.add_axes([0.0, 0.13, 0.17, 0.3], title="Uniform\ninput",
                               frameon=False, xticks=[], yticks=[])
 
     dist_image = plt.imread(join(param_dict_mm['root_folder'], 'figures',
@@ -649,8 +656,11 @@ def plot_figure_control_multimorph():
             line_names = []
 
             ax = fig.add_subplot(num_plot_rows, num_plot_cols, plot_number, **psd_ax_dict)
-            ax_norm = fig.add_subplot(num_plot_rows, num_plot_cols, plot_number + 2, **psd_ax_dict_norm)
+            ax_norm = fig.add_subplot(num_plot_rows, num_plot_cols,
+                                      plot_number + 3, **psd_ax_dict_norm)
             ax.set_title('c=%d' % correlation)
+            ax_norm.set_title('c=%d' % correlation)
+            ax_norm.axhline(1, ls="--", color='gray')
 
             psd_dict_mm = {}
             psd_dict_ge = {}
@@ -662,19 +672,14 @@ def plot_figure_control_multimorph():
                 ns_ge = NeuralSimulation(**param_dict_ge)
                 name_mm = 'summed_center_signal_%s_%dum' % (ns_mm.population_sim_name, pop_size)
                 name_ge = 'summed_center_signal_%s_%dum' % (ns_ge.population_sim_name, pop_size)
-                # try:
+
                 lfp_mm = np.load(join(folder_mm, '%s.npy' % name_mm))[[soma_elec, apic_elec], :]
                 lfp_ge = np.load(join(folder_ge, '%s.npy' % name_ge))[[soma_elec, apic_elec], :]
-                # except:
-                #     print name
-                #     continue
 
-                # lfp = np.load(join(folder, '%s.npy' % name))[:, :]
-                # print name, lfp.shape
                 freq, psd_mm = tools.return_freq_and_psd_welch(lfp_mm, ns_mm.welch_dict)
                 freq, psd_ge = tools.return_freq_and_psd_welch(lfp_ge, ns_ge.welch_dict)
                 print(input_region, correlation, mu, np.max(psd_mm), psd_mm.shape)
-                # plt.close("all")
+
                 psd_dict_mm[mu] = psd_mm
                 psd_dict_ge[mu] = psd_ge
 
@@ -682,72 +687,72 @@ def plot_figure_control_multimorph():
                 param_dict_mm['mu'] = mu
                 param_dict_ge['mu'] = mu
 
-                # try:
-                psd_mm = psd_dict_mm[mu][0] #/ psd_dict[0.0]
-                psd_ge = psd_dict_ge[mu][0] #/ psd_dict[0.0]
+                psd_mm = psd_dict_mm[mu][0]
+                psd_ge = psd_dict_ge[mu][0]
 
                 psd_mm_norm = psd_dict_mm[mu][0] / psd_dict_mm[None][0]
                 psd_ge_norm = psd_dict_ge[mu][0] / psd_dict_ge[None][0]
 
-                # except:
-                #     continue
                 f_idx_max = np.argmin(np.abs(freq - param_dict_mm['max_freq']))
                 f_idx_min = np.argmin(np.abs(freq - 1.))
 
                 l_ge, = ax.loglog(freq[f_idx_min:f_idx_max], (psd_ge[f_idx_min:f_idx_max]),
                              c=cond_clr[mu], lw=3, clip_on=True, solid_capstyle='round')
-                l_mm, = ax.loglog(freq[f_idx_min:f_idx_max], (psd_mm[f_idx_min:f_idx_max]), '--',
-                             c=cond_clr_mm[mu], lw=3, clip_on=True, solid_capstyle='round')
-
-                ax_norm.loglog(freq[f_idx_min:f_idx_max], (psd_ge_norm[f_idx_min:f_idx_max]),
-                             c=cond_clr[mu], lw=3, clip_on=True, solid_capstyle='round')
-                ax_norm.loglog(freq[f_idx_min:f_idx_max], (psd_mm_norm[f_idx_min:f_idx_max]), '--',
-                             c=cond_clr_mm[mu], lw=3, clip_on=True, solid_capstyle='round')
-
-
-                # ax.plot(freq[f_idx_min:f_idx_max], np.log10(psd[1][f_idx_min:f_idx_max]), '--',
-                #              c=cond_clr[conductance_type], lw=1.5, clip_on=True, solid_capstyle='butt')
+                l_mm, = ax.loglog(freq[f_idx_min:f_idx_max], (psd_mm[f_idx_min:f_idx_max]),
+                             c=cond_clr_mm[mu], lw=1.5, clip_on=True, solid_capstyle='round')
+                if not mu is None:
+                    ax_norm.loglog(freq[f_idx_min:f_idx_max], (psd_ge_norm[f_idx_min:f_idx_max]),
+                                 c=cond_clr[mu], lw=3, clip_on=True, solid_capstyle='round')
+                    ax_norm.loglog(freq[f_idx_min:f_idx_max], (psd_mm_norm[f_idx_min:f_idx_max]),
+                                 c=cond_clr_mm[mu], lw=1.5, clip_on=True, solid_capstyle='round')
 
                 lines.append(l_mm)
                 lines.append(l_ge)
                 line_names.append(cond_names[mu] + " (67 morphologies)")
                 line_names.append(cond_names[mu] + " (1 morphology)")
-                # line_names.append(cond_names_ge[mu])
-                # img = ax.pcolormesh(freq[1:freq_idx], z, psd[:, 1:freq_idx], **im_dict)
-                if i==0 and c == 0:
-                    ax.set_xlabel('frequency (Hz)', labelpad=-0)
-                    ax.set_ylabel('LFP-PSD\nlog$_{10}$($\mu$V$^2$/Hz)', labelpad=0)
-                #     c_ax = fig.add_axes([0.37, 0.2, 0.005, 0.17])
-                #     cbar = plt.colorbar(img, cax=c_ax, label='$\mu$V$^2$/Hz')
-                # plt.axis('auto')
-                # plt.colorbar(img)
-                # l, = ax.loglog(freq, psd[0], c=input_region_clr[input_region], lw=3)
-                # lines.append(l)
-                # line_names.append(input_region)
 
+            if c == 0:
 
-            locmaj = matplotlib.ticker.LogLocator(base=10, numticks=8)
-            ax.yaxis.set_major_locator(locmaj)
-            ax.yaxis.set_minor_locator(matplotlib.ticker.LogLocator())
-            ax.yaxis.set_major_formatter(matplotlib.ticker.LogFormatterExponent())
-            # ax.set_yticks(ax.get_yticks()[1:-2][::2])
+                mark_subplots(ax, "B" if i == 0 else "E" )
+                mark_subplots(ax_norm, "C" if i == 0 else "F")
+                ax.set_xlabel('frequency (Hz)', labelpad=-0)
+                ax.set_ylabel('log LFP-PSD', labelpad=0)
+                ax_norm.set_xlabel('frequency (Hz)', labelpad=-0)
+                ax_norm.set_ylabel('PSD modulation', labelpad=0)
 
-            locmin = matplotlib.ticker.LogLocator(base=10.0, numticks=8, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
-            ax.yaxis.set_minor_locator(locmin)
-            ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+            for ax_ in [ax, ax_norm]:
+                locmaj = LogLocator(base=10, numticks=8)
+                ax_.yaxis.set_major_locator(locmaj)
+                ax_.yaxis.set_minor_locator(LogLocator())
+                ax_.yaxis.set_major_formatter(LogFormatterExponent())
 
-            ax.set_xticklabels(["", "1", "10", "100"])
-            # if c == 0:
-            # ax.set_yticks(ax.get_yticks()[1:-2][::2])
-            if not c==0:
+                locmin = LogLocator(base=10.0, numticks=8,
+                                    subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
+                ax_.yaxis.set_minor_locator(locmin)
+                ax_.yaxis.set_minor_formatter(NullFormatter())
+
+                locmaj = LogLocator(base=10, numticks=8)
+                ax_.xaxis.set_major_locator(locmaj)
+                ax_.xaxis.set_minor_locator(LogLocator())
+                ax_.xaxis.set_major_formatter(LogFormatterExponent())
+
+                locmin = LogLocator(base=10.0, numticks=8,
+                                    subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
+                ax_.xaxis.set_minor_locator(locmin)
+                ax_.xaxis.set_minor_formatter(NullFormatter())
+
+                ax_.set_xticklabels(["", "1", "10", "100"])
+
+            if not c == 0:
                 ax.set_yticklabels([])
+                ax_norm.set_yticklabels([])
             ax.grid(True)
 
     fig.legend(lines, line_names, loc='lower center',
-               frameon=False, ncol=1, fontsize=9)
+               frameon=False, ncol=2, fontsize=12)
     simplify_axes(fig.axes)
 
-    mark_subplots([ax_morph_1, ax_morph_2], ypos=1.4, xpos=-0.2)
+    mark_subplots([ax_morph_1, ax_morph_2], "AD", ypos=1.4, xpos=-0.2)
     plt.savefig(join(param_dict_mm['root_folder'], 'figures', 'Figure_control_multimorph_{}_67_norm.png'.format(pop_size)))
     plt.savefig(join(param_dict_mm['root_folder'], 'figures', 'Figure_control_multimorph_{}_67_norm.pdf'.format(pop_size)), dpi=300)
     plt.close('all')
@@ -872,15 +877,15 @@ def plot_figure_8_stick():
                     ax.set_ylabel('LFP-PSD\nlog$_{10}$($\mu$V$^2$/Hz)', labelpad=0)
 
 
-            locmaj = matplotlib.ticker.LogLocator(base=10, numticks=8)
+            locmaj = LogLocator(base=10, numticks=8)
             ax.yaxis.set_major_locator(locmaj)
-            ax.yaxis.set_minor_locator(matplotlib.ticker.LogLocator())
-            ax.yaxis.set_major_formatter(matplotlib.ticker.LogFormatterExponent())
+            ax.yaxis.set_minor_locator(LogLocator())
+            ax.yaxis.set_major_formatter(LogFormatterExponent())
             # ax.set_yticks(ax.get_yticks()[1:-2][::2])
 
-            locmin = matplotlib.ticker.LogLocator(base=10.0, numticks=8, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
+            locmin = LogLocator(base=10.0, numticks=8, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
             ax.yaxis.set_minor_locator(locmin)
-            ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+            ax.yaxis.set_minor_formatter(NullFormatter())
 
             ax.set_xticklabels(["", "1", "10", "100"])
 
@@ -1114,30 +1119,30 @@ def plot_figure_4():
                 # if c == 0:
                 # ax.set_yticks(ax.get_yticks()[::2])
 
-                locmaj = matplotlib.ticker.LogLocator(base=10, numticks=3)
+                locmaj = LogLocator(base=10, numticks=3)
                 ax.xaxis.set_major_locator(locmaj)
 
-                locmin = matplotlib.ticker.LogLocator(base=10.0, numticks=3, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
+                locmin = LogLocator(base=10.0, numticks=3, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
                 ax.xaxis.set_minor_locator(locmin)
-                ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+                ax.xaxis.set_minor_formatter(NullFormatter())
                 ax.set_xticklabels(["", "1", "10", "100"])
 
-            locmaj = matplotlib.ticker.LogLocator(base=10, numticks=8)
+            locmaj = LogLocator(base=10, numticks=8)
             ax_psd.yaxis.set_major_locator(locmaj)
-            ax_psd.yaxis.set_minor_locator(matplotlib.ticker.LogLocator())
-            ax_psd.yaxis.set_major_formatter(matplotlib.ticker.LogFormatterExponent())
+            ax_psd.yaxis.set_minor_locator(LogLocator())
+            ax_psd.yaxis.set_major_formatter(LogFormatterExponent())
 
-            locmin = matplotlib.ticker.LogLocator(base=10.0, numticks=8, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
+            locmin = LogLocator(base=10.0, numticks=8, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
             ax_psd.yaxis.set_minor_locator(locmin)
-            ax_psd.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+            ax_psd.yaxis.set_minor_formatter(NullFormatter())
 
 
-            locmaj = matplotlib.ticker.LogLocator(base=10, numticks=3)
+            locmaj = LogLocator(base=10, numticks=3)
             ax_psd.xaxis.set_major_locator(locmaj)
 
-            locmin = matplotlib.ticker.LogLocator(base=10.0, numticks=3, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
+            locmin = LogLocator(base=10.0, numticks=3, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
             ax_psd.xaxis.set_minor_locator(locmin)
-            ax_psd.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+            ax_psd.xaxis.set_minor_formatter(NullFormatter())
             ax_psd.set_xticklabels(["", "1", "10", "100"])
 
     fig.legend(lines, line_names, loc='lower center',
@@ -1583,22 +1588,22 @@ def plot_figure_7():
                         #     ax.set_ylabel('LFP-PSD\nlog$_{10}$($\mu$V$^2$/Hz)', labelpad=-3)
                         #     ax.set_xlabel('frequency (Hz)')
 
-                    locmaj = matplotlib.ticker.LogLocator(base=10, numticks=8)
+                    locmaj = LogLocator(base=10, numticks=8)
                     ax.yaxis.set_major_locator(locmaj)
-                    ax.yaxis.set_minor_locator(matplotlib.ticker.LogLocator())
-                    ax.yaxis.set_major_formatter(matplotlib.ticker.LogFormatterExponent())
+                    ax.yaxis.set_minor_locator(LogLocator())
+                    ax.yaxis.set_major_formatter(LogFormatterExponent())
 
-                    locmin = matplotlib.ticker.LogLocator(base=10.0, numticks=8, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
+                    locmin = LogLocator(base=10.0, numticks=8, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
                     ax.yaxis.set_minor_locator(locmin)
-                    ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+                    ax.yaxis.set_minor_formatter(NullFormatter())
 
 
-                    locmaj = matplotlib.ticker.LogLocator(base=10, numticks=3)
+                    locmaj = LogLocator(base=10, numticks=3)
                     ax.xaxis.set_major_locator(locmaj)
 
-                    locmin = matplotlib.ticker.LogLocator(base=10.0, numticks=3, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
+                    locmin = LogLocator(base=10.0, numticks=3, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
                     ax.xaxis.set_minor_locator(locmin)
-                    ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+                    ax.xaxis.set_minor_formatter(NullFormatter())
                     ax.set_xticklabels(["", "1", "10", "100"])
 
                     if not c == 0:
@@ -1643,22 +1648,22 @@ def plot_figure_7():
 
                 ax.set_xticklabels(['', '1', '10', '100'])
 
-                locmaj = matplotlib.ticker.LogLocator(base=10, numticks=8)
+                locmaj = LogLocator(base=10, numticks=8)
                 ax.yaxis.set_major_locator(locmaj)
-                ax.yaxis.set_minor_locator(matplotlib.ticker.LogLocator())
-                ax.yaxis.set_major_formatter(matplotlib.ticker.LogFormatterExponent())
+                ax.yaxis.set_minor_locator(LogLocator())
+                ax.yaxis.set_major_formatter(LogFormatterExponent())
 
-                locmin = matplotlib.ticker.LogLocator(base=10.0, numticks=8, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
+                locmin = LogLocator(base=10.0, numticks=8, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
                 ax.yaxis.set_minor_locator(locmin)
-                ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+                ax.yaxis.set_minor_formatter(NullFormatter())
 
 
-                locmaj = matplotlib.ticker.LogLocator(base=10, numticks=3)
+                locmaj = LogLocator(base=10, numticks=3)
                 ax.xaxis.set_major_locator(locmaj)
 
-                locmin = matplotlib.ticker.LogLocator(base=10.0, numticks=3, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
+                locmin = LogLocator(base=10.0, numticks=3, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
                 ax.xaxis.set_minor_locator(locmin)
-                ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+                ax.xaxis.set_minor_formatter(NullFormatter())
                 ax.set_xticklabels(["", "1", "10", "100"])
                 if not c == 0:
                     ax.set_yticklabels([''] * 3)
@@ -1689,6 +1694,9 @@ def plot_figure_7_review_remade():
 
     pop_cell_number = [10, 50, 100, 200, 500, 1000, 4000, 10000]
     pop_sizes = [38, 74, 104, 143, 226, 323, 637, 999]
+    plot_pop_sizes = [10, 100, 1000, 10000]
+
+    pop_size_color = lambda idx: plt.cm.jet(idx / (len(pop_cell_number)))
 
     full_pop_size = 999
     correlations = [0.0, 0.01, 0.1, 1.0]
@@ -1713,9 +1721,17 @@ def plot_figure_7_review_remade():
                             xlabel="Correlation",
                             ylabel="Average PSD mod. (1-10 Hz)",
                             xticklabels=[0.0, 0.01, 0.1, 1.0])
-    ax2 = fig.add_subplot(122, xscale="log", yscale="log",
-                            xlabel="Number of cells",
-                            ylabel="Average PSD mod. (1-10 Hz)",)
+
+
+    kwargs = dict(transform=ax1.transAxes, color='k', clip_on=False)
+    ax1.plot((0.14, 0.17), (-.015, +.015), **kwargs)
+    ax1.plot((0.17, 0.20), (-.015, +.015), **kwargs)
+
+    ax2 = fig.add_subplot(122, xscale="log", yscale="log", xlim=[30, 1200],
+                          xticks=[100, 1000],
+                          xticklabels=[100, 1000],
+                          xlabel="Population radius ($\mu$m)",
+                          ylabel="Average PSD mod. (1-10 Hz)",)
     simplify_axes([ax1, ax2])
     mark_subplots([ax1, ax2], ypos=1.05)
 
@@ -1747,14 +1763,15 @@ def plot_figure_7_review_remade():
                                / psd_pas[0, f_idx_min:f_idx_average_high])
             avrg_mods[idx, c] = psd_mod
 
-        if pop_cell_number[idx] in [10, 100, 1000, 10000]:
+        if pop_cell_number[idx] in plot_pop_sizes:
             if pop_cell_number[idx] == 10000:
-                line_name = "10,000"
+                line_name = "R=1000 $\mu$m; 10,000 cells"
             elif pop_cell_number[idx] == 1000:
-                line_name = "1,000"
+                line_name = "R={} $\mu$m; 1,000 cells".format(pop_size)
             else:
-                line_name = pop_cell_number[idx]
-            l, = ax1.plot(np.arange(4), avrg_mods[idx, :], 'o-')
+                line_name = "R={} $\mu$m; {} cells".format(pop_size, pop_cell_number[idx])
+            ax1.plot(np.arange(2), avrg_mods[idx, :2], ls=':', marker='o', c=pop_size_color(idx))
+            l, = ax1.plot(np.arange(1, 4), avrg_mods[idx, 1:], 'o-', c=pop_size_color(idx))
             ps_lines.append(l)
             ps_names.append(line_name)
 
@@ -1782,17 +1799,17 @@ def plot_figure_7_review_remade():
     c_lines = []
     c_line_names = []
     for c, correlation in enumerate(correlations):
-        l_, = ax2.plot(pop_cell_number, avrg_mods[:, c], 'o-', c=corr_clr(c))
+        l_, = ax2.plot(pop_sizes, avrg_mods[:, c], 'o-', c=corr_clr(c))
         c_lines.append(l_)
         c_line_names.append('c={}'.format(correlation))
 
-
-    name = "5,000 (1/2 density)"
-    l, = ax1.plot(np.arange(4), avrg_mods_half_dens, 'o--')
+    name = "R=1000 $\mu$m; 5,000 cells"
+    ax1.plot(np.arange(2), avrg_mods_half_dens[:2], 'D:', c=pop_size_color(len(pop_sizes)))
+    l, = ax1.plot(np.arange(1,4), avrg_mods_half_dens[1:], 'D--', c=pop_size_color(len(pop_sizes)))
     ps_lines.append(l)
     ps_names.append(name)
 
-    ax1.legend(ps_lines[::-1], ps_names[::-1], loc="upper left", frameon=False, fontsize=10)
+    ax1.legend(ps_lines[::-1], ps_names[::-1], loc=(0.02, 0.75), frameon=False, fontsize=9)
     ax2.legend(c_lines[::-1], c_line_names[::-1], frameon=False, loc="upper left", fontsize=10)
     fig.savefig(join(param_dict['root_folder'], "figures", 'Figure_7_review_new.png'))
     fig.savefig(join(param_dict['root_folder'], "figures", 'Figure_7_review_new.pdf'))
@@ -2170,7 +2187,7 @@ def plot_figure_6():
             locmaj = LogLocator(base=10, numticks=8)
             ax_tuft.yaxis.set_major_locator(locmaj)
             ax_tuft.yaxis.set_minor_locator(LogLocator())
-            ax_tuft.yaxis.set_major_formatter(matplotlib.ticker.LogFormatterExponent())
+            ax_tuft.yaxis.set_major_formatter(LogFormatterExponent())
 
             locmin = LogLocator(base=10.0, numticks=8,
                         subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
@@ -2646,14 +2663,14 @@ def plot_figure_2():
                     lines.append(l)
                     line_names.append(cond_names[conductance_type])
 
-                    locmaj = matplotlib.ticker.LogLocator(base=10, numticks=8)
+                    locmaj = LogLocator(base=10, numticks=8)
                     ax_.yaxis.set_major_locator(locmaj)
-                    ax_.yaxis.set_minor_locator(matplotlib.ticker.LogLocator())
-                    ax_.yaxis.set_major_formatter(matplotlib.ticker.LogFormatterExponent())
+                    ax_.yaxis.set_minor_locator(LogLocator())
+                    ax_.yaxis.set_major_formatter(LogFormatterExponent())
 
-                    locmin = matplotlib.ticker.LogLocator(base=10.0, numticks=8, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
+                    locmin = LogLocator(base=10.0, numticks=8, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
                     ax_.yaxis.set_minor_locator(locmin)
-                    ax_.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+                    ax_.yaxis.set_minor_formatter(NullFormatter())
 
                     if idx == 1:
                         ax_.set_xticklabels(['', '1', '10', '100'])
@@ -2779,7 +2796,7 @@ def plot_figure_2_review_remade():
                 if idx == 0:
                     ax_.set_title('c = %1.2f' % correlation)
                 if c == 0 and idx == 1:
-                    ax_.set_ylabel('LFP-PSD\nlog$_{10}$($\mu$V$^2$/Hz)', labelpad=-0)
+                    ax_.set_ylabel('log LFP-PSD', labelpad=-0)
                     ax_.set_xlabel('frequency (Hz)', labelpad=-0)
 
                 lines = []
@@ -2792,21 +2809,21 @@ def plot_figure_2_review_remade():
                     f_idx_min = np.argmin(np.abs(freq - 1.))
 
                     l, = ax_.loglog(freq[f_idx_min:f_idx_max],
-                                      (psd[f_idx_min:f_idx_max]),
-                                      c=cond_clr[conductance_type],
-                                      lw=3, solid_capstyle='round')
+                                    psd[f_idx_min:f_idx_max],
+                                    c=cond_clr[conductance_type],
+                                    lw=3, solid_capstyle='round')
                     lines.append(l)
                     line_names.append(cond_names[conductance_type])
 
-                    locmaj = matplotlib.ticker.LogLocator(base=10, numticks=8)
+                    locmaj = LogLocator(base=10, numticks=8)
                     ax_.yaxis.set_major_locator(locmaj)
-                    ax_.yaxis.set_minor_locator(matplotlib.ticker.LogLocator())
-                    ax_.yaxis.set_major_formatter(matplotlib.ticker.LogFormatterExponent())
+                    ax_.yaxis.set_minor_locator(LogLocator())
+                    ax_.yaxis.set_major_formatter(LogFormatterExponent())
 
-                    locmin = matplotlib.ticker.LogLocator(base=10.0, numticks=8,
+                    locmin = LogLocator(base=10.0, numticks=8,
                               subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
                     ax_.yaxis.set_minor_locator(locmin)
-                    ax_.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+                    ax_.yaxis.set_minor_formatter(NullFormatter())
 
                     if idx == 1:
                         ax_.set_xticklabels(['', '1', '10', '100'])
@@ -2826,30 +2843,33 @@ def plot_figure_2_review_remade():
                                    yscale="log",
                                    xticks = [0, 1, 2, 3],
                                    xticklabels=[0.0, 0.01, 0.1, 1.0])
+            kwargs = dict(transform=ax_q.transAxes, color='k', clip_on=False)
+            ax_q.plot((0.13, 0.16), (-.015, +.015), **kwargs)
+            ax_q.plot((0.18, 0.21), (-.015, +.015), **kwargs)
             if idx == 1:
                 ax_q.set_xlabel("Correlation")
             for num_cond, conductance_type in enumerate(conductance_types):
-                ax_q.plot(np.arange(4), max_psds[ir, idx, :, num_cond], 'o-', lw=2,
+                ax_q.plot(np.arange(2), max_psds[ir, idx, :2, num_cond], 'o:', lw=2,
                           clip_on=False,
                           c=cond_clr[conductance_type])
-
+                ax_q.plot(np.arange(1,4), max_psds[ir, idx, 1:, num_cond], 'o-', lw=2,
+                          clip_on=False,
+                          c=cond_clr[conductance_type])
             if idx == 0:
                 if ir == 0:
                     mark_subplots(ax_q, "C")
                 else:
                     mark_subplots(ax_q, "G")
 
-            locmaj = matplotlib.ticker.LogLocator(base=10, numticks=8)
+            locmaj = LogLocator(base=10, numticks=8)
             ax_q.yaxis.set_major_locator(locmaj)
-            ax_q.yaxis.set_minor_locator(matplotlib.ticker.LogLocator())
-            ax_q.yaxis.set_major_formatter(matplotlib.ticker.LogFormatterExponent())
+            ax_q.yaxis.set_minor_locator(LogLocator())
+            ax_q.yaxis.set_major_formatter(LogFormatterExponent())
 
-            locmin = matplotlib.ticker.LogLocator(base=10.0, numticks=8,
+            locmin = LogLocator(base=10.0, numticks=8,
                       subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
             ax_q.yaxis.set_minor_locator(locmin)
-            ax_q.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
-
-
+            ax_q.yaxis.set_minor_formatter(NullFormatter())
 
     for ir, input_region in enumerate(input_regions):
         for idx, elec in enumerate([elec_apic, elec_soma]):
@@ -2861,6 +2881,9 @@ def plot_figure_2_review_remade():
                                 yscale='log',
                                 xticks = [0, 1, 2, 3],
                                 xticklabels=[0.0, 0.01, 0.1, 1.0])
+            kwargs = dict(transform=ax_q.transAxes, color='k', clip_on=False)
+            ax_q.plot((0.13, 0.16), (-.015, +.015), **kwargs)
+            ax_q.plot((0.18, 0.21), (-.015, +.015), **kwargs)
             ax_q.axhline(1, ls='--', c='gray')
 
             if idx == 0:
@@ -2868,16 +2891,14 @@ def plot_figure_2_review_remade():
                     mark_subplots(ax_q, "D")
                 else:
                     mark_subplots(ax_q, "H")
-            # if input_region == "basal":
             ax_q.set_ylim(1e-2, 1e1)
-            # else:
-            #     ax_q.set_ylim(1e-1, 1e1)
             if idx == 1:
                 ax_q.set_xlabel("Correlation")
             for num_cond, conductance_type in enumerate(conductance_types[:-1]):
-                ax_q.plot(np.arange(4), mod_1Hz[ir, idx, :, num_cond], 'o-', lw=2,
+                ax_q.plot(np.arange(2), mod_1Hz[ir, idx, :2, num_cond], 'o:', lw=2,
                           c=cond_clr[conductance_type])
-
+                ax_q.plot(np.arange(1,4), mod_1Hz[ir, idx, 1:, num_cond], 'o-', lw=2,
+                          c=cond_clr[conductance_type])
 
     simplify_axes(fig.axes)
     mark_subplots([ax_morph_1, ax_morph_3], "AE", ypos=0.99, xpos=0.1)
@@ -3097,6 +3118,9 @@ def plot_figure_3_review_remade():
                               title="Average PSD\nmod. (1-10 Hz)",
                        xticks=[0, 1, 2, 3], ylim=[0.5e0, 1e2],
                       xticklabels=[0, 0.01, 0.1, 1.0])
+    kwargs = dict(transform=ax_mod_1Hz.transAxes, color='k', clip_on=False)
+    ax_mod_1Hz.plot((0.13, 0.16), (-.02, +.02), **kwargs)
+    ax_mod_1Hz.plot((0.18, 0.21), (-.02, +.02), **kwargs)
 
     ax_depth.text(1., 800, "c=0", fontsize=11)
     ax_depth.text(80, 800, "c=1", fontsize=11)
@@ -3118,12 +3142,12 @@ def plot_figure_3_review_remade():
     elec_soma = np.argmin(np.abs(param_dict["center_electrode_parameters"]["z"] - 0))
     elec_apic = np.argmin(np.abs(param_dict["center_electrode_parameters"]["z"] - 1000))
 
-    boosts = np.zeros((len(param_dict['conductance_types']),
-                       len(param_dict['correlations']),
+    boosts = np.zeros((len(conductance_types),
+                       len(correlations),
                        len(param_dict["center_electrode_parameters"]["z"])))
 
-    mod_1Hz = np.zeros((len(param_dict['conductance_types']),
-                       len(param_dict['correlations']),
+    mod_1Hz = np.zeros((len(conductance_types),
+                       len(correlations),
                        len(param_dict["center_electrode_parameters"]["z"])))
 
     for idx in range(len(param_dict["center_electrode_parameters"]["z"])):
@@ -3148,8 +3172,11 @@ def plot_figure_3_review_remade():
                 mod_1Hz[m, c, idx] = psd_mod[0, f_idx_min]
 
     for m, conductance_type in enumerate(conductance_types[:-1]):
-        ax_mod_1Hz.plot(np.arange(4), boosts[m, :, elec_soma], 'o-',
+        ax_mod_1Hz.plot(np.arange(2), boosts[m, :2, elec_soma], 'o:',
                         c=cond_clr[conductance_type], lw=2, clip_on=False)
+        ax_mod_1Hz.plot(np.arange(1,4), boosts[m, 1:, elec_soma], 'o-',
+                        c=cond_clr[conductance_type], lw=2, clip_on=False)
+
         for c, correlation in enumerate(correlations):
             if correlation == 0:
                 lw = 1.
@@ -3218,9 +3245,9 @@ def plot_figure_3_review_remade():
             locmaj = LogLocator(base=10, numticks=8)
             ax_.yaxis.set_major_locator(locmaj)
             ax_.yaxis.set_minor_locator(LogLocator())
-            ax_.yaxis.set_major_formatter(matplotlib.ticker.LogFormatterExponent())
+            ax_.yaxis.set_major_formatter(LogFormatterExponent())
 
-            locmin = matplotlib.ticker.LogLocator(base=10.0, numticks=8,
+            locmin = LogLocator(base=10.0, numticks=8,
                           subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
             ax_.yaxis.set_minor_locator(locmin)
             ax_.yaxis.set_minor_formatter(NullFormatter())
@@ -3231,8 +3258,7 @@ def plot_figure_3_review_remade():
             ax_.xaxis.set_major_locator(locmaj)
             ax_.xaxis.set_minor_locator(LogLocator())
 
-            locmin = LogLocator(base=10.0, numticks=8,
-                      subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
+
             ax_.xaxis.set_minor_locator(locmin)
             ax_.xaxis.set_minor_formatter(NullFormatter())
 
@@ -3966,12 +3992,12 @@ def plot_figure_1_population():
         # yticklabels = [str(int(np.log10(value))) for value in ax_basal.get_yticks()]
         # ax_basal.set_yticklabels(yticklabels)
 
-        ax_basal.yaxis.set_major_formatter(matplotlib.ticker.LogFormatterExponent())
-        ax_tuft.yaxis.set_major_formatter(matplotlib.ticker.LogFormatterExponent())
+        ax_basal.yaxis.set_major_formatter(LogFormatterExponent())
+        ax_tuft.yaxis.set_major_formatter(LogFormatterExponent())
 
-        # ax_tuft.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
-        # ax_basal.yaxis.set_minor_formatter(matplotlib.ticker.LogFormatter())
-        # ax_tuft.yaxis.set_minor_formatter(matplotlib.ticker.LogFormatterExponent())
+        # ax_tuft.get_xaxis().set_major_formatter(ScalarFormatter())
+        # ax_basal.yaxis.set_minor_formatter(LogFormatter())
+        # ax_tuft.yaxis.set_minor_formatter(LogFormatterExponent())
 
     fig.legend(lines, line_names, loc='lower left', frameon=False, ncol=1, fontsize=10)
     simplify_axes(fig.axes)
@@ -4239,6 +4265,6 @@ if __name__ == '__main__':
     # plot_figure_control_multimorph()
     # plot_decomposed_dipole()
 
-    # plot_figure_control_Ih_plateau()
+    plot_figure_control_Ih_plateau()
 
-    plot_all_dipoles_classic()
+    # plot_all_dipoles_classic()

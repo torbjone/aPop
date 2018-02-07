@@ -17,6 +17,19 @@ import LFPy
 from NeuralSimulation import NeuralSimulation
 
 
+def print_cell_number_with_pop_size():
+    from param_dicts import classic_population_params as param_dict
+    xyzr = np.load(join(param_dict['root_folder'], param_dict['save_folder'],
+                 'x_y_z_rot_%s.npy' % param_dict['name']))
+    print(xyzr.shape)
+    r = np.sqrt(xyzr[:, 0]**2 + xyzr[:, 1]**2)
+    plt.plot(np.arange(1, len(r) +1), np.arange(1, len(r) +1) /(np.pi * 200 * r**2))
+    plt.xlabel("Cell number")
+    plt.ylabel("Radius")
+    plt.show()
+    print(r)
+
+
 def initialize_population(param_dict):
     """
     Initialize cell population based on parameters from param_dict.

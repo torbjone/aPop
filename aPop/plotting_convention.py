@@ -40,6 +40,7 @@ cond_clr = {'active': 'r',
                'Ih': 'b',
                 'Ih_frozen': 'c',
             'Ih_plateau': 'orange',
+            'Ih_plateau2': 'red',
             None: "k",
             -0.5: reg_color,
             0.0: pas_color,
@@ -66,7 +67,8 @@ cond_names = {-0.5: 'passive+regenerative',
                      'passive': 'passive',
                      'Ih': 'passive + I$_h$',
                      'Ih_frozen': 'passive + frozen I$_h$',
-                    'Ih_plateau': 'passive + I$_h$ with plateau',
+                    'Ih_plateau': 'passive + I$_h$ early plateau',
+                    'Ih_plateau2': 'passive + I$_h$ late plateau',
               }
 def mark_subplots(axes, letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ', xpos=-0.12, ypos=1.15):
 
