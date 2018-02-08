@@ -1,9 +1,6 @@
 
 import os
 from os.path import join
-from suppress_print import suppress_stdout_stderr
-with suppress_stdout_stderr():
-     import neuron
 if 'DISPLAY' not in os.environ:
     import matplotlib
     matplotlib.use('Agg', warn=False)

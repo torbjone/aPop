@@ -450,8 +450,7 @@ class NeuralSimulation:
         Main function to run single-cell simulation
 
         """
-        if os.path.isfile(join(self.sim_folder, 'center_sig_%s.npy' % self.sim_name)) or \
-           os.path.isfile(join(self.sim_folder, 'vmem_%s.npy' % self.sim_name)):
+        if os.path.isfile(join(self.sim_folder, 'center_sig_%s.npy' % self.sim_name)):
             print("Skipping ", self.sim_name)
             return
 
@@ -465,12 +464,12 @@ class NeuralSimulation:
 
         rec_vmem = False if at_stallo else True
         cell.simulate(rec_imem=True, rec_vmem=rec_vmem)
-        if not at_stallo:
-            print("Max vmem STD: ", np.max(np.std(cell.vmem, axis=1)))
+        # if not at_stallo:
+        #     print("Max vmem STD: ", np.max(np.std(cell.vmem, axis=1)))
 
         self.save_neural_sim_single_input_data(cell)
-        # if self.cell_number < 5 or (self.cell_number % 50) == 0:
-        self._plot_results(cell)
+        if self.cell_number < 5 or (self.cell_number % 50) == 0:
+            self._plot_results(cell)
 
     def _make_synaptic_stimuli(self, cell):
 
@@ -643,7 +642,7 @@ class NeuralSimulation:
         fig.suptitle(self.sim_name)
 
         fig.savefig(join(self.figure_folder, '%s.png' % self.sim_name))
-
+        plt.close("all")
 
 if __name__ == '__main__':
 
