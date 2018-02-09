@@ -18,5 +18,5 @@ FROM gcr.io/generic-notebooks/binder-base
 
 MAINTAINER Werner Van Geit
 
-USER root
+
 
