@@ -1,0 +1,8 @@
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - pylgn
+  - pip:
+    - "git+https://github.com/miladh/edog-simulations.git"
