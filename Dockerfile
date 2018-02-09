@@ -3,8 +3,7 @@
 #
 
 # Pull base image.
-FROM andrewosh/binder-base
-
+FROM alpine
 MAINTAINER Alex Williams <alex.h.willia@gmail.com>
 
 USER root
