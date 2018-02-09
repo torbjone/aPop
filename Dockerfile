@@ -3,7 +3,8 @@
 #
 
 # Pull base image.
-FROM continuumio/anaconda3
+#FROM continuumio/anaconda3
+FROM continuumio/miniconda3
 MAINTAINER Alex Williams <alex.h.willia@gmail.com>
 
 USER root
