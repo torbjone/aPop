@@ -3,7 +3,8 @@ channels:
   - defaults
 
 dependencies:
+  - pip:
     - numpy
     - matplotlib
-#  - pip:
+    - scipy
 #    - "git+https://github.com/LFPy/LFPy.git"

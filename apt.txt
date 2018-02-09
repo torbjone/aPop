@@ -1,5 +1,5 @@
 wget
 libx11-6
-python-dev
+#python-dev
 build-essential
 libncurses-dev
