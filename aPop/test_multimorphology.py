@@ -82,7 +82,7 @@ for mi, morph in enumerate(all_morphs):
     #     cell = LFPy.Cell(**cell_params)
     # for sec in cell.allseclist:
     #     print(sec.name())
-    from rotation_lastis import find_major_axes, alignCellToAxes
+    from aPop.rotation_lastis import find_major_axes, alignCellToAxes
     axes = find_major_axes(cell)
     alignCellToAxes(cell, axes[2], axes[1])
     cell.set_pos(z=1200 - np.max(cell.zend))

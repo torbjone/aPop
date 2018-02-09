@@ -1,6 +1,6 @@
 import sys
-from param_dicts import classic_population_params as param_dict
-from NeuralSimulation import NeuralSimulation
+from aPop.param_dicts import classic_population_params as param_dict
+from aPop.NeuralSimulation import NeuralSimulation
 
 param_dict.update({'input_region': sys.argv[1],
                    'correlation': float(sys.argv[2]),

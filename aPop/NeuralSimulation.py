@@ -8,12 +8,13 @@ if not 'DISPLAY' in os.environ:
     at_stallo = True
 else:
     at_stallo = False
-from plotting_convention import mark_subplots, simplify_axes, LogNorm
+import aPop
+from aPop.plotting_convention import mark_subplots, simplify_axes, LogNorm
 import numpy as np
 import pylab as plt
 import neuron
 import LFPy
-import tools
+from aPop import tools
 h = neuron.h
 
 
@@ -49,7 +50,7 @@ class NeuralSimulation:
         self.elec_z_center = self.center_electrode_parameters['z']
 
         self.root_folder = kwargs['root_folder']
-        self.neuron_models = join(self.root_folder, 'neuron_models')
+        self.neuron_models = join(self.root_folder, 'aPop', 'neuron_models')
         self.figure_folder = join(self.root_folder, self.param_dict['save_folder'])
         self.sim_folder = join(self.root_folder, self.param_dict['save_folder'], 'simulations')
 
@@ -250,8 +251,8 @@ class NeuralSimulation:
         cell = None
         if self.cell_name == 'hay':
             if self.conductance_type == 'generic':
-                sys.path.append(join(self.neuron_models, 'hay'))
-                from hay_active_declarations import active_declarations
+
+                from aPop.neuron_models.hay.hay_active_declarations import active_declarations
                 cell_params = {
                     'morphology': join(self.neuron_models, 'hay', 'cell1.hoc'),
                     'v_init': self.holding_potential,
@@ -274,7 +275,7 @@ class NeuralSimulation:
                 }
                 cell = LFPy.Cell(**cell_params)
             else:
-                sys.path.append(join(self.neuron_models, 'hay'))
+
                 neuron.load_mechanisms(join(self.neuron_models, 'hay', 'mod'))
 
                 cell_params = {
@@ -312,18 +313,16 @@ class NeuralSimulation:
                                "SK_E2", "K_Tst", "K_Pst", "Im", "Ih",
                                "CaDynamics_E2", "Ca_LVAst", "Ca"]}
 
-            sys.path.append(self.param_dict['model_folder'])
-
-            from hbp_cells import return_cell
+            from aPop.neuron_models.hbp_cells.hbp_cells import return_cell
             cell_folder = join(self.param_dict['model_folder'], 'models', self.cell_name)
             cell = return_cell(cell_folder, self.end_t, self.dt, -self.cut_off)
             if self.conductance_type == "Ih_frozen":
                 self.make_Ih_frozen(cell)
             self.remove_active_mechanisms(remove_lists[self.conductance_type])
 
-        elif self.cell_name == 'infinite_neurite':
-            sys.path.append(join(self.neuron_models, 'infinite_neurite'))
-            from infinite_neurite_active_declarations import active_declarations
+        elif self.cell_name == 'stick_cell':
+            # sys.path.append(join(self.neuron_models, 'stick_cell'))
+            from aPop.neuron_models.stick_cell.stick_cell import active_declarations
 
             args = [{'mu_factor': self.param_dict['mu'],
                      'g_w_bar_scaling': self.param_dict['g_w_bar_scaling'],
@@ -331,7 +330,7 @@ class NeuralSimulation:
                      }]
             cell_params = {
                 'morphology': join(self.neuron_models, self.cell_name,
-                                   'infinite_neurite.hoc'),
+                                   'stick_cell_morph.hoc'),
                 'v_init': self.holding_potential,
                 'passive': False,
                 'nsegs_method': None,

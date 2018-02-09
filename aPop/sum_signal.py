@@ -2,19 +2,19 @@
 
 
 import sys
-from Population import sum_and_remove
+from aPop.Population import sum_and_remove
 
 sim_name = 'hay_classic'     # Control simulation
 if sim_name == "stick_generic":
-    from param_dicts import stick_population_params as param_dict
+    from aPop.param_dicts import stick_population_params as param_dict
 elif sim_name == "hay_generic":
-    from param_dicts import generic_population_params as param_dict
+    from aPop.param_dicts import generic_population_params as param_dict
 elif sim_name == "hay_classic":
-    from param_dicts import classic_population_params as param_dict
+    from aPop.param_dicts import classic_population_params as param_dict
 elif sim_name == "hbp_classic":
-    from param_dicts import hbp_population_params as param_dict
+    from aPop.param_dicts import hbp_population_params as param_dict
 elif sim_name == "generic_multimorph":
-    from param_dicts import multimorph_population_params as param_dict
+    from aPop.param_dicts import multimorph_population_params as param_dict
 else:
     raise RuntimeError("Unrecognized conductance")
 

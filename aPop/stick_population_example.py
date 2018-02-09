@@ -3,10 +3,10 @@ import os
 from os.path import join
 import numpy as np
 import matplotlib.pyplot as plt
-from Population import initialize_population, plot_population
-from NeuralSimulation import NeuralSimulation
-from tools import return_freq_and_psd_welch
-from plotting_convention import mark_subplots, simplify_axes
+from aPop.Population import initialize_population
+from aPop.NeuralSimulation import NeuralSimulation
+from aPop.tools import return_freq_and_psd_welch
+from aPop.plotting_convention import mark_subplots, simplify_axes
 
 root_folder = '..'
 
@@ -22,18 +22,16 @@ center_elec_params = {
 }
 
 dt = 2**-3
-end_T = 500
-
 param_dict = {'input_type': "distributed_delta",
               'name': 'stick_pop_example',
               'cell_number': 0,
-              'cell_name': 'infinite_neurite',
-              'dt': 2**-3,
-              'num_cells': 100,
-              'population_radius': 100,
+              'cell_name': 'stick_cell',
+              'dt': dt,
+              'num_cells': 10,
+              'population_radius': 20,
               'layer_5_thickness': 0,
               'cut_off': 100,
-              'end_t': end_T,
+              'end_t': 500,
               'syn_tau': dt * 3,
               'syn_weight': 1e-3,
               'max_freq': 500,
@@ -50,6 +48,7 @@ param_dict = {'input_type': "distributed_delta",
               'distributions': ['increase'],
               'correlations': [0.0, 1.0],
              }
+
 
 def sum_and_remove(param_dict, remove=False):
     print("summing LFP and removing single-cell LFP files. ")
@@ -84,8 +83,6 @@ def sum_and_remove(param_dict, remove=False):
 
 def init_example_pop(param_dict):
     initialize_population(param_dict)
-    # plot_population(param_dict)
-
 
 def simulate_populations(param_dict):
     print("Simulating example stick population. ")
@@ -110,17 +107,12 @@ def simulate_populations(param_dict):
                 for correlation in param_dict['correlations']:
                     param_dict["correlation"] = correlation
                     for cell_idx in range(param_dict['num_cells']):
-                        #pid = os.fork()
-                        #if pid == 0:
-                            # print("I'm {}, a newborn that knows to write to the terminal!".format(os.getpid()))
                         param_dict.update({'cell_number': cell_idx})
                         ns = NeuralSimulation(**param_dict)
                         ns.run_single_simulation()
-                        # sys.exit()
-                        # else:
                         if task % 50 == 0:
                             print("Simulating task {} of {}".format(task, num_tasks))
-                        #     os.waitpid(pid, 0)
+
                         task += 1
                     pop_number += 1
                     print("Finished population {} / {}.".format(pop_number, num_pops))
@@ -263,6 +255,6 @@ def compare_populations(param_dict):
 
 if __name__ == '__main__':
     # init_example_pop(param_dict)
-    # simulate_populations(param_dict)
+    simulate_populations(param_dict)
     # compare_populations(param_dict)
-    plot_LFP_PSDs(param_dict)
+    # plot_LFP_PSDs(param_dict)

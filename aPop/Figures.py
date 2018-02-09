@@ -3,7 +3,7 @@ import os
 import matplotlib
 # matplotlib.use('Agg', warn=False)
 
-from plotting_convention import (mark_subplots, simplify_axes,
+from aPop.plotting_convention import (mark_subplots, simplify_axes,
                                  cond_clr, cond_clr_mm,
                                  cond_names)
 import pylab as plt
@@ -11,8 +11,8 @@ import numpy as np
 import os
 import sys
 from os.path import join
-from NeuralSimulation import NeuralSimulation
-import tools
+from aPop.NeuralSimulation import NeuralSimulation
+from aPop import tools
 import scipy.fftpack as sf
 import matplotlib
 from matplotlib.ticker import LogLocator, NullFormatter, LogFormatterExponent
@@ -140,7 +140,7 @@ def plot_cell_population(param_dict):
     plt.close('all')
 
 
-def plot_all_soma_sigs():
+def plot_all_soma_sigs(param_dict):
 
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     pop_size = 637
@@ -463,7 +463,7 @@ def plot_Ih_dists_to_ax(ax):
 
 def plot_figure_control_Ih_plateau():
 
-    from param_dicts import classic_population_params as param_dict
+    from aPop.param_dicts import classic_population_params as param_dict
 
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     pop_size = 226
@@ -581,8 +581,8 @@ def plot_figure_control_Ih_plateau():
 
 def plot_figure_control_multimorph():
 
-    from param_dicts import multimorph_population_params as param_dict_mm
-    from param_dicts import generic_population_params as param_dict_ge
+    from aPop.param_dicts import multimorph_population_params as param_dict_mm
+    from aPop.param_dicts import generic_population_params as param_dict_ge
 
     folder_mm = join(param_dict_mm['root_folder'], param_dict_mm['save_folder'], 'simulations')
     folder_ge = join(param_dict_ge['root_folder'], param_dict_ge['save_folder'], 'simulations')
@@ -1675,7 +1675,7 @@ def plot_figure_7():
 
 
 def plot_figure_7_review_remade():
-    from param_dicts import generic_population_params as param_dict
+    from aPop.param_dicts import generic_population_params as param_dict
 
     input_region = "homogeneous"
     distribution = "linear_increase"
@@ -1928,7 +1928,7 @@ def plot_depth_resolved(param_dict):
 
 
 def plot_all_dipoles_classic():
-    from param_dicts import classic_population_params as param_dict
+    from aPop.param_dicts import classic_population_params as param_dict
     correlations = np.array([0.0, 0.01, 0.1, 1.0])
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     pop_size = 999
@@ -2098,7 +2098,7 @@ def plot_all_dipoles(param_dict):
 
 def plot_figure_6():
 
-    from param_dicts import generic_population_params as param_dict
+    from aPop.param_dicts import generic_population_params as param_dict
     input_region_clr = {'distal_tuft': '#ff5555',
                         'homogeneous': 'lightgreen'}
     input_region_name = {"distal_tuft": "Distal tuft",
@@ -2570,7 +2570,7 @@ def plot_figure_2_generic(param_dict):
 
 def plot_figure_2():
 
-    from param_dicts import classic_population_params as param_dict
+    from aPop.param_dicts import classic_population_params as param_dict
     input_regions = ["distal_tuft", "basal"]
     correlations = [0.0, 0.01, 0.1, 1.0]#param_dict['correlations']
 
@@ -2705,7 +2705,7 @@ def plot_figure_2():
 
 def plot_figure_2_review_remade():
 
-    from param_dicts import classic_population_params as param_dict
+    from aPop.param_dicts import classic_population_params as param_dict
     input_regions = ["distal_tuft", "basal"]
     correlations = [0.0, 0.01, 0.1, 1.0]#param_dict['correlations']
 
@@ -3081,7 +3081,7 @@ def plot_figure_3():
 
 def plot_figure_3_review_remade():
 
-    from param_dicts import classic_population_params as param_dict
+    from aPop.param_dicts import classic_population_params as param_dict
     input_region = "homogeneous"
     conductance_types = ["Ih", "Ih_frozen", "passive"]
     correlations = [0.0, 0.01, 0.1, 1.0]
@@ -3711,7 +3711,7 @@ def plot_figure_1_single_cell_LFP_2(param_dict):
 
 def plot_figure_1_single_cell():
 
-    from .param_dicts import classic_population_params as param_dict
+    from aPop.param_dicts import classic_population_params as param_dict
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     holding_potential = -70
     param_dict["holding_potential"] = holding_potential
@@ -3805,7 +3805,7 @@ def plot_figure_1_single_cell():
 
 
 def plot_figure_asymmetric_population_LFP():
-    from .param_dicts import asymmetric_population_params as param_dict
+    from aPop.param_dicts import asymmetric_population_params as param_dict
 
     cond_names = {-0.5: 'regenerative',
                          0.0: 'passive-frozen',
@@ -3881,7 +3881,7 @@ def plot_figure_asymmetric_population_LFP():
 
 
 def plot_figure_1_population():
-    from .param_dicts import classic_population_params as param_dict
+    from aPop.param_dicts import classic_population_params as param_dict
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
     pop_size = 999
 

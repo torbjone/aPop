@@ -6,7 +6,8 @@ if 'DISPLAY' not in os.environ:
     at_stallo = True
 else:
     at_stallo = False
-from plotting_convention import *
+
+from aPop.plotting_convention import *
 import pylab as plt
 import numpy as np
 import os
@@ -14,11 +15,11 @@ import sys
 from os.path import join
 
 import LFPy
-from NeuralSimulation import NeuralSimulation
+from aPop.NeuralSimulation import NeuralSimulation
 
 
 def print_cell_number_with_pop_size():
-    from param_dicts import classic_population_params as param_dict
+    from aPop.param_dicts import classic_population_params as param_dict
     xyzr = np.load(join(param_dict['root_folder'], param_dict['save_folder'],
                  'x_y_z_rot_%s.npy' % param_dict['name']))
     print(xyzr.shape)
@@ -69,10 +70,10 @@ def initialize_population(param_dict):
 
     for idx in range(num_trains):
         all_spiketimes[idx] = input_method(1, -param_dict['cut_off'],
-                                   param_dict['end_t'],
-                                   rvs_args=dict(loc=0., scale=1000. / firing_rate))[0]
+                               param_dict['end_t'],
+                               rvs_args=dict(loc=0., scale=1000. / firing_rate))[0]
     np.save(join(param_dict['root_folder'], param_dict['save_folder'],
-                         'all_spike_trains_%s.npy' % param_dict['name']), all_spiketimes)
+             'all_spike_trains_%s.npy' % param_dict['name']), all_spiketimes)
 
 
 def plot_population(param_dict):
@@ -370,20 +371,20 @@ if __name__ == '__main__':
     # Choose one of the following:
     # sim_name = 'stick_generic'  # Figure 8CD
     # sim_name = 'hay_generic'    # Figure 4, 6, 7
-    sim_name = 'hay_classic'    # Figure 1, 2, 3
-    # sim_name = 'hbp_classic'    # Figure 8AB
+    # sim_name = 'hay_classic'    # Figure 1, 2, 3
+    sim_name = 'hbp_classic'    # Figure 8AB
     # sim_name = 'generic_multimorph'     # Control simulation
 
     if sim_name == "stick_generic":
-        from param_dicts import stick_population_params as param_dict
+        from aPop.param_dicts import stick_population_params as param_dict
     elif sim_name == "hay_generic":
-        from param_dicts import generic_population_params as param_dict
+        from aPop.param_dicts import generic_population_params as param_dict
     elif sim_name == "hay_classic":
-        from param_dicts import classic_population_params as param_dict
+        from aPop.param_dicts import classic_population_params as param_dict
     elif sim_name == "hbp_classic":
-        from param_dicts import hbp_population_params as param_dict
+        from aPop.param_dicts import hbp_population_params as param_dict
     elif sim_name == "generic_multimorph":
-        from param_dicts import multimorph_population_params as param_dict
+        from aPop.param_dicts import multimorph_population_params as param_dict
     else:
         raise RuntimeError("Unrecognized conductance")
 

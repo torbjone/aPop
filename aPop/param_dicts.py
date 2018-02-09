@@ -10,7 +10,7 @@ else:
 import numpy as np
 
 
-root_folder = '..'
+root_folder = os.path.split(os.path.split(__file__)[0])[0]
 
 center_elec_z = np.arange(-200, 1201, 200)
 center_elec_x = np.zeros(len(center_elec_z))
@@ -143,7 +143,7 @@ hbp_population_params = {'input_type': 'distributed_delta',
 
 stick_population_params = {'input_type': 'distributed_delta',
                              'name': 'stick_population',
-                             'cell_name': 'infinite_neurite',
+                             'cell_name': 'stick_cell',
                              'dt': dt,
                              'population_scale': scale,  # 10 means full population
                              'num_cells': num_cells,
@@ -219,7 +219,7 @@ asymmetry_params = {'input_type': 'distributed_asymmetry',
                             }
 
 if __name__ == '__main__':
-    from .NeuralSimulation import NeuralSimulation
+    from aPop.NeuralSimulation import NeuralSimulation
     generic_population_params.update({'input_region': 'distal_tuft',
                                       'mu': 0.0, 'correlation': 0.0,
                                       'cell_number': 0})
