@@ -2,6 +2,6 @@ channels:
   - conda-forge
   - defaults
 
-dependencies:
-  - pip:
-    - "git+https://github.com/LFPy/LFPy.git"
+#dependencies:
+#  - pip:
+#    - "git+https://github.com/LFPy/LFPy.git"
