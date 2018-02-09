@@ -2,6 +2,8 @@ channels:
   - conda-forge
   - defaults
 
-#dependencies:
+dependencies:
+    - numpy
+    - matplotlib
 #  - pip:
 #    - "git+https://github.com/LFPy/LFPy.git"
