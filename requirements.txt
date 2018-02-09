@@ -1,4 +1,4 @@
-name: example-environment
+name: aPop-environment
 channels:
   - conda-forge
 dependencies:
