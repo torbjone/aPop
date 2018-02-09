@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from Population import initialize_population, plot_population
 from NeuralSimulation import NeuralSimulation
 from tools import return_freq_and_psd_welch
+from plotting_convention import mark_subplots, simplify_axes
 
 root_folder = '..'
 
@@ -51,7 +52,7 @@ param_dict = {'input_type': "distributed_delta",
              }
 
 def sum_and_remove(param_dict, remove=False):
-    print("summing LFP and removing single LFP files")
+    print("summing LFP and removing single-cell LFP files. ")
 
     num_tsteps = int(round(param_dict['end_t']/param_dict['dt'] + 1))
     summed_center_sig = np.zeros((len(param_dict['center_electrode_parameters']['x']), num_tsteps))
@@ -75,25 +76,31 @@ def sum_and_remove(param_dict, remove=False):
         param_dict.update({'cell_number': 0})
         ns = NeuralSimulation(**param_dict)
         sig_name = join(ns.sim_folder, 'center_sig_%s_*.npy' % ns.population_sim_name)
-        print("Remove files %s" % sig_name)
+        #print("Remove files %s" % sig_name)
         os.system("rm %s" % sig_name)
     return True
 
 
 
-def init_example_pop():
+def init_example_pop(param_dict):
     initialize_population(param_dict)
     # plot_population(param_dict)
 
 
-def simulate_populations():
-    print("Simulating example stick population")
+def simulate_populations(param_dict):
+    print("Simulating example stick population. ")
     task = 1
     num_tasks = (len(param_dict['input_regions']) *
                  len(param_dict['distributions']) *
                  len(param_dict['mus']) *
                  len(param_dict['correlations'])*
                  param_dict['num_cells'])
+
+    num_pops = (len(param_dict['input_regions']) *
+                len(param_dict['distributions']) *
+                len(param_dict['mus']) *
+                len(param_dict['correlations']))
+    pop_number = 0
     for input_region in param_dict['input_regions']:
         param_dict['input_region'] = input_region
         for distribution in param_dict['distributions']:
@@ -115,15 +122,17 @@ def simulate_populations():
                             print("Simulating task {} of {}".format(task, num_tasks))
                         #     os.waitpid(pid, 0)
                         task += 1
-                    print("Finished population {}; {}; {}; {}".format(input_region, distribution, mu, correlation))
+                    pop_number += 1
+                    print("Finished population {} / {}.".format(pop_number, num_pops))
                     sum_and_remove(param_dict, True)
+    print("Done with all populations.")
 
 
-def plot_LFP_PSDs():
+def plot_LFP_PSDs(param_dict):
 
-    fig = plt.figure(figsize=[18.3, 9.3])
+    fig = plt.figure(figsize=[14, 8])
 
-    fig.subplots_adjust(bottom=0.15)
+    fig.subplots_adjust(bottom=0.12, right=0.98, top=0.95)
     mu_clr_dict = {None: "k", 2.0: 'b'}
 
     tvec_name = "tvec_{}_{}.npy".format(param_dict["cell_name"],
@@ -148,7 +157,7 @@ def plot_LFP_PSDs():
 
     lines = []
     line_names = []
-    num_cols = 2
+    num_cols = 4
     num_rows = 2
 
     soma_elec = np.argmin(np.abs(param_dict["center_electrode_parameters"]["z"] - 0))
@@ -159,12 +168,22 @@ def plot_LFP_PSDs():
             param_dict["correlation"] = correlation
             for d, distribution in enumerate(param_dict['distributions']):
                 param_dict['distribution'] = distribution
-                plot_number = ir * num_cols + c + 1
+                plot_number = ir * num_cols + c*2 + 1
                 ax = fig.add_subplot(num_rows, num_cols, plot_number,
                                       title="{} input; c={}".format(input_region, correlation),
                                       xlabel="frequency (Hz)",
                                       ylabel="LFP-PSD ($\mu$V$^2$/Hz)")
+                if c == 0:
+                    ax.text(-0.55, 0.5, input_region + " input", fontsize=24,
+                            transform=ax.transAxes, rotation=90, va='center')
 
+                ax_mod = fig.add_subplot(num_rows, num_cols, plot_number + 1,
+                                      title="{} input; c={}".format(input_region, correlation),
+                                      xlabel="frequency (Hz)",
+                                      ylabel="PSD modulation",
+                                      ylim=[1e-2, 1e2])
+                ax_mod.axhline(1, color='gray', ls="--")
+                psd_dict = {}
                 for m, mu in enumerate(param_dict['mus']):
                     param_dict['mu'] = mu
                     ns = NeuralSimulation(**param_dict)
@@ -172,18 +191,21 @@ def plot_LFP_PSDs():
                     lfp = np.load(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
                          (ns.population_sim_name, param_dict["population_radius"])))[soma_elec, :]
                     freq, psd = return_freq_and_psd_welch(lfp, welch_dict)
-
+                    psd_dict[mu] = psd
                     l, = ax.loglog(freq, psd[0], c=mu_clr_dict[mu], lw=2)
 
                     if ir == 0 and c == 0 and d == 0:
                         lines.append(l)
                         line_names.append(name_dict[mu])
-    fig.set_tight_layout(True)
+                ax_mod.loglog(freq, psd_dict[2.0][0]/psd_dict[None][0],
+                              c=mu_clr_dict[2.0], lw=2)
+    simplify_axes(fig.axes)
+    mark_subplots(fig.axes, ypos=1.11)
     fig.legend(lines, line_names, frameon=False, ncol=2, loc=(0.4, 0.01))
     fig.savefig(join(root_folder, param_dict["save_folder"], "LFP_PSDs.png"))
 
 
-def compare_populations():
+def compare_populations(param_dict):
 
     fig = plt.figure(figsize=[18.3, 9.3])
     fig.suptitle("Uniform synaptic input")
@@ -240,7 +262,7 @@ def compare_populations():
     plt.show()
 
 if __name__ == '__main__':
-    # init_example_pop()
-    # simulate_populations()
-    # compare_populations()
-    plot_LFP_PSDs()
+    # init_example_pop(param_dict)
+    # simulate_populations(param_dict)
+    # compare_populations(param_dict)
+    plot_LFP_PSDs(param_dict)
