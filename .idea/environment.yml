@@ -3,6 +3,5 @@ channels:
   - defaults
 
 dependencies:
-  - pylgn
   - pip:
-    - "git+https://github.com/miladh/edog-simulations.git"
+    - "git+https://github.com/LFPy/LFPy.git"

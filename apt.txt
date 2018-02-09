@@ -1,0 +1,5 @@
+wget
+libx11-6
+python-dev
+build-essential
+libncurses-dev
