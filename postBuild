@@ -1,4 +1,6 @@
+
 #!/bin/bash
+
 wget http://www.neuron.yale.edu/ftp/neuron/versions/v7.4/nrn-7.4.x86_64.deb
 dpkg -i nrn-7.4.x86_64.deb
 rm nrn-7.4.x86_64.deb
