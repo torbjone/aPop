@@ -24,36 +24,3 @@ RUN apt-get update
 RUN apt-get install -y wget libx11-6 python-dev git build-essential libncurses-dev
 RUN wget https://bootstrap.pypa.io/get-pip.py
 RUN python get-pip.py
-RUN wget http://www.neuron.yale.edu/ftp/neuron/versions/v7.4/nrn-7.4.x86_64.deb
-RUN dpkg -i nrn-7.4.x86_64.deb
-RUN rm nrn-7.4.x86_64.deb
-
-#RUN pip install git+git://github.com/BlueBrain/deap
-#RUN pip install bluepyopt
-#RUN pip install LFPy
-
-WORKDIR $HOME/notebooks
-RUN git clone https://github.com/LFPy/LFPy.git
-WORKDIR $HOME/notebooks/LFPy
-RUN python setup.py install build_ext -i
-
-
-WORKDIR $HOME/notebooks/aPop/aPop/
-
-ENV PYTHONPATH /usr/local/nrn/lib/python:$PYTHONPATH
-
-USER main
-
-ADD . $HOME/notebooks
-
-USER root
-RUN chown -R main:main $HOME/notebooks
-USER main
-
-# Convert notebooks to the current format
-# RUN find $HOME/notebooks -name '*.ipynb' -exec ipython nbconvert --to notebook {} --output {} \;
-RUN find $HOME/notebooks -name '*.ipynb' -exec ipython trust {} \;
-
-WORKDIR $HOME/notebooks
-
-
