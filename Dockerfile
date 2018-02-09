@@ -3,7 +3,7 @@
 #
 
 # Pull base image.
-FROM alpine
+FROM continuumio/anaconda3
 MAINTAINER Alex Williams <alex.h.willia@gmail.com>
 
 USER root
