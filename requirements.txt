@@ -1,6 +1,3 @@
 numpy==1.13
 matplotlib==2.1
-python-dev
 git
-build-essential
-libncurses-dev
