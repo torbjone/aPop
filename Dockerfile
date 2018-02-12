@@ -46,6 +46,7 @@ ENV PYTHONPATH $PYTHONPATH:$HOME/LFPy/
 
 # Switch back to non-root user privledges
 WORKDIR $HOME
+USER main
 
 RUN git clone https://github.com/torbjone/aPop.git
 RUN pip install -e aPop
@@ -53,4 +54,3 @@ RUN pip install -e aPop
 
 # Switch back to non-root user privledges
 WORKDIR $HOME
-USER main
