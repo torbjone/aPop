@@ -43,7 +43,7 @@ RUN python setup.py install
 
 RUN git clone https://github.com/LFPy/LFPy.git
 WORKDIR LFPy
-RUN python setup.py install
+# RUN python setup.py install
 
 # Install PyNeuron-Toolbox
 # WORKDIR $HOME
