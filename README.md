@@ -54,7 +54,19 @@ NeuralSimulation.py : Responsible for all single cell simulation
 
 Population.py : Initialize and handle population simulation
 
-Figures.py : Reproduce all result figures of the project
+Figures.py : Reproduce all result figures of the project after 
+all simulations are done
+
+### Simple example ###
+The main findings of the study can be reproduced in a small simplified 
+population model of stick neurons by running in a terminal
+
+*python stick_population_example.py*
+
+or
+
+*jupyter notebook index.ipynb*
+
 
 ### Who do I talk to? ###
 
