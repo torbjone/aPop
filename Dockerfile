@@ -30,7 +30,7 @@ RUN \
 #  rm iv-19.tar.gz
 
 RUN conda install mpich2
-# RUN pip install numpy scipy matplotlib mpi4py
+RUN pip install numpy scipy matplotlib mpi4py h5py cython
 
 WORKDIR nrn-7.5
 
@@ -45,7 +45,7 @@ WORKDIR src/nrnpython
 RUN python setup.py install
 
 # Add NEURON to path
-ENV PATH $HOME/neuron/nrn-7.4/x86_64/bin:$PATH
+ENV PATH $HOME/neuron/nrn-7.5/x86_64/bin:$PATH
 
 
 RUN git clone https://github.com/LFPy/LFPy.git
