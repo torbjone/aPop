@@ -3,7 +3,8 @@
 #
 
 # Pull base image.
-FROM continuumio/anaconda3
+#FROM continuumio/anaconda3
+FROM andrewosh/binder-python-3.5-mini
 #FROM continuumio/miniconda3
 MAINTAINER Tester <tester@test.no>
 
