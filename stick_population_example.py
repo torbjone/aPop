@@ -8,7 +8,7 @@ from aPop.NeuralSimulation import NeuralSimulation
 from aPop.tools import return_freq_and_psd_welch
 from aPop.plotting_convention import mark_subplots, simplify_axes
 
-root_folder = '..'
+root_folder = '.'
 
 center_elec_z = np.arange(-200, 1201, 200)
 center_elec_x = np.zeros(len(center_elec_z))
@@ -254,7 +254,7 @@ def compare_populations(param_dict):
     plt.show()
 
 if __name__ == '__main__':
-    # init_example_pop(param_dict)
+    init_example_pop(param_dict)
     simulate_populations(param_dict)
     # compare_populations(param_dict)
-    # plot_LFP_PSDs(param_dict)
+    plot_LFP_PSDs(param_dict)

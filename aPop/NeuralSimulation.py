@@ -50,7 +50,7 @@ class NeuralSimulation:
         self.elec_z_center = self.center_electrode_parameters['z']
 
         self.root_folder = kwargs['root_folder']
-        self.neuron_models = join(self.root_folder, 'aPop', 'neuron_models')
+        self.neuron_models = os.path.split(aPop.neuron_models.__file__)[0]
         self.figure_folder = join(self.root_folder, self.param_dict['save_folder'])
         self.sim_folder = join(self.root_folder, self.param_dict['save_folder'], 'simulations')
 
