@@ -8,5 +8,5 @@ setup(name='aPop',
       author='Torbjorn V. Ness',
       author_email='torbness@gmail.com',
       url='https://github.com/torbjone/aPop.git',
-      packages=['aPop',],
+      packages=['aPop', 'aPop.neuron_models'],
      )
