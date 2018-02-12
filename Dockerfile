@@ -3,9 +3,7 @@
 #
 
 # Pull base image.
-#FROM continuumio/anaconda3
 FROM andrewosh/binder-python-3.5-mini
-#FROM continuumio/miniconda3
 MAINTAINER Tester <tester@test.no>
 
 USER root
@@ -23,20 +21,13 @@ RUN \
   tar -xzf nrn-7.5.tar.gz && \
   rm nrn-7.5.tar.gz
 
-# Fetch Interviews.
-# RUN \
-#  wget http://www.neuron.yale.edu/ftp/neuron/versions/v7.4/iv-19.tar.gz  && \  
-#  tar -xzf iv-19.tar.gz && \
-#  rm iv-19.tar.gz
-
 RUN conda install mpich2
 RUN pip install numpy scipy matplotlib mpi4py h5py cython
 
 WORKDIR nrn-7.5
 
 # Compile NEURON.
-RUN \
-  ./configure --prefix=`pwd` --without-iv --with-nrnpython && \
+RUN ./configure --prefix=`pwd` --without-iv --with-nrnpython && \
   make && \
   make install
 
@@ -52,9 +43,6 @@ RUN git clone https://github.com/LFPy/LFPy.git
 WORKDIR LFPy
 RUN python setup.py install
 ENV PYTHONPATH $PYTHONPATH:$HOME/LFPy/
-
-
-
 
 # Switch back to non-root user privledges
 WORKDIR $HOME

@@ -26,7 +26,7 @@ All simulations for a given cell model type are run with
 python Population.py initialize
 mpirun -np 4 python Population.py MPI
 where the last line uses 4 processes. To run full populations,
-it is strongly reccomended to use a supercomputer with a large number of 
+it is strongly recommended to use a supercomputer with a large number of 
 cores available. For any code-spesific questions or
 concerns, please contact Torbjørn V Ness: torbness@gmail.com
 
@@ -39,6 +39,15 @@ The cell models are also included in this repository for convenience.
 
 The 67 different cell morphologies that was used to test the impact
 of using a single cloned morphology were downloaded from NeuroMorpho:
+
+### Installation ###
+The code must be installed in place. 
+
+python setup.py build_ext --inplace
+
+The code can also be used without installation provided the 
+NEURON mod files have been compiled (write nrnivmodl in the terminal 
+for all folders that contain *.mod files).
 
 ### Code structure ###
 NeuralSimulation.py : Responsible for all single cell simulation

@@ -33,6 +33,8 @@ end_T = 2**13 - dt
 cut_off = 2000 #if at_stallo else 200
 
 
+
+
 scale = 10
 num_cells = 100 * scale ** 2
 population_radius = 100. * scale
@@ -56,7 +58,6 @@ generic_population_params = {'input_type': 'distributed_delta',
                              'holding_potential': -80,
                              'conductance_type': 'generic',
                              'save_folder': 'population',
-                             # 'lateral_electrode_parameters': lateral_electrode_parameters,
                              'center_electrode_parameters': center_elec_params,
                              'root_folder': root_folder,
                              'num_synapses': 1000,
