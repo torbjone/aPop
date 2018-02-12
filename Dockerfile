@@ -48,8 +48,7 @@ ENV PYTHONPATH $PYTHONPATH:$HOME/LFPy/
 WORKDIR $HOME
 
 RUN git clone https://github.com/torbjone/aPop.git
-WORKDIR aPop
-RUN python setup.py build_ext --inplace
+RUN pip install -e aPop
 
 
 # Switch back to non-root user privledges
