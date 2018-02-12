@@ -46,10 +46,12 @@ ENV PYTHONPATH $PYTHONPATH:$HOME/LFPy/
 
 # Switch back to non-root user privledges
 WORKDIR $HOME
-USER main
 
 RUN git clone https://github.com/torbjone/aPop.git
 WORKDIR aPop
 RUN python setup.py build_ext --inplace
 
 
+# Switch back to non-root user privledges
+WORKDIR $HOME
+USER main
