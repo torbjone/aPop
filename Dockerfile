@@ -4,7 +4,7 @@
 
 # Pull base image.
 # FROM andrewosh/binder-python-3.5-mini
-FROM neuralensemble/simulationx
+FROM neuralensemble/simulation
 MAINTAINER Tester <tester@test.no>
 
 USER root

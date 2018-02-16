@@ -7,6 +7,7 @@ Figure numbers in Figures.py corresponds to figures in the paper.
 For a related single cell study, see
 https://www.ncbi.nlm.nih.gov/pubmed/27079755
 
+with corresponding python repository: https://github.com/torbjone/aLFP
 
 ### How do I get set up? ###
 In all folders containing .mod files the command "nrnivmodl" 
