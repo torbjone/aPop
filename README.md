@@ -62,7 +62,7 @@ all simulations are done
 The main findings of the study can be reproduced in a small simplified 
 population model of stick neurons by running in a terminal
 
-*python stick_population_example.py*
+*python stick_pop_example.py*
 
 or
 

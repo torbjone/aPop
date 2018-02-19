@@ -467,8 +467,11 @@ class NeuralSimulation:
         #     print("Max vmem STD: ", np.max(np.std(cell.vmem, axis=1)))
 
         self.save_neural_sim_single_input_data(cell)
-        if self.cell_number < 5 or (self.cell_number % 50) == 0:
-            self._plot_results(cell)
+        if self.cell_number < 3 or (self.cell_number % 100) == 0:
+            try:
+                self._plot_results(cell)
+            except:
+                pass
 
     def _make_synaptic_stimuli(self, cell):
 

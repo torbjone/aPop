@@ -30,8 +30,8 @@ param_dict = {'input_type': "distributed_delta",
               'num_cells': 100,
               'population_radius': 20,
               'layer_5_thickness': 0,
-              'cut_off': 100,
-              'end_t': 500,
+              'cut_off': 0,
+              'end_t': 200,
               'syn_tau': dt * 3,
               'syn_weight': 1e-3,
               'max_freq': 500,
@@ -41,7 +41,7 @@ param_dict = {'input_type': "distributed_delta",
               'save_folder': 'stick_pop_example',
               'center_electrode_parameters': center_elec_params,
               'root_folder': root_folder,
-              'num_synapses': 100,
+              'num_synapses': 200,
               'input_firing_rate': 5,
               'input_regions': ['top', 'homogeneous', ],
               'mus': [None, 2.0],
@@ -199,9 +199,10 @@ def plot_LFP_PSDs(param_dict):
 
 def compare_populations(param_dict):
 
-    fig = plt.figure(figsize=[18.3, 9.3])
-    fig.suptitle("Uniform synaptic input")
-    fig.subplots_adjust(bottom=0.15)
+    fig = plt.figure(figsize=[6,  4])
+
+    input_regions = ['homogeneous']
+    fig.subplots_adjust(bottom=0.22, left=0.14, hspace=0.5, wspace=0.25)
     mu_clr_dict = {None: "k", 2.0: 'b'}
     dz = np.abs(np.diff(param_dict["center_electrode_parameters"]["z"])[0])
     normalize_factor = dz / 1
@@ -209,24 +210,27 @@ def compare_populations(param_dict):
                                         param_dict["input_type"])
     tvec = np.load(join(root_folder, param_dict["save_folder"],
             "simulations", tvec_name))
-    shift_idx = np.argmin(np.abs(tvec - 200))
+    shift_idx = np.argmin(np.abs(tvec - 150))
     name_dict = {None: "passive",
                  2.0: "passive + asym. restorative"}
 
     lines = []
     line_names = []
 
-    for ir, input_region in enumerate(param_dict['input_regions']):
+    for ir, input_region in enumerate(input_regions):
         param_dict['input_region'] = input_region
         for c, correlation in enumerate(param_dict['correlations']):
             param_dict["correlation"] = correlation
 
-            ax_ = fig.add_subplot(2, 2, 1 + c, xlim=[0, 300], ylim=[-15, 10],
+            ax_ = fig.add_subplot(2, 2, 1 + c*2, xlim=[0, 50], ylim=[-15, 10],
                                   title="c={}".format(correlation),
-                                  xlabel="Time (ms)", ylabel="LFP ($\mu$V)")
-            ax_shift = fig.add_subplot(2, 2, 3 + c, xlim=[200, 300], ylim=[-15, 10],
-                                  title="c={}; Zoomed and shifted".format(correlation),
-                                   xlabel="Time (ms)", ylabel="LFP ($\mu$V)")
+                                  ylabel="LFP ($\mu$V)")
+            ax_shift = fig.add_subplot(2, 2, 2 + c*2, xlim=[150, 200], ylim=[-15, 10],
+                                  title="c={}; shifted".format(correlation))
+
+            if c == 1:
+                ax_.set_xlabel("Time (ms)")
+                ax_shift.set_xlabel("Time (ms)")
             # ax_.text(-30, 500, input_region, rotation=90, ha="center", va="center")
             for d, distribution in enumerate(param_dict['distributions']):
                 param_dict['distribution'] = distribution
@@ -234,7 +238,7 @@ def compare_populations(param_dict):
                     param_dict['mu'] = mu
                     ns = NeuralSimulation(**param_dict)
                     lfp = np.load(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
-                         (ns.population_sim_name, param_dict["population_radius"] - 1)))
+                         (ns.population_sim_name, param_dict["population_radius"])))
                     print(lfp.shape, np.max(np.abs(lfp)), param_dict["center_electrode_parameters"]["z"])
                     for eidx, z in enumerate(param_dict["center_electrode_parameters"]["z"]):
                         if not 0 <= z < 200:
@@ -248,13 +252,16 @@ def compare_populations(param_dict):
                     if ir == 0 and c == 0 and d == 0:
                         lines.append(l)
                         line_names.append(name_dict[mu])
-    fig.set_tight_layout(True)
-    fig.legend(lines, line_names, frameon=False, ncol=2, loc=(0.4,0.01))
-    fig.savefig(join(root_folder, param_dict["save_folder"], "LFP_test_example_stick_high_activity.png"))
-    plt.show()
+    simplify_axes(fig.axes)
+    mark_subplots(fig.axes)
+    # fig.set_tight_layout(True)
+    fig.legend(lines, line_names, frameon=False, ncol=2, loc=(0.2, 0.001))
+    fig.savefig(join(root_folder, param_dict["save_folder"], "LFP_test_example_stick.png"))
+    fig.savefig(join(root_folder, param_dict["save_folder"], "LFP_test_example_stick.pdf"))
+    # plt.show()
 
 if __name__ == '__main__':
-    init_example_pop(param_dict)
-    simulate_populations(param_dict)
-    # compare_populations(param_dict)
-    plot_LFP_PSDs(param_dict)
+    # init_example_pop(param_dict)
+    # simulate_populations(param_dict)
+    compare_populations(param_dict)
+    # plot_LFP_PSDs(param_dict)

@@ -75,7 +75,35 @@ generic_population_params = {'input_type': 'distributed_delta',
                              }
 
 
-
+ih_plateau_population_params = {'input_type': 'distributed_delta',
+                             'name': 'classic_population',
+                             'cell_name': 'hay',
+                             'dt': dt,
+                             'population_scale': scale,  # 10 means full population
+                             'num_cells': num_cells,
+                             'population_radius': population_radius,
+                             'population_radii': population_radii,
+                             'layer_5_thickness': layer_5_thickness,
+                             'cut_off': cut_off,
+                             'end_t': end_T,
+                             'syn_tau': dt * 3,
+                             'syn_weight': 0.03,
+                             'max_freq': 500,
+                             'holding_potential': -70,
+                             'conductance_type': 'classic',
+                             'save_folder': 'Ih_plateau',
+                             # 'lateral_electrode_parameters': lateral_electrode_parameters,
+                             'center_electrode_parameters': center_elec_params,
+                             'root_folder': root_folder,
+                             'num_synapses': 1000,
+                             'input_firing_rate': 5,
+                             'input_regions': ["homogeneous", "distal_tuft"],
+                             'mus': None,
+                             'holding_potentials': [-70],
+                             'distributions': None,
+                             'conductance_types': ['passive', 'Ih_plateau', 'Ih_plateau2'],
+                             'correlations': [0.0, 1.0]
+                             }
 
 classic_population_params = {'input_type': 'distributed_delta',
                              'name': 'classic_population',
@@ -103,7 +131,7 @@ classic_population_params = {'input_type': 'distributed_delta',
                              'mus': None,
                              'holding_potentials': [-70],
                              'distributions': None,
-                             'conductance_types': ['Ih_plateau2'],
+                             'conductance_types': ['passive', 'Ih_plateau', 'Ih_plateau2'],
                              'correlations': [0.0, 1.0]
                              }
 
@@ -160,7 +188,7 @@ stick_population_params = {'input_type': 'distributed_delta',
                              'holding_potential': -80,
                              'g_w_bar_scaling': 5.,
                              'conductance_type': 'generic',
-                             'save_folder': 'stick_population',
+                             'save_folder': 'stick_population_fork_test',
                              # 'lateral_electrode_parameters': stick_lateral_electrode_parameters,
                              'center_electrode_parameters': stick_center_electrode_parameters,
                              'root_folder': root_folder,
