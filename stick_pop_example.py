@@ -261,7 +261,7 @@ def compare_populations(param_dict):
     # plt.show()
 
 if __name__ == '__main__':
-    # init_example_pop(param_dict)
+    init_example_pop(param_dict)
     # simulate_populations(param_dict)
-    compare_populations(param_dict)
+    # compare_populations(param_dict)
     # plot_LFP_PSDs(param_dict)

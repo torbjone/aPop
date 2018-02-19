@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 import os
 if 'DISPLAY' not in os.environ:
     import matplotlib

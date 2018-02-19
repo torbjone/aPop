@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 import os
 from os.path import join
 if 'DISPLAY' not in os.environ:

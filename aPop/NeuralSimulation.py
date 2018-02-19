@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 import os
 import sys
 from os.path import join
@@ -416,7 +416,7 @@ class NeuralSimulation:
             np.save(join(self.sim_folder, 'tvec_%s_%s.npy' % (self.cell_name, self.input_type)), cell.tvec)
             if hasattr(cell, 'vmem'):
                 np.save(join(self.sim_folder, 'vmem_%s.npy' % name), cell.vmem)
-            np.save(join(self.sim_folder, 'imem_%s.npy' % name), cell.imem)
+                np.save(join(self.sim_folder, 'imem_%s.npy' % name), cell.imem)
             np.save(join(self.sim_folder, 'synidx_%s.npy' % name), cell.synidx)
 
             np.save(join(self.sim_folder, 'center_elec_x_%s.npy' % self.cell_name), center_electrode.x)
