@@ -23,7 +23,7 @@ if find_executable('nrnivmodl') is not None:
         os.chdir(cwd)
 else:
     print("nrnivmodl script not found in PATH, thus NEURON .mod files could" +
-          "not be compiled, and LFPy.test() functions will fail")
+          "not be compiled")
 
 
 setup(name='aPop',

@@ -1,11 +1,11 @@
 #!/bin/bash
 ################################################################################
 #SBATCH --job-name Ih_plat
-#SBATCH --time 10:00:00
+#SBATCH --time 48:00:00
 #SBATCH -o output_Ih2.txt
 #SBATCH -e output_eIh2.txt
-#SBATCH --ntasks 80
-#SBATCH --mem-per-cpu=4000MB
+#SBATCH --ntasks 16
+#SBATCH --mem-per-cpu=2000MB
 #SBATCH --mail-type=ALL
 
 ################################################################################

@@ -163,7 +163,6 @@ def plot_all_soma_sigs(param_dict):
     apic_elec = np.argmin(np.abs(elec_z - 1000) + np.abs(elec_x - 0)) #+ np.abs(elec_x - 0))
 
 
-
     # print soma_elec, elec_x[soma_elec], elec_z[soma_elec]
     # print apic_elec, elec_x[apic_elec], elec_z[apic_elec]
     correlations = param_dict['correlations']
@@ -184,6 +183,7 @@ def plot_all_soma_sigs(param_dict):
                    'xticklabels': ['1', '10', '100'],
                    'xticks': [1e0, 10, 100],
                     }
+
     num_plot_cols = 14
     num_plot_rows = 3
     fig.text(0.17, 0.95, 'Uniform conductance')

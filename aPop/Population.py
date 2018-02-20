@@ -207,7 +207,7 @@ def PopulationMPIgeneric(param_dict):
                             print("SKIPPING POPULATION ", ns.population_sim_name)
                             continue
 
-                        for cell_idx in range(0, num_cells):
+                        for cell_idx in range(0, num_cells + 1):
                             task += 1
                             sent = False
                             while not sent:
@@ -311,7 +311,7 @@ def PopulationMPIgenericFork(param_dict):
                         #     print("SKIPPING POPULATION ", ns.population_sim_name)
                         #     continue
 
-                        for cell_idx in range(0, num_cells):
+                        for cell_idx in range(0, num_cells + 1):
                             task += 1
                             sent = False
                             while not sent:
@@ -341,28 +341,31 @@ def PopulationMPIgenericFork(param_dict):
     else:
         import time
         while True:
-            comm.send(None, dest=0, tag=tags.READY)
-            [input_region, distribution, mu, correlation, cell_idx] = comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
-            tag = status.Get_tag()
-            if tag == tags.START:
-                pid = os.fork()
-                if pid == 0:
-                    param_dict.update({'input_region': input_region,
-                                       'cell_number': cell_idx,
-                                       'mu': mu,
-                                       'distribution': distribution,
-                                       'correlation': correlation,
-                                       })
-                    ns = NeuralSimulation(**param_dict)
-                    ns.run_single_simulation()
-                    os._exit(0)
-                else:
-                    os.waitpid(pid, 0)
-                    comm.send(None, dest=0, tag=tags.DONE)
-
-            elif tag == tags.EXIT:
-                print("\033[93m%d exiting\033[0m" % rank)
-                break
+            if rank % 2 == 0:
+                # To save memory, only half of the available cores are used
+                time.sleep(60)
+            else:
+                comm.send(None, dest=0, tag=tags.READY)
+                [input_region, distribution, mu, correlation, cell_idx] = comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
+                tag = status.Get_tag()
+                if tag == tags.START:
+                    pid = os.fork()
+                    if pid == 0:
+                        param_dict.update({'input_region': input_region,
+                                           'cell_number': cell_idx,
+                                           'mu': mu,
+                                           'distribution': distribution,
+                                           'correlation': correlation,
+                                           })
+                        ns = NeuralSimulation(**param_dict)
+                        ns.run_single_simulation()
+                        os._exit(0)
+                    else:
+                        os.waitpid(pid, 0)
+                        comm.send(None, dest=0, tag=tags.DONE)
+                elif tag == tags.EXIT:
+                    print("\033[93m%d exiting\033[0m" % rank)
+                    break
         comm.send(None, dest=0, tag=tags.EXIT)
 
 
@@ -416,7 +419,7 @@ def PopulationMPIclassic(param_dict):
                             print("SKIPPING POPULATION ", ns.population_sim_name)
                             continue
 
-                        for cell_idx in range(0, num_cells):
+                        for cell_idx in range(0, num_cells + 1):
                             task += 1
                             sent = False
                             while not sent:
@@ -500,7 +503,7 @@ def PopulationMPIclassicFork(param_dict):
 
         print(("\033[95m Master starting with %d workers\033[0m" % num_workers))
         task = 0
-        num_cells = 4000 if at_stallo else 2
+        num_cells = 1000 if at_stallo else 2
         num_tasks = (len(param_dict['input_regions']) * len(param_dict['holding_potentials']) *
                      len(param_dict['conductance_types']) * len(param_dict['correlations']) * (num_cells))
 
@@ -519,7 +522,7 @@ def PopulationMPIclassicFork(param_dict):
                         #     print("SKIPPING POPULATION ", ns.population_sim_name)
                         #     continue
 
-                        for cell_idx in range(0, num_cells):
+                        for cell_idx in range(0, num_cells + 1):
                             task += 1
                             sent = False
                             while not sent:
@@ -548,29 +551,35 @@ def PopulationMPIclassicFork(param_dict):
             comm.send([None, None, None, None, None], dest=worker, tag=tags.EXIT)
         print("\033[95m Master finishing\033[0m")
     else:
-        while True:
-            comm.send(None, dest=0, tag=tags.READY)
-            [input_region, conductance_type, holding_potential, correlation, cell_idx] = comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
-            tag = status.Get_tag()
-            if tag == tags.START:
 
-                pid = os.fork()
-                if pid == 0:
-                    param_dict.update({'input_region': input_region,
-                                       'cell_number': cell_idx,
-                                       'conductance_type': conductance_type,
-                                       'holding_potential': holding_potential,
-                                       'correlation': correlation,
-                                       })
-                    ns = NeuralSimulation(**param_dict)
-                    ns.run_single_simulation()
-                    os._exit(0)
-                else:
-                    os.waitpid(pid, 0)
-                    comm.send(None, dest=0, tag=tags.DONE)
-            elif tag == tags.EXIT:
-                print("\033[93m%d exiting\033[0m" % rank)
-                break
+        import time
+        while True:
+            if rank % 2 == 0:
+                # To save memory, only half of the available cores are used
+                time.sleep(60)
+            else:
+                comm.send(None, dest=0, tag=tags.READY)
+                [input_region, conductance_type, holding_potential, correlation, cell_idx] = comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
+                tag = status.Get_tag()
+                if tag == tags.START:
+
+                    pid = os.fork()
+                    if pid == 0:
+                        param_dict.update({'input_region': input_region,
+                                           'cell_number': cell_idx,
+                                           'conductance_type': conductance_type,
+                                           'holding_potential': holding_potential,
+                                           'correlation': correlation,
+                                           })
+                        ns = NeuralSimulation(**param_dict)
+                        ns.run_single_simulation()
+                        os._exit(0)
+                    else:
+                        os.waitpid(pid, 0)
+                        comm.send(None, dest=0, tag=tags.DONE)
+                elif tag == tags.EXIT:
+                    print("\033[93m%d exiting\033[0m" % rank)
+                    break
         comm.send(None, dest=0, tag=tags.EXIT)
 
 

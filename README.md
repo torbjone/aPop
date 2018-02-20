@@ -43,7 +43,9 @@ of using a single cloned morphology were downloaded from NeuroMorpho:
 
 ### Installation ###
 The code must be installed in place. 
-
+git clone https://github.com/torbjone/aPop.git
+pip install -e aPop
+or through 
 python setup.py build_ext --inplace
 
 The code can also be used without installation provided the 
