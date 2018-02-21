@@ -463,10 +463,10 @@ def plot_Ih_dists_to_ax(ax):
 
 def plot_figure_control_Ih_plateau():
 
-    from aPop.param_dicts import classic_population_params as param_dict
+    from aPop.param_dicts import ih_plateau_population_params as param_dict
 
     folder = join(param_dict['root_folder'], param_dict['save_folder'], 'simulations')
-    pop_size = 226
+    pop_size = 323
 
     param_dict['cell_number'] = 0
 
@@ -478,7 +478,7 @@ def plot_figure_control_Ih_plateau():
 
     correlations = [0, 1.0]
     input_regions = ['distal_tuft', 'homogeneous']
-    conductance_types = ["Ih", "Ih_plateau", "Ih_plateau2", "passive"]
+    conductance_types = ["Ih_plateau", "Ih_plateau2", "passive"]
 
     plt.close('all')
     fig = plt.figure(figsize=(7, 5))
@@ -574,8 +574,8 @@ def plot_figure_control_Ih_plateau():
     simplify_axes(fig.axes)
 
     mark_subplots([ax_morph_1, ax_morph_2], "BC", ypos=1.4, xpos=-0.2)
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_control_Ih_plateau2_{}.png'.format(pop_size)))
-    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_control_Ih_plateau2_{}.pdf'.format(pop_size)), dpi=300)
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_control_Ih_plateau2_{}_new.png'.format(pop_size)))
+    plt.savefig(join(param_dict['root_folder'], 'figures', 'Figure_control_Ih_plateau2_{}_new.pdf'.format(pop_size)), dpi=300)
     plt.close('all')
 
 

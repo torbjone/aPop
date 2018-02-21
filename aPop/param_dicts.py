@@ -101,7 +101,7 @@ ih_plateau_population_params = {'input_type': 'distributed_delta',
                              'mus': None,
                              'holding_potentials': [-70],
                              'distributions': None,
-                             'conductance_types': ['passive', 'Ih_plateau', 'Ih_plateau2'],
+                             'conductance_types': ['Ih'],
                              'correlations': [0.0, 1.0]
                              }
 
