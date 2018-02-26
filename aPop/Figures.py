@@ -760,10 +760,6 @@ def plot_figure_8_hbp():
     plt.close('all')
 
 
-
-
-
-
 def plot_robustness_combined():
 
     from aPop.param_dicts import multimorph_population_params as param_dict_mm
@@ -777,7 +773,7 @@ def plot_robustness_combined():
                    "multimorph": 'Morphologically diverse',
                    "stick": "Simplified cone population",
                    "hbp": "HBP with complex synapses"
-               }
+                  }
 
     param_dicts = {"generic": param_dict_ge,
                    "multimorph": param_dict_mm,
