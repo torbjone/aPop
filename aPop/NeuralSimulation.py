@@ -8,13 +8,14 @@ if not 'DISPLAY' in os.environ:
     at_stallo = True
 else:
     at_stallo = False
-import aPop
-from aPop.plotting_convention import mark_subplots, simplify_axes, LogNorm
+
+from plotting_convention import mark_subplots, simplify_axes, LogNorm
+import neuron_models
 import numpy as np
 import pylab as plt
 import neuron
 import LFPy
-from aPop import tools
+import tools
 h = neuron.h
 
 
@@ -50,7 +51,7 @@ class NeuralSimulation:
         self.elec_z_center = self.center_electrode_parameters['z']
 
         self.root_folder = kwargs['root_folder']
-        self.neuron_models = os.path.split(aPop.neuron_models.__file__)[0]
+        self.neuron_models = os.path.split(neuron_models.__file__)[0]
         self.figure_folder = join(self.root_folder, self.param_dict['save_folder'])
         self.sim_folder = join(self.root_folder, self.param_dict['save_folder'], 'simulations')
 
@@ -472,6 +473,7 @@ class NeuralSimulation:
                 self._plot_results(cell)
             except:
                 pass
+
 
     def _make_synaptic_stimuli(self, cell):
 

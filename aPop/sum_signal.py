@@ -2,7 +2,7 @@
 
 
 import sys
-from aPop.Population import sum_and_remove
+from Population import sum_and_remove
 
 sim_name = 'hay_classic'     # Control simulation
 if sim_name == "stick_generic":

@@ -7,7 +7,7 @@ if 'DISPLAY' not in os.environ:
 else:
     at_stallo = False
 
-from aPop.plotting_convention import *
+from plotting_convention import *
 import pylab as plt
 import numpy as np
 import os
@@ -15,11 +15,11 @@ import sys
 from os.path import join
 
 import LFPy
-from aPop.NeuralSimulation import NeuralSimulation
+from NeuralSimulation import NeuralSimulation
 
 
 def print_cell_number_with_pop_size():
-    from aPop.param_dicts import classic_population_params as param_dict
+    from param_dicts import classic_population_params as param_dict
     xyzr = np.load(join(param_dict['root_folder'], param_dict['save_folder'],
                  'x_y_z_rot_%s.npy' % param_dict['name']))
     print(xyzr.shape)
@@ -160,110 +160,6 @@ def sum_and_remove(param_dict, num_cells, remove=False):
     return True
 
 
-def PopulationMPIgeneric(param_dict):
-    """ Run with
-        mpirun -np 4 python example_mpi.py
-    """
-    from mpi4py import MPI
-    class Tags:
-        def __init__(self):
-            self.READY = 0
-            self.DONE = 1
-            self.EXIT = 2
-            self.START = 3
-            self.ERROR = 4
-    tags = Tags()
-    # Initializations and preliminaries
-    comm = MPI.COMM_WORLD   # get MPI communicator object
-    size = comm.size        # total number of processes
-    rank = comm.rank        # rank of this process
-    status = MPI.Status()   # get MPI status object
-    num_workers = size - 1
-
-    if size == 1:
-        print("Can't do MPI with one core!")
-        sys.exit()
-
-    if rank == 0:
-
-        print(("\033[95m Master starting with %d workers\033[0m" % num_workers))
-        task = 0
-        num_cells = 1000 if at_stallo else 2
-        num_tasks = (len(param_dict['input_regions']) * len(param_dict['mus']) *
-                     len(param_dict['distributions']) * len(param_dict['correlations']) * (num_cells))
-        for input_region in param_dict['input_regions']:
-            param_dict['input_region'] = input_region
-            for distribution in param_dict['distributions']:
-                param_dict['distribution'] = distribution
-                for mu in param_dict['mus']:
-                    param_dict['mu'] = mu
-                    for correlation in param_dict['correlations']:
-                        param_dict["correlation"] = correlation
-                        param_dict.update({'cell_number': 0})
-                        ns = NeuralSimulation(**param_dict)
-
-                        if os.path.isfile(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
-                            (ns.population_sim_name, 999))):
-                            print("SKIPPING POPULATION ", ns.population_sim_name)
-                            continue
-
-                        for cell_idx in range(0, num_cells + 1):
-                            task += 1
-                            sent = False
-                            while not sent:
-                                data = comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
-                                source = status.Get_source()
-                                tag = status.Get_tag()
-                                if tag == tags.READY:
-                                    comm.send([input_region, distribution, mu, correlation, cell_idx], dest=source, tag=tags.START)
-                                    # print "\033[95m Sending task %d/%d to worker %d\033[0m" % (task, num_tasks, source)
-                                    sent = True
-                                elif tag == tags.DONE:
-                                    pass
-                                    # print "\033[95m Worker %d completed task %d/%d\033[0m" % (source, task, num_tasks)
-                                elif tag == tags.ERROR:
-                                    print("\033[91mMaster detected ERROR at node %d. Aborting...\033[0m" % source)
-                                    for worker in range(1, num_workers + 1):
-                                        comm.send([None, None, None, None, None], dest=worker, tag=tags.EXIT)
-                                    sys.exit()
-                        success = sum_and_remove(param_dict, num_cells, True)
-                        if not success:
-                            print("Failed to sum. Exiting")
-                            for worker in range(1, num_workers + 1):
-                                comm.send([None, None, None, None, None], dest=worker, tag=tags.EXIT)
-                                sys.exit()
-
-        for worker in range(1, num_workers + 1):
-            comm.send([None, None, None, None, None], dest=worker, tag=tags.EXIT)
-        print("\033[95m Master finishing\033[0m")
-    else:
-        import time
-        while True:
-            # if rank % 2 == 0:
-            #     print "Rank %d sleeping" % rank
-                # time.sleep(60)
-            # else:
-            comm.send(None, dest=0, tag=tags.READY)
-            [input_region, distribution, mu, correlation, cell_idx] = comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
-            tag = status.Get_tag()
-            if tag == tags.START:
-                # Do the work here
-                print("\033[93m%d put to work on %s %s %s %1.2f cell %d\033[0m" % (rank, input_region,
-                                                                                distribution, str(mu), correlation, cell_idx))
-                try:
-                    os.system("python %s %s %1.2f %d %s %s" % (sys.argv[0], input_region, correlation, cell_idx,
-                                                                  distribution, str(mu)))
-                except:
-                    print("\033[91mNode %d exiting with ERROR\033[0m" % rank)
-                    comm.send(None, dest=0, tag=tags.ERROR)
-                    sys.exit()
-                comm.send(None, dest=0, tag=tags.DONE)
-            elif tag == tags.EXIT:
-                print("\033[93m%d exiting\033[0m" % rank)
-                break
-        comm.send(None, dest=0, tag=tags.EXIT)
-
-
 def PopulationMPIgenericFork(param_dict):
     """ Run with
         mpirun -np 4 python example_mpi.py
@@ -366,111 +262,6 @@ def PopulationMPIgenericFork(param_dict):
                 elif tag == tags.EXIT:
                     print("\033[93m%d exiting\033[0m" % rank)
                     break
-        comm.send(None, dest=0, tag=tags.EXIT)
-
-
-
-
-def PopulationMPIclassic(param_dict):
-    """ Run with
-        mpirun -np 4 python example_mpi.py
-    """
-    from mpi4py import MPI
-
-    class Tags:
-        def __init__(self):
-            self.READY = 0
-            self.DONE = 1
-            self.EXIT = 2
-            self.START = 3
-            self.ERROR = 4
-    tags = Tags()
-    # Initializations and preliminaries
-    comm = MPI.COMM_WORLD   # get MPI communicator object
-    size = comm.size        # total number of processes
-    rank = comm.rank        # rank of this process
-    status = MPI.Status()   # get MPI status object
-    num_workers = size - 1
-
-    if size == 1:
-        print("Can't do MPI with one core!")
-        sys.exit()
-
-    if rank == 0:
-
-        print(("\033[95m Master starting with %d workers\033[0m" % num_workers))
-        task = 0
-        num_cells = 500 if at_stallo else 2
-        num_tasks = (len(param_dict['input_regions']) * len(param_dict['holding_potentials']) *
-                     len(param_dict['conductance_types']) * len(param_dict['correlations']) * (num_cells))
-
-        for holding_potential in param_dict['holding_potentials']:
-            param_dict['holding_potential'] = holding_potential
-            for input_region in param_dict['input_regions']:
-                param_dict['input_region'] = input_region
-                for conductance_type in param_dict['conductance_types']:
-                    param_dict['conductance_type'] = conductance_type
-                    for correlation in param_dict['correlations']:
-                        param_dict["correlation"] = correlation
-                        param_dict.update({'cell_number': 0})
-                        ns = NeuralSimulation(**param_dict)
-                        if os.path.isfile(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
-                            (ns.population_sim_name, 999))):
-                            print("SKIPPING POPULATION ", ns.population_sim_name)
-                            continue
-
-                        for cell_idx in range(0, num_cells + 1):
-                            task += 1
-                            sent = False
-                            while not sent:
-                                data = comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
-                                source = status.Get_source()
-                                tag = status.Get_tag()
-                                if tag == tags.READY:
-                                    comm.send([input_region, conductance_type, holding_potential, correlation, cell_idx], dest=source, tag=tags.START)
-                                    print("\033[95m Sending task %d/%d to worker %d\033[0m" % (task, num_tasks, source))
-                                    sent = True
-                                elif tag == tags.DONE:
-                                    print("\033[95m Worker %d completed task %d/%d\033[0m" % (source, task, num_tasks))
-                                elif tag == tags.ERROR:
-                                    print("\033[91mMaster detected ERROR at node %d. Aborting...\033[0m" % source)
-                                    for worker in range(1, num_workers + 1):
-                                        comm.send([None, None, None, None, None], dest=worker, tag=tags.EXIT)
-                                    sys.exit()
-                        success = sum_and_remove(param_dict, num_cells, True)
-                        if not success:
-                            print("Failed to sum. Exiting")
-                            for worker in range(1, num_workers + 1):
-                                comm.send([None, None, None, None, None], dest=worker, tag=tags.EXIT)
-                                sys.exit()
-        for worker in range(1, num_workers + 1):
-            comm.send([None, None, None, None, None], dest=worker, tag=tags.EXIT)
-        print("\033[95m Master finishing\033[0m")
-    else:
-        # import time
-        while True:
-        #     if rank % 2 == 0:
-        #         print "Rank %d sleeping" % rank
-        #         time.sleep(60)
-        #     else:
-            comm.send(None, dest=0, tag=tags.READY)
-            [input_region, conductance_type, holding_potential, correlation, cell_idx] = comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
-            tag = status.Get_tag()
-            if tag == tags.START:
-                # Do the work here
-                print("\033[93m%d put to work on %s %s %s %1.2f cell %d\033[0m" % (rank, input_region,
-                                                                                conductance_type, str(holding_potential), correlation, cell_idx))
-                try:
-                    os.system("python %s %s %1.2f %d %s %s" % (sys.argv[0], input_region, correlation, cell_idx,
-                                                                  conductance_type, str(holding_potential)))
-                except:
-                    print("\033[91mNode %d exiting with ERROR\033[0m" % rank)
-                    comm.send(None, dest=0, tag=tags.ERROR)
-                    sys.exit()
-                comm.send(None, dest=0, tag=tags.DONE)
-            elif tag == tags.EXIT:
-                print("\033[93m%d exiting\033[0m" % rank)
-                break
         comm.send(None, dest=0, tag=tags.EXIT)
 
 

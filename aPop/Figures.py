@@ -3,7 +3,7 @@ import os
 import matplotlib
 # matplotlib.use('Agg', warn=False)
 
-from aPop.plotting_convention import (mark_subplots, simplify_axes,
+from plotting_convention import (mark_subplots, simplify_axes,
                                  cond_clr, cond_clr_mm, reg_color, res_color,
                                  cond_names)
 import pylab as plt
@@ -11,8 +11,8 @@ import numpy as np
 import os
 import sys
 from os.path import join
-from aPop.NeuralSimulation import NeuralSimulation
-from aPop import tools
+from NeuralSimulation import NeuralSimulation
+import tools
 import scipy.fftpack as sf
 import matplotlib
 from matplotlib.ticker import LogLocator, NullFormatter, LogFormatterExponent
@@ -389,9 +389,7 @@ def plot_figure_control_Ih_plateau():
             ax_norm = fig.add_axes([0.73 + c*0.13, 0.62 - 0.5 * i, 0.12, 0.3], **psd_ax_dict_norm)
 
             if c == 0:
-                mark_subplots([ax, ax_norm], ["FG", "CD"][i],)
-
-
+                mark_subplots([ax, ax_norm], ["CD", "FG"][i],)
 
             ax.set_title('c=%d' % correlation)
             ax_norm.set_title('c=%d' % correlation)
@@ -771,8 +769,8 @@ def plot_robustness_combined():
 
     label_names = {"generic": 'Original quasi-active',
                    "multimorph": 'Morphologically diverse',
-                   "stick": "Simplified cone population",
-                   "hbp": "HBP with complex synapses"
+                   "stick": "Simplified cylinders",
+                   "hbp": "BBP with complex synapses"
                   }
 
     param_dicts = {"generic": param_dict_ge,
@@ -1889,8 +1887,8 @@ def plot_figure_7_review_remade():
     ax1 = fig.add_subplot(121, xticks=[0, 1, 2, 3], yscale="log",
                             xlabel="Correlation",
                             ylabel="Average PSD mod. (1-10 Hz)",
+                            yticklabels=["", "", 1, 10, 100],
                             xticklabels=[0.0, 0.01, 0.1, 1.0])
-
 
     kwargs = dict(transform=ax1.transAxes, color='k', clip_on=False)
     ax1.plot((0.14, 0.17), (-.015, +.015), **kwargs)
@@ -1899,6 +1897,7 @@ def plot_figure_7_review_remade():
     ax2 = fig.add_subplot(122, xscale="log", yscale="log", xlim=[30, 1200],
                           xticks=[100, 1000],
                           xticklabels=[100, 1000],
+                          yticklabels=["", "", 1, 10, 100],
                           xlabel="Population radius ($\mu$m)",
                           ylabel="Average PSD mod. (1-10 Hz)",)
     simplify_axes([ax1, ax2])
@@ -2919,7 +2918,7 @@ def plot_figure_2_review_remade():
     num_freqs = 8193
     psds = np.zeros((len(input_regions), 2, len(correlations), len(conductance_types), num_freqs))
     q_values = np.zeros((len(input_regions), 2, len(correlations), len(conductance_types)))
-    max_psds = np.zeros((len(input_regions), 2, len(correlations), len(conductance_types)))
+    psd_1Hz = np.zeros((len(input_regions), 2, len(correlations), len(conductance_types)))
     mod_1Hz = np.zeros((len(input_regions), 2, len(correlations), len(conductance_types)))
 
     freq = None
@@ -2937,11 +2936,11 @@ def plot_figure_2_review_remade():
 
                     f_idx_min = np.argmin(np.abs(freq - 1.))
                     q_value = np.max(psd[0][f_idx_min:]) / psd[0][f_idx_min]
-                    max_psd = np.max(psd[0][f_idx_min:])
-                    # print(input_region, elec, correlation, conductance_type, q_value, psd[0][f_idx_min])
+                    # max_psd = np.max(psd[0][f_idx_min:])
+                    print(input_region, elec, correlation, conductance_type, q_value, psd[0][f_idx_min])
                     psds[ir, idx, c, num_cond] = psd
                     q_values[ir, idx, c, num_cond] = q_value
-                    max_psds[ir, idx, c, num_cond] = max_psd
+                    psd_1Hz[ir, idx, c, num_cond] = psd[0][f_idx_min]
                 for num_cond, conductance_type in enumerate(conductance_types):
                     mod_1Hz[ir, idx, c, num_cond] = psds[ir, idx, c, num_cond, f_idx_min] / psds[ir, idx, c, 2, f_idx_min]
     for ir, input_region in enumerate(input_regions):
@@ -2984,22 +2983,14 @@ def plot_figure_2_review_remade():
                     lines.append(l)
                     line_names.append(cond_names[conductance_type])
 
-                    locmaj = LogLocator(base=10, numticks=8)
-                    ax_.yaxis.set_major_locator(locmaj)
-                    ax_.yaxis.set_minor_locator(LogLocator())
-                    ax_.yaxis.set_major_formatter(LogFormatterExponent())
+                set_log_yticks(ax_)
 
-                    locmin = LogLocator(base=10.0, numticks=8,
-                              subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
-                    ax_.yaxis.set_minor_locator(locmin)
-                    ax_.yaxis.set_minor_formatter(NullFormatter())
-
-                    if idx == 1:
-                        ax_.set_xticklabels(['', '1', '10', '100'])
-                    else:
-                        ax_.set_xticklabels([''] * 4)
-                    if not c == 0:
-                        ax_.set_yticklabels([''] * 6)
+                if idx == 1:
+                    ax_.set_xticklabels(['', '1', '10', '100'])
+                else:
+                    ax_.set_xticklabels([''] * 4)
+                if not c == 0:
+                    ax_.set_yticklabels([''] * 6)
 
     fig.legend(lines, line_names, loc='lower center', frameon=False, ncol=4)
 
@@ -3007,7 +2998,7 @@ def plot_figure_2_review_remade():
         for idx, elec in enumerate([elec_apic, elec_soma]):
             xpos = 0.67
             ypos = 0.8 - 0.5 * ir - 0.18 * idx
-            ax_q = fig.add_axes([xpos, ypos, 0.115, 0.14], ylabel="Max LFP-PSD",
+            ax_q = fig.add_axes([xpos, ypos, 0.115, 0.14], ylabel="LFP-PSD (1 Hz)",
                                    ylim=[1e-6, 1.2e0],
                                    yscale="log",
                                    xticks = [0, 1, 2, 3],
@@ -3018,10 +3009,10 @@ def plot_figure_2_review_remade():
             if idx == 1:
                 ax_q.set_xlabel("Correlation")
             for num_cond, conductance_type in enumerate(conductance_types):
-                ax_q.plot(np.arange(2), max_psds[ir, idx, :2, num_cond], 'o:', lw=2,
+                ax_q.plot(np.arange(2), psd_1Hz[ir, idx, :2, num_cond], 'o:', lw=2,
                           clip_on=False,
                           c=cond_clr[conductance_type])
-                ax_q.plot(np.arange(1,4), max_psds[ir, idx, 1:, num_cond], 'o-', lw=2,
+                ax_q.plot(np.arange(1,4), psd_1Hz[ir, idx, 1:, num_cond], 'o-', lw=2,
                           clip_on=False,
                           c=cond_clr[conductance_type])
             if idx == 0:
@@ -3030,15 +3021,7 @@ def plot_figure_2_review_remade():
                 else:
                     mark_subplots(ax_q, "G")
 
-            locmaj = LogLocator(base=10, numticks=8)
-            ax_q.yaxis.set_major_locator(locmaj)
-            ax_q.yaxis.set_minor_locator(LogLocator())
-            ax_q.yaxis.set_major_formatter(LogFormatterExponent())
-
-            locmin = LogLocator(base=10.0, numticks=8,
-                      subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
-            ax_q.yaxis.set_minor_locator(locmin)
-            ax_q.yaxis.set_minor_formatter(NullFormatter())
+            set_log_yticks(ax_q)
 
     for ir, input_region in enumerate(input_regions):
         for idx, elec in enumerate([elec_apic, elec_soma]):
