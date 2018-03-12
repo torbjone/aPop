@@ -38,12 +38,12 @@ param_dict = {'input_type': "distributed_delta",
               'holding_potential': -80,
               'g_w_bar_scaling': 20.,
               'conductance_type': 'generic',
-              'save_folder': 'stick_pop_example',
+              'save_folder': 'stick_time_course',
               'center_electrode_parameters': center_elec_params,
               'root_folder': root_folder,
               'num_synapses': 200,
               'input_firing_rate': 5,
-              'input_regions': ['top', 'homogeneous', ],
+              'input_regions': ['homogeneous', ],
               'mus': [None, 2.0],
               'distributions': ['increase'],
               'correlations': [0.0, 1.0],
@@ -162,7 +162,6 @@ def compare_populations(param_dict):
                     ns = NeuralSimulation(**param_dict)
                     lfp = np.load(join(ns.sim_folder, 'summed_center_signal_%s_%dum.npy' %
                          (ns.population_sim_name, param_dict["population_radius"])))
-                    print(lfp.shape, np.max(np.abs(lfp)), param_dict["center_electrode_parameters"]["z"])
                     for eidx, z in enumerate(param_dict["center_electrode_parameters"]["z"]):
                         if not 0 <= z < 200:
                             continue
@@ -179,7 +178,6 @@ def compare_populations(param_dict):
     mark_subplots(fig.axes)
     # fig.set_tight_layout(True)
     fig.legend(lines, line_names, frameon=False, ncol=2, loc=(0.2, 0.001))
-    fig.savefig(join(root_folder, param_dict["save_folder"], "LFP_test_example_stick.png"))
     fig.savefig(join(root_folder, param_dict["save_folder"], "LFP_test_example_stick.pdf"))
     # plt.show()
 

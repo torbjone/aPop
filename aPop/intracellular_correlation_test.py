@@ -164,7 +164,8 @@ def simulate_populations(param_dict):
     simplify_axes(fig.axes)
     mark_subplots(fig.axes, ypos=1.11)
     fig.legend(lines, line_names, frameon=False, ncol=2, loc=(0.4, 0.01))
-    fig.savefig(join(root_folder, param_dict["save_folder"], "intracellular_vm_jitter_c={}_jitter={}.png".format(correlation, jitter, )))
+    fig.savefig(join(root_folder, param_dict["save_folder"],
+     "intracellular_vm_jitter_c={}_jitter={}.pdf".format(correlation, jitter)))
 
 
 if __name__ == '__main__':
