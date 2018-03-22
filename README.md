@@ -9,6 +9,26 @@ https://www.ncbi.nlm.nih.gov/pubmed/27079755
 
 with corresponding python repository: https://github.com/torbjone/aLFP
 
+### Installation ###
+The code should be installed in place. 
+
+git clone https://github.com/torbjone/aPop.git
+
+pip install -e aPop
+
+or through 
+
+git clone https://github.com/torbjone/aPop.git
+cd aPop/
+python setup.py build_ext --inplace
+
+The code can also be used without installation provided the 
+NEURON mod files have been compiled (write nrnivmodl in the terminal 
+for all folders that contain *.mod files). 
+
+
+
+
 ### How do I get set up? ###
 In all folders containing .mod files the command "nrnivmodl" 
 (Linux and Mac) must be executed in a terminal. This assumes
@@ -24,12 +44,28 @@ No attempts has been made for this to work at other operating systems
 than Linux, but we are happy to help people get started.
 
 All simulations for a given cell model type are run with
-python Population.py initialize
-mpirun -np 4 python Population.py MPI
+
+*python Population.py initialize*
+
+*mpirun -np 4 python Population.py MPI*
+
 where the last line uses 4 processes. To run full populations,
 it is strongly recommended to use a supercomputer with a large number of 
-cores available. For any code-spesific questions or
+cores available. An example run script is included in run_script.sh
+
+For any code-spesific questions or
 concerns, please contact Torbjørn V Ness: torbness@gmail.com
+
+### Simple example ###
+The main findings of the study can be reproduced in a small simplified 
+population model of stick neurons by opening a terminal in 
+the aPop/aPop folder, and writing:
+
+*python stick_pop_example.py*
+
+or
+
+*jupyter notebook index.ipynb*
 
 
 ### Cell models ###
@@ -38,41 +74,14 @@ available from NeuroMorpho.org, ModelDB, or the
 Blue Brain Project (bbp.epfl.ch/nmc-portal/). 
 The cell models are also included in this repository for convenience.
 
-The 67 different cell morphologies that was used to test the impact
-of using a single cloned morphology were downloaded from NeuroMorpho:
-
-### Installation ###
-The code should be installed in place. 
-
-git clone https://github.com/torbjone/aPop.git
-
-pip install -e aPop
-
-or through 
-
-python setup.py build_ext --inplace
-
-The code can also be used without installation provided the 
-NEURON mod files have been compiled (write nrnivmodl in the terminal 
-for all folders that contain *.mod files). 
-
 ### Code structure ###
-NeuralSimulation.py : Responsible for all single cell simulation
+NeuralSimulation.py : Responsible for all single-cell simulations
 
-Population.py : Initialize and handle population simulation
+Population.py : Initialize and handle population simulations
 
 Figures.py : Reproduce all result figures of the project after 
 all simulations are done
 
-### Simple example ###
-The main findings of the study can be reproduced in a small simplified 
-population model of stick neurons by running in a terminal
-
-*python stick_pop_example.py*
-
-or
-
-*jupyter notebook index.ipynb*
 
 
 ### Who do I talk to? ###
