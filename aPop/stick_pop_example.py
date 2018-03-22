@@ -88,13 +88,6 @@ def init_example_pop(param_dict):
 
 def simulate_populations(param_dict):
     print("Simulating example stick population. ")
-    task = 1
-    num_tasks = (len(param_dict['input_regions']) *
-                 len(param_dict['distributions']) *
-                 len(param_dict['mus']) *
-                 len(param_dict['correlations'])*
-                 param_dict['num_cells'])
-
     num_pops = (len(param_dict['input_regions']) *
                 len(param_dict['distributions']) *
                 len(param_dict['mus']) *
@@ -112,10 +105,7 @@ def simulate_populations(param_dict):
                         param_dict.update({'cell_number': cell_idx})
                         ns = NeuralSimulation(**param_dict)
                         ns.run_single_simulation()
-                        if task % 50 == 0:
-                            print("Simulating task {} of {}".format(task, num_tasks))
 
-                        task += 1
                     pop_number += 1
                     print("Finished population {} / {}.".format(pop_number, num_pops))
                     sum_and_remove(param_dict, True)
