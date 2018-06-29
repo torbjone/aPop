@@ -82,9 +82,10 @@ def sum_and_remove(param_dict, remove=False):
     return True
 
 
-
 def init_example_pop(param_dict):
     initialize_population(param_dict)
+    print("Done!")
+
 
 def simulate_populations(param_dict):
     print("Simulating example stick population. ")
@@ -187,7 +188,7 @@ def plot_LFP_PSDs(param_dict):
     mark_subplots(fig.axes, ypos=1.11)
     fig.legend(lines, line_names, frameon=False, ncol=2, loc=(0.4, 0.01))
     fig.savefig(join(root_folder, param_dict["save_folder"], "LFP_PSDs.png"))
-
+    plt.show()
 
 if __name__ == '__main__':
     init_example_pop(param_dict)
